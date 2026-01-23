@@ -1,0 +1,121 @@
+{
+  "app": {
+    "title": "Stemux"
+  },
+  "upload": {
+    "title": "Ajouter des pistes audio",
+    "description": "Déposez des fichiers audio ici ou cliquez pour sélectionner",
+    "dragActive": "Déposez les fichiers ici..."
+  },
+  "track": {
+    "actions": "Actions de piste",
+    "mute": "Muet",
+    "unmute": "Activer",
+    "solo": "Solo",
+    "unsolo": "Désactiver solo",
+    "loop": "Boucle",
+    "delete": "Supprimer",
+    "volume": "Volume",
+    "editName": "Modifier le nom",
+    "saveName": "Enregistrer",
+    "cancelEdit": "Annuler",
+    "deleteConfirmTitle": "Supprimer la piste ?",
+    "deleteConfirmMessage": "Êtes-vous sûr de vouloir supprimer cette piste ? Cette action est irréversible.",
+    "deleteConfirmButton": "Supprimer",
+    "cancelButton": "Annuler"
+  },
+  "controls": {
+    "play": "Lecture",
+    "pause": "Pause",
+    "skipToStart": "Retour au début",
+    "speed": "Vitesse de lecture",
+    "masterVolume": "Volume général",
+    "loop": "Afficher/masquer le panneau de boucle"
+  },
+  "speed": {
+    "title": "Vitesse de lecture",
+    "custom": "Personnalisée",
+    "slower": "Plus lent",
+    "normal": "Normal",
+    "faster": "Plus rapide",
+    "presets": "Préréglages rapides",
+    "helperText": "Entrez une valeur entre 0.25 et 4.0"
+  },
+  "loop": {
+    "title": "Contrôles de la région de boucle",
+    "start": "Début",
+    "end": "Fin",
+    "set": "Définir",
+    "setStart": "Marquer début de boucle",
+    "setEnd": "Marquer fin de boucle",
+    "waitingForEnd": "En attente de la fin, début à",
+    "active": "Active",
+    "region": "Région",
+    "enabled": "Boucle activée",
+    "disabled": "Boucle désactivée",
+    "clear": "Effacer la boucle",
+    "tooShort": "La boucle est trop courte (minimum 0.1s)",
+    "tooltip": "Définir la limite de boucle à la position de lecture actuelle",
+    "startHere": "Début ici",
+    "endHere": "Fin ici"
+  },
+  "loading": {
+    "tracks": "Chargement des pistes..."
+  },
+  "pwa": {
+    "offlineReady": "Application prête à fonctionner hors ligne !",
+    "updateAvailable": "Nouvelle version disponible ! Cliquez pour recharger.",
+    "reload": "Recharger"
+  },
+  "help": {
+    "title": "Guide d'utilisation",
+    "close": "Fermer",
+    "sections": {
+      "welcome": {
+        "title": "Bienvenue sur Stemux !",
+        "description": "Stemux est un lecteur audio multi-pistes conçu pour les musiciens qui souhaitent s'exercer avec des stems isolées. Chargez vos pistes, contrôlez les volumes indépendamment et créez des régions de boucle pour une pratique ciblée."
+      },
+      "basics": {
+        "title": "Premiers pas",
+        "uploadTitle": "1. Charger vos pistes",
+        "uploadDesc": "Glissez-déposez des fichiers audio (MP3, WAV, OGG, etc.) ou cliquez sur la zone de téléchargement. Vos pistes sont stockées localement dans votre navigateur.",
+        "playbackTitle": "2. Contrôles de lecture",
+        "playbackDesc": "Utilisez le bouton lecture/pause flottant ou appuyez sur ESPACE pour contrôler la lecture. Ajustez la vitesse de 0.25x à 4.0x pour pratiquer à votre rythme."
+      },
+      "tracks": {
+        "title": "Contrôles des pistes",
+        "soloTitle": "Bouton Solo (icône casque)",
+        "soloShort": "Appui court : Solo sur cette piste (coupe toutes les autres)",
+        "soloLong": "Appui long : Solo exclusif (réactive tout + solo uniquement sur cette piste)",
+        "muteTitle": "Bouton Muet (icône volume)",
+        "muteShort": "Appui court : Couper/réactiver cette piste",
+        "muteLong": "Appui long : Réactiver toutes les pistes",
+        "volumeTitle": "Volume de piste",
+        "volumeDesc": "Chaque piste a son propre curseur de volume. Il y a aussi un volume général dans la barre du bas."
+      },
+      "loops": {
+        "title": "Système de boucle",
+        "openTitle": "Ouvrir le panneau de boucle",
+        "openDesc": "Cliquez sur le bouton de boucle (coin supérieur droit) pour ouvrir les contrôles. La timeline affiche la progression audio.",
+        "setTitle": "Définir une boucle",
+        "setStep1": "1. Lancez la lecture et cliquez sur 'Marquer début de boucle' au point de départ souhaité",
+        "setStep2": "2. Continuez la lecture et cliquez sur 'Marquer fin de boucle' au point d'arrivée souhaité",
+        "setStep3": "3. La boucle est automatiquement activée. Activez/désactivez-la ou effacez-la avec les contrôles.",
+        "activeTitle": "Boucle active",
+        "activeDesc": "Quand une boucle est active, la lecture retourne automatiquement au début en atteignant la fin. Parfait pour travailler les passages difficiles !"
+      },
+      "keyboard": {
+        "title": "Raccourcis clavier",
+        "space": "ESPACE - Lecture/Pause",
+        "more": "D'autres raccourcis arrivent bientôt !"
+      },
+      "tips": {
+        "title": "Astuces",
+        "tip1": "Cliquez sur les noms de pistes pour les renommer",
+        "tip2": "Les fichiers sont sauvegardés dans votre navigateur - pas besoin d'internet après le chargement",
+        "tip3": "Utilisez le bouton de retour pour revenir au début de la boucle (ou de la piste si pas de boucle)",
+        "tip4": "Combinez solo et boucle pour vous concentrer sur des instruments spécifiques dans des sections précises"
+      }
+    }
+  }
+}

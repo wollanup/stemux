@@ -1,0 +1,222 @@
+import { useEffect, useRef } from 'react';
+import { useAudioStore } from './useAudioStore';
+
+interface AudioNodeRefs {
+  [trackId: string]: {
+    source: AudioBufferSourceNode | null;
+    gainNode: GainNode;
+  };
+}
+
+export const useAudioEngine = () => {
+  const audioNodesRef = useRef<AudioNodeRefs>({});
+  const animationFrameRef = useRef<number | undefined>(undefined);
+  const startTimeRef = useRef<number>(0);
+  const isPlayingRef = useRef(false);
+  const playbackRateRef = useRef(1.0);
+  const lastSeekTimeRef = useRef<number>(0);
+
+  const {
+    tracks,
+    playbackState,
+    loopRegion,
+    audioContext,
+    seek,
+    pause,
+    initAudioContext,
+  } = useAudioStore();
+
+  useEffect(() => {
+    if (!audioContext) {
+      initAudioContext();
+    }
+  }, [audioContext, initAudioContext]);
+
+  // Initialize gain nodes for each track
+  useEffect(() => {
+    if (!audioContext) return;
+
+    tracks.forEach((track) => {
+      if (!audioNodesRef.current[track.id]) {
+        const gainNode = audioContext.createGain();
+        gainNode.connect(audioContext.destination);
+        audioNodesRef.current[track.id] = {
+          source: null,
+          gainNode,
+        };
+      }
+    });
+
+    // Cleanup removed tracks
+    Object.keys(audioNodesRef.current).forEach((id) => {
+      if (!tracks.find((t) => t.id === id)) {
+        audioNodesRef.current[id].gainNode.disconnect();
+        delete audioNodesRef.current[id];
+      }
+    });
+  }, [tracks, audioContext]);
+
+  // Update gain values
+  useEffect(() => {
+    tracks.forEach((track) => {
+      const node = audioNodesRef.current[track.id];
+      if (node) {
+        const hasSolo = tracks.some((t) => t.isSolo);
+        let volume = track.volume;
+
+        if (track.isMuted || (hasSolo && !track.isSolo)) {
+          volume = 0;
+        }
+
+        node.gainNode.gain.value = volume;
+      }
+    });
+  }, [tracks]);
+
+  const startPlayback = () => {
+    if (!audioContext) return;
+
+    // Stop any existing playback
+    stopPlayback();
+
+    const startTime = playbackState.currentTime;
+    startTimeRef.current = audioContext.currentTime - startTime / playbackState.playbackRate;
+
+    tracks.forEach((track) => {
+      if (!track.buffer) return;
+
+      const node = audioNodesRef.current[track.id];
+      if (!node) return;
+
+      const source = audioContext.createBufferSource();
+      source.buffer = track.buffer;
+      source.playbackRate.value = playbackState.playbackRate;
+      source.connect(node.gainNode);
+
+      const offset = startTime;
+      const duration = track.buffer.duration - offset;
+
+      if (duration > 0) {
+        source.start(0, offset);
+        node.source = source;
+      }
+    });
+
+    isPlayingRef.current = true;
+    playbackRateRef.current = playbackState.playbackRate;
+    updateTime();
+  };
+
+  const stopPlayback = () => {
+    isPlayingRef.current = false;
+    
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = undefined;
+    }
+
+    Object.values(audioNodesRef.current).forEach(({ source }) => {
+      if (source) {
+        try {
+          source.stop();
+        } catch (e) {
+          // Already stopped
+        }
+      }
+    });
+
+    Object.keys(audioNodesRef.current).forEach((id) => {
+      audioNodesRef.current[id].source = null;
+    });
+  };
+
+  const updateTime = () => {
+    if (!audioContext || !isPlayingRef.current) return;
+
+    const elapsed =
+      (audioContext.currentTime - startTimeRef.current) * playbackRateRef.current;
+
+    // Handle loop
+    if (loopRegion.enabled && loopRegion.end > loopRegion.start) {
+      if (elapsed >= loopRegion.end) {
+        stopPlayback();
+        seek(loopRegion.start);
+        setTimeout(() => {
+          if (playbackState.isPlaying) {
+            startPlayback();
+          }
+        }, 10);
+        return;
+      }
+    }
+
+    // Handle end of track
+    if (elapsed >= playbackState.duration) {
+      stopPlayback();
+      pause();
+      seek(0);
+      return;
+    }
+
+    seek(elapsed);
+    animationFrameRef.current = requestAnimationFrame(updateTime);
+  };
+
+  // Handle play/pause changes
+  useEffect(() => {
+    if (!audioContext) return;
+
+    if (playbackState.isPlaying && !isPlayingRef.current) {
+      startPlayback();
+    } else if (!playbackState.isPlaying && isPlayingRef.current) {
+      stopPlayback();
+    }
+  }, [playbackState.isPlaying]);
+
+  // Handle manual seeks (when user clicks on waveform)
+  useEffect(() => {
+    if (!audioContext) return;
+    
+    // Detect if currentTime changed from outside (not from updateTime)
+    const timeDiff = Math.abs(playbackState.currentTime - lastSeekTimeRef.current);
+    
+    if (timeDiff > 0.1 && isPlayingRef.current) {
+      // Manual seek detected during playback - restart from new position
+      console.log('🎯 Manual seek detected! Restarting playback from', playbackState.currentTime);
+      lastSeekTimeRef.current = playbackState.currentTime;
+      stopPlayback();
+      setTimeout(() => startPlayback(), 10);
+    } else if (timeDiff > 0.1 && !isPlayingRef.current) {
+      // Manual seek in pause mode - just update ref
+      console.log('🎯 Manual seek in pause mode');
+      lastSeekTimeRef.current = playbackState.currentTime;
+    } else if (timeDiff < 0.1) {
+      // Normal playback update - update ref to track current position
+      lastSeekTimeRef.current = playbackState.currentTime;
+    }
+  }, [playbackState.currentTime]);
+
+  // Handle playback rate changes
+  useEffect(() => {
+    if (!audioContext || !isPlayingRef.current) return;
+    
+    if (playbackState.playbackRate !== playbackRateRef.current) {
+      const wasPlaying = isPlayingRef.current;
+      if (wasPlaying) {
+        stopPlayback();
+        setTimeout(() => startPlayback(), 10);
+      }
+    }
+  }, [playbackState.playbackRate]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      stopPlayback();
+    };
+  }, []);
+
+  return {
+    isReady: !!audioContext && tracks.every((t) => t.buffer !== null),
+  };
+};

@@ -1,0 +1,121 @@
+{
+  "app": {
+    "title": "Stemux"
+  },
+  "upload": {
+    "title": "Add Audio Tracks",
+    "description": "Drop audio files here or click to select",
+    "dragActive": "Drop files here..."
+  },
+  "track": {
+    "actions": "Track actions",
+    "mute": "Mute",
+    "unmute": "Unmute",
+    "solo": "Solo",
+    "unsolo": "Unsolo",
+    "loop": "Loop",
+    "delete": "Delete",
+    "volume": "Volume",
+    "editName": "Edit track name",
+    "saveName": "Save",
+    "cancelEdit": "Cancel",
+    "deleteConfirmTitle": "Delete Track?",
+    "deleteConfirmMessage": "Are you sure you want to delete this track? This action cannot be undone.",
+    "deleteConfirmButton": "Delete",
+    "cancelButton": "Cancel"
+  },
+  "controls": {
+    "play": "Play",
+    "pause": "Pause",
+    "skipToStart": "Skip to start",
+    "speed": "Playback speed",
+    "masterVolume": "Master volume",
+    "loop": "Toggle loop panel"
+  },
+  "speed": {
+    "title": "Playback Speed",
+    "custom": "Custom",
+    "slower": "Slower",
+    "normal": "Normal",
+    "faster": "Faster",
+    "presets": "Quick Presets",
+    "helperText": "Enter a value between 0.25 and 4.0"
+  },
+  "loop": {
+    "title": "Loop Region Controls",
+    "start": "Start",
+    "end": "End",
+    "set": "Set",
+    "setStart": "Mark Loop Start",
+    "setEnd": "Mark Loop End",
+    "waitingForEnd": "Waiting for end, started at",
+    "active": "Active",
+    "region": "Region",
+    "enabled": "Loop Enabled",
+    "disabled": "Loop Disabled",
+    "clear": "Clear Loop",
+    "tooShort": "Loop is too short (minimum 0.1s)",
+    "tooltip": "Set loop boundary at current playback position",
+    "startHere": "Start Here",
+    "endHere": "End Here"
+  },
+  "loading": {
+    "tracks": "Loading tracks..."
+  },
+  "pwa": {
+    "offlineReady": "App ready to work offline!",
+    "updateAvailable": "New version available! Click reload to update.",
+    "reload": "Reload"
+  },
+  "help": {
+    "title": "User Guide",
+    "close": "Close",
+    "sections": {
+      "welcome": {
+        "title": "Welcome to Stemux!",
+        "description": "Stemux is a multi-track audio player designed for musicians who want to practice with isolated stems. Load your tracks, control volumes independently, and create loop regions for focused practice."
+      },
+      "basics": {
+        "title": "Getting Started",
+        "uploadTitle": "1. Upload Your Tracks",
+        "uploadDesc": "Drag and drop audio files (MP3, WAV, OGG, etc.) or click the upload area. Your tracks are stored locally in your browser.",
+        "playbackTitle": "2. Playback Controls",
+        "playbackDesc": "Use the floating play/pause button or press SPACE to control playback. Adjust playback speed from 0.25x to 4.0x for practice at your own pace."
+      },
+      "tracks": {
+        "title": "Track Controls",
+        "soloTitle": "Solo Button (Headphone Icon)",
+        "soloShort": "Short press: Solo this track (mute all others)",
+        "soloLong": "Long press: Exclusive solo (unmute all + solo only this track)",
+        "muteTitle": "Mute Button (Volume Icon)",
+        "muteShort": "Short press: Mute/unmute this track",
+        "muteLong": "Long press: Unmute all tracks",
+        "volumeTitle": "Track Volume",
+        "volumeDesc": "Each track has its own volume slider. There's also a master volume control in the bottom bar."
+      },
+      "loops": {
+        "title": "Loop System",
+        "openTitle": "Opening Loop Panel",
+        "openDesc": "Click the loop button (top-right corner) to open the loop controls. The timeline shows your audio progress.",
+        "setTitle": "Setting a Loop",
+        "setStep1": "1. Start playback and click 'Mark Loop Start' at the desired starting point",
+        "setStep2": "2. Continue playing and click 'Mark Loop End' at the desired ending point",
+        "setStep3": "3. The loop is automatically enabled. Toggle it on/off or clear it using the controls.",
+        "activeTitle": "Active Loop",
+        "activeDesc": "When a loop is active, playback automatically returns to the start point when reaching the end. Perfect for practicing difficult sections!"
+      },
+      "keyboard": {
+        "title": "Keyboard Shortcuts",
+        "space": "SPACE - Play/Pause",
+        "more": "More shortcuts coming soon!"
+      },
+      "tips": {
+        "title": "Tips & Tricks",
+        "tip1": "Click on track names to rename them",
+        "tip2": "Files are saved in your browser - no internet required after loading",
+        "tip3": "Use the skip button to return to loop start (or track start if no loop)",
+        "tip4": "Combine solo and loop to focus on specific instruments in specific sections"
+      }
+    }
+  }
+}
