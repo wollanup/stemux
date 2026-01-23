@@ -67,6 +67,10 @@
     "updateAvailable": "New version available! Click reload to update.",
     "reload": "Reload"
   },
+  "menu": {
+    "title": "Menu",
+    "refresh": "Refresh app"
+  },
   "help": {
     "title": "User Guide",
     "close": "Close",

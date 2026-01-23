@@ -14,8 +14,12 @@ import {
   Paper,
   IconButton,
   Slide,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material';
-import { Loop, HelpOutline, ZoomIn, ZoomOut } from '@mui/icons-material';
+import { Loop, HelpOutline, ZoomIn, ZoomOut, MoreVert, Refresh } from '@mui/icons-material';
 import { useAudioStore, restoreTracks } from './hooks/useAudioStore';
 import { useAudioEngine } from './hooks/useAudioEngine';
 import FileUploader from './components/FileUploader';
@@ -33,6 +37,7 @@ function App() {
   const { tracks, initAudioContext, showLoopPanel, loopRegion, toggleLoopPanel, zoomIn, zoomOut, zoomLevel } = useAudioStore();
   const [isLoadingStorage, setIsLoadingStorage] = useState(true);
   const [helpModalOpen, setHelpModalOpen] = useState(false);
+  const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
   
   // Show phantom timeline if loop panel is open OR if a loop is active
   const hasActiveLoop = loopRegion.enabled && loopRegion.start < loopRegion.end && loopRegion.end > 0;
@@ -195,14 +200,54 @@ function App() {
             >
               <Loop />
             </IconButton>
-            {/* Help button */}
+            {/* Menu button */}
             <IconButton
               color="inherit"
-              onClick={() => setHelpModalOpen(true)}
-              aria-label={t('help.title')}
+              onClick={(e) => setMenuAnchorEl(e.currentTarget)}
+              aria-label={t('menu.title')}
             >
-              <HelpOutline />
+              <MoreVert />
             </IconButton>
+            
+            {/* Menu */}
+            <Menu
+              anchorEl={menuAnchorEl}
+              open={Boolean(menuAnchorEl)}
+              onClose={() => setMenuAnchorEl(null)}
+              anchorOrigin={{
+                vertical: 'bottom',
+                horizontal: 'right',
+              }}
+              transformOrigin={{
+                vertical: 'top',
+                horizontal: 'right',
+              }}
+            >
+              <MenuItem onClick={() => {
+                setMenuAnchorEl(null);
+                setHelpModalOpen(true);
+              }}>
+                <ListItemIcon>
+                  <HelpOutline fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>{t('help.title')}</ListItemText>
+              </MenuItem>
+              <MenuItem onClick={async () => {
+                setMenuAnchorEl(null);
+                // Unregister all service workers and hard reload
+                if ('serviceWorker' in navigator) {
+                  const registrations = await navigator.serviceWorker.getRegistrations();
+                  await Promise.all(registrations.map(reg => reg.unregister()));
+                }
+                // Hard reload bypassing all caches
+                window.location.reload();
+              }}>
+                <ListItemIcon>
+                  <Refresh fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>{t('menu.refresh')}</ListItemText>
+              </MenuItem>
+            </Menu>
           </Toolbar>
         </AppBar>
 

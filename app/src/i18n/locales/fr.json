@@ -67,6 +67,10 @@
     "updateAvailable": "Nouvelle version disponible ! Cliquez pour recharger.",
     "reload": "Recharger"
   },
+  "menu": {
+    "title": "Menu",
+    "refresh": "Rafraîchir l'application"
+  },
   "help": {
     "title": "Guide d'utilisation",
     "close": "Fermer",
