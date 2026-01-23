@@ -1,20 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import { Box, useTheme } from '@mui/material';
 import WaveSurfer from 'wavesurfer.js';
+import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions.esm.js';
 import { useAudioStore } from '../hooks/useAudioStore';
 
 const PhantomTimeline = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const wavesurferRef = useRef<WaveSurfer | null>(null);
-  const [isDragging, setIsDragging] = useState<'start' | 'end' | 'move' | null>(null);
-  const [dragStartX, setDragStartX] = useState(0);
-  const [tempLoopRegion, setTempLoopRegion] = useState<{ start: number; end: number } | null>(null);
-  
-  const theme = useTheme();
-  const { playbackState, seek, loopRegion, setLoopRegion } = useAudioStore();
+  const regionsPluginRef = useRef<any>(null);
+  const loopRegionRef = useRef<any>(null);
+  const [isReady, setIsReady] = useState(false);
 
-  // Use temp loop region during drag, otherwise use store value
-  const displayLoopRegion = tempLoopRegion || loopRegion;
+  const theme = useTheme();
+  const { playbackState, seek, loopRegion, setLoopRegion, zoomLevel } = useAudioStore();
 
   // Create wavesurfer instance
   useEffect(() => {
@@ -30,9 +28,47 @@ const PhantomTimeline = () => {
       height: 60,
       normalize: true,
       interact: true,
+      ...(zoomLevel > 1 && { minPxPerSec: 50 * zoomLevel }),
     });
 
     wavesurferRef.current = wavesurfer;
+
+    // Register regions plugin
+    const regions = wavesurfer.registerPlugin(RegionsPlugin.create());
+    regionsPluginRef.current = regions;
+
+    // Style regions when created
+    regions.on('region-created', (region) => {
+      if (!region.element) return;
+
+      // Style the handles
+      const handles = region.element.querySelectorAll('[part~="region-handle"]');
+      handles.forEach((handle: Element) => {
+        const htmlHandle = handle as HTMLElement;
+        htmlHandle.style.width = '16px';
+        htmlHandle.style.height = '16px';
+        htmlHandle.style.borderRadius = '50%';
+        htmlHandle.style.backgroundColor = theme.palette.primary.main;
+        htmlHandle.style.border = 'none';
+        htmlHandle.style.top = '50%';
+        htmlHandle.style.transform = 'translateY(-50%)';
+        htmlHandle.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.4)';
+        htmlHandle.style.opacity = '1';
+        htmlHandle.style.zIndex = '10';
+      });
+
+      // Style left handle
+      const leftHandle = region.element.querySelector('[part~="region-handle-left"]') as HTMLElement;
+      if (leftHandle) {
+        leftHandle.style.left = '-8px';
+      }
+
+      // Style right handle
+      const rightHandle = region.element.querySelector('[part~="region-handle-right"]') as HTMLElement;
+      if (rightHandle) {
+        rightHandle.style.right = '-8px';
+      }
+    });
 
     // Create empty buffer with duration of longest track
     const emptyBuffer = new AudioBuffer({
@@ -43,18 +79,71 @@ const PhantomTimeline = () => {
 
     wavesurfer.load('', [emptyBuffer.getChannelData(0)], emptyBuffer.duration);
 
-    // Handle clicks to seek (only if not dragging)
+    // Mark as ready when waveform is loaded
+    wavesurfer.on('ready', () => {
+      setIsReady(true);
+    });
+
+    // Handle clicks to seek
     wavesurfer.on('click', (progress) => {
-      if (!isDragging) {
-        const time = progress * playbackState.duration;
-        seek(time);
+      const time = progress * playbackState.duration;
+      seek(time);
+    });
+
+    // Handle region updates - debounce to sync only at the end of drag for performance
+    let updateTimeout: number | null = null;
+
+    regions.on('region-updated', (region) => {
+      // Clear previous timeout
+      if (updateTimeout) {
+        clearTimeout(updateTimeout);
       }
+
+      // Set new timeout - will only execute if no more updates come in 150ms
+      updateTimeout = window.setTimeout(() => {
+        setLoopRegion(region.start, region.end);
+        updateTimeout = null;
+      }, 150);
     });
 
     return () => {
+      if (updateTimeout) {
+        clearTimeout(updateTimeout);
+      }
+      setIsReady(false);
+      wavesurferRef.current = null;
+      regionsPluginRef.current = null;
+      loopRegionRef.current = null;
       wavesurfer.destroy();
     };
-  }, [playbackState.duration, seek, theme, isDragging]);
+  }, [playbackState.duration, seek, theme, zoomLevel, setLoopRegion]);
+
+  // Manage loop region separately - only when ready
+  useEffect(() => {
+    if (!isReady || !regionsPluginRef.current || playbackState.duration === 0) return;
+
+    const hasValidLoop = loopRegion.start < loopRegion.end && loopRegion.end > 0;
+
+    // Clear existing region
+    if (loopRegionRef.current) {
+      loopRegionRef.current.remove();
+      loopRegionRef.current = null;
+    }
+
+    // Create new region if valid
+    if (hasValidLoop) {
+      const region = regionsPluginRef.current.addRegion({
+        start: loopRegion.start,
+        end: loopRegion.end,
+        color: loopRegion.enabled
+          ? `${theme.palette.primary.main}AA`
+          : `${theme.palette.primary.main}40`,
+        drag: true,
+        resize: true,
+      });
+      loopRegionRef.current = region;
+    }
+  }, [isReady, loopRegion.start, loopRegion.end, loopRegion.enabled, playbackState.duration, theme]);
 
   // Update cursor position
   const lastUpdateTimeRef = useRef(0);
@@ -70,96 +159,16 @@ const PhantomTimeline = () => {
     }
   }, [playbackState.currentTime, playbackState.duration]);
 
-  // Handle loop overlay drag
-  const handleLoopMouseDown = (e: React.MouseEvent | React.TouchEvent, type: 'start' | 'end' | 'move') => {
-    e.stopPropagation();
-    e.preventDefault();
-    setIsDragging(type);
-    
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-    setDragStartX(clientX);
-  };
-
+  // Update loop region color when enabled state changes
   useEffect(() => {
-    if (!isDragging || !containerRef.current || playbackState.duration === 0) return;
+    if (!loopRegionRef.current) return;
 
-    const handleMove = (e: MouseEvent | TouchEvent) => {
-      if (!containerRef.current || playbackState.duration === 0) return;
-      
-      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-      const rect = containerRef.current.getBoundingClientRect();
-      const x = Math.max(0, Math.min(clientX - rect.left, rect.width));
-      const time = (x / rect.width) * playbackState.duration;
+    const color = loopRegion.enabled
+      ? `${theme.palette.primary.main}40`
+      : `${theme.palette.primary.main}20`;
 
-      const currentRegion = tempLoopRegion || loopRegion;
-
-      if (isDragging === 'start') {
-        const newStart = Math.min(time, currentRegion.end - 0.1);
-        setTempLoopRegion({ start: newStart, end: currentRegion.end });
-      } else if (isDragging === 'end') {
-        const newEnd = Math.max(time, currentRegion.start + 0.1);
-        setTempLoopRegion({ start: currentRegion.start, end: newEnd });
-      } else if (isDragging === 'move') {
-        const delta = ((clientX - dragStartX) / rect.width) * playbackState.duration;
-        const duration = currentRegion.end - currentRegion.start;
-        let newStart = currentRegion.start + delta;
-        let newEnd = currentRegion.end + delta;
-        
-        if (newStart < 0) {
-          newStart = 0;
-          newEnd = duration;
-        }
-        if (newEnd > playbackState.duration) {
-          newEnd = playbackState.duration;
-          newStart = newEnd - duration;
-        }
-        
-        setTempLoopRegion({ start: newStart, end: newEnd });
-        setDragStartX(clientX);
-      }
-    };
-
-    const handleEnd = () => {
-      if (tempLoopRegion) {
-        setLoopRegion(tempLoopRegion.start, tempLoopRegion.end);
-        setTempLoopRegion(null);
-      }
-      setIsDragging(null);
-    };
-
-    document.addEventListener('mousemove', handleMove);
-    document.addEventListener('mouseup', handleEnd);
-    document.addEventListener('touchmove', handleMove);
-    document.addEventListener('touchend', handleEnd);
-
-    return () => {
-      document.removeEventListener('mousemove', handleMove);
-      document.removeEventListener('mouseup', handleEnd);
-      document.removeEventListener('touchmove', handleMove);
-      document.removeEventListener('touchend', handleEnd);
-    };
-  }, [isDragging, dragStartX, loopRegion, tempLoopRegion, playbackState.duration, setLoopRegion]);
-
-  const getLoopPosition = () => {
-    if (playbackState.duration === 0) return null;
-    // Show loop overlay if defined, regardless of enabled state
-    if (loopRegion.start >= loopRegion.end || loopRegion.end === 0) return null;
-    
-    const startPercent = (displayLoopRegion.start / playbackState.duration) * 100;
-    const endPercent = (displayLoopRegion.end / playbackState.duration) * 100;
-    
-    return {
-      left: `${startPercent}%`,
-      width: `${endPercent - startPercent}%`,
-    };
-  };
-
-  const loopPos = getLoopPosition();
-  
-  // Calculate cursor position for visual line gradient
-  const cursorPercent = playbackState.duration > 0 
-    ? (playbackState.currentTime / playbackState.duration) * 100 
-    : 0;
+    loopRegionRef.current.setOptions({ color });
+  }, [loopRegion.enabled, theme]);
 
   return (
     <Box
@@ -173,125 +182,7 @@ const PhantomTimeline = () => {
         overflow: 'hidden',
         cursor: 'pointer',
       }}
-    >
-      {/* Horizontal line to simulate waveform */}
-      <Box
-        sx={{
-          position: 'absolute',
-          top: '50%',
-          left: 0,
-          width: '100%',
-          height: 2,
-          background: `linear-gradient(to right, 
-            ${theme.palette.primary.main}40 0%, 
-            ${theme.palette.primary.main}40 ${cursorPercent}%, 
-            ${theme.palette.primary.main} ${cursorPercent}%, 
-            ${theme.palette.primary.main} 100%)`,
-          transform: 'translateY(-50%)',
-          zIndex: 5,
-          pointerEvents: 'none',
-        }}
-      />
-      
-      {/* Loop region overlay - always visible if defined, but with opacity */}
-      {loopPos && (
-        <>
-          {/* Background overlay with transparency */}
-          <Box
-            sx={{
-              position: 'absolute',
-              top: 0,
-              left: loopPos.left,
-              width: loopPos.width,
-              height: '100%',
-              bgcolor: 'primary.main',
-              opacity: loopRegion.enabled ? 0.15 : 0.05,
-              borderRadius: 1,
-              cursor: isDragging ? 'grabbing' : 'grab',
-              zIndex: 10,
-              pointerEvents: 'auto',
-              touchAction: 'none',
-              transition: 'opacity 0.2s',
-              '&:hover': {
-                opacity: loopRegion.enabled ? 0.25 : 0.1,
-              },
-            }}
-            onMouseDown={(e) => handleLoopMouseDown(e, 'move')}
-            onTouchStart={(e) => handleLoopMouseDown(e, 'move')}
-          />
-          
-          {/* Border overlay */}
-          <Box
-            sx={{
-              position: 'absolute',
-              top: 0,
-              left: loopPos.left,
-              width: loopPos.width,
-              height: '100%',
-              border: '2px solid',
-              borderColor: 'primary.main',
-              borderRadius: 1,
-              pointerEvents: 'none',
-              zIndex: 11,
-              opacity: loopRegion.enabled ? 1 : 0.3,
-              transition: 'opacity 0.2s',
-            }}
-          >
-            {/* Start handle */}
-            <Box
-              sx={{
-                position: 'absolute',
-                left: -10,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                width: 20,
-                height: 20,
-                borderRadius: '50%',
-                bgcolor: 'primary.main',
-                cursor: 'ew-resize',
-                boxShadow: 1,
-                opacity: loopRegion.enabled ? 1 : 0.3,
-                transition: 'all 0.2s',
-                pointerEvents: 'auto',
-                touchAction: 'none',
-                '&:hover': {
-                  transform: 'translateY(-50%) scale(1.2)',
-                  boxShadow: 2,
-                },
-              }}
-              onMouseDown={(e) => handleLoopMouseDown(e, 'start')}
-              onTouchStart={(e) => handleLoopMouseDown(e, 'start')}
-            />
-            
-            {/* End handle */}
-            <Box
-              sx={{
-                position: 'absolute',
-                right: -10,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                width: 20,
-                height: 20,
-                borderRadius: '50%',
-                bgcolor: 'primary.main',
-                cursor: 'ew-resize',
-                boxShadow: 1,
-                opacity: loopRegion.enabled ? 1 : 0.3,
-                transition: 'all 0.2s',
-                pointerEvents: 'auto',
-                touchAction: 'none',
-                '&:hover': {
-                  transform: 'translateY(-50%) scale(1.2)',
-                  boxShadow: 2,
-                },
-              }}
-              onMouseDown={(e) => handleLoopMouseDown(e, 'end')}
-              onTouchStart={(e) => handleLoopMouseDown(e, 'end')}
-            />
-          </Box>
-        </>
-      )}
-    </Box>
+    />
   );
 };
 

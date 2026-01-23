@@ -30,9 +30,12 @@ const LoopControls = () => {
       setLoopStartTime(currentTime);
       setIsSettingLoop(true);
       
-      // Disable existing loop while setting new one
-      if (loopRegion.enabled) {
-        toggleLoop();
+      // Clear existing loop completely before starting new one
+      if (hasLoopDefined) {
+        setLoopRegion(0, 0);
+        if (loopRegion.enabled) {
+          toggleLoop();
+        }
       }
     } else {
       // Second click: mark loop end and enable

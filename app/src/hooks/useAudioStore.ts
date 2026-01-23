@@ -93,6 +93,7 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
   masterVolume: loadMasterVolume(),
   audioContext: null,
   showLoopPanel: false,
+  zoomLevel: 1,
 
   initAudioContext: () => {
     const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -266,6 +267,14 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
 
   toggleLoopPanel: () => {
     set((state) => ({ showLoopPanel: !state.showLoopPanel }));
+  },
+
+  zoomIn: () => {
+    set((state) => ({ zoomLevel: Math.min(state.zoomLevel * 1.5, 20) }));
+  },
+
+  zoomOut: () => {
+    set((state) => ({ zoomLevel: Math.max(state.zoomLevel / 1.5, 1) }));
   },
 }));
 

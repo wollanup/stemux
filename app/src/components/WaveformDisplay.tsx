@@ -1,6 +1,7 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Box, useTheme } from '@mui/material';
 import WaveSurfer from 'wavesurfer.js';
+import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions.esm.js';
 import type { AudioTrack } from '../types/audio';
 import { useAudioStore } from '../hooks/useAudioStore';
 
@@ -12,6 +13,9 @@ interface WaveformDisplayProps {
 const WaveformDisplay = ({ track }: WaveformDisplayProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const wavesurferRef = useRef<WaveSurfer | null>(null);
+  const regionsPluginRef = useRef<any>(null);
+  const loopRegionRef = useRef<any>(null);
+  const [isReady, setIsReady] = useState(false);
 
   // LOOP OVERLAY - DISABLED (kept for future re-enablement)
   // const loopOverlayRef = useRef<HTMLDivElement>(null);
@@ -20,7 +24,7 @@ const WaveformDisplay = ({ track }: WaveformDisplayProps) => {
   // const [tempLoopRegion, setTempLoopRegion] = useState<{ start: number; end: number } | null>(null);
 
   const theme = useTheme();
-  const { playbackState, seek } = useAudioStore();
+  const { playbackState, seek, zoomLevel, loopRegion } = useAudioStore();
   // const { playbackState, seek, loopRegion, setLoopRegion } = useAudioStore(); // For loop overlay
 
   // const displayLoopRegion = tempLoopRegion || loopRegion; // For loop overlay
@@ -46,12 +50,34 @@ const WaveformDisplay = ({ track }: WaveformDisplayProps) => {
       height: 60,
       normalize: true,
       interact: true,
+      ...(zoomLevel > 1 && { minPxPerSec: 50 * zoomLevel }),
     });
 
     wavesurferRef.current = wavesurfer;
 
+    // Register regions plugin for read-only loop display
+    const regions = wavesurfer.registerPlugin(RegionsPlugin.create());
+    regionsPluginRef.current = regions;
+
+    // Style regions when created (read-only regions don't need visible handles)
+    regions.on('region-created', (region) => {
+      if (!region.element) return;
+      
+      // For read-only regions, hide the handles completely
+      const handles = region.element.querySelectorAll('[part~="region-handle"]');
+      handles.forEach((handle: Element) => {
+        const htmlHandle = handle as HTMLElement;
+        htmlHandle.style.display = 'none';
+      });
+    });
+
     // Load directly from buffer
     wavesurfer.load('', [track.buffer.getChannelData(0)], track.buffer.duration);
+
+    // Mark as ready when waveform is loaded
+    wavesurfer.on('ready', () => {
+      setIsReady(true);
+    });
 
     // Simple click handler - just seek, audio engine handles the rest
     wavesurfer.on('click', (progress) => {
@@ -60,9 +86,38 @@ const WaveformDisplay = ({ track }: WaveformDisplayProps) => {
     });
 
     return () => {
+      setIsReady(false);
+      wavesurferRef.current = null;
+      regionsPluginRef.current = null;
+      loopRegionRef.current = null;
       wavesurfer.destroy();
     };
-  }, [track.buffer, track.color, track.isMuted, seek, theme]);
+  }, [track.buffer, track.color, track.isMuted, seek, theme, zoomLevel]);
+
+  // Manage loop region separately - only when ready
+  useEffect(() => {
+    if (!isReady || !regionsPluginRef.current || !track.buffer) return;
+
+    const hasValidLoop = loopRegion.enabled && loopRegion.start < loopRegion.end && loopRegion.end > 0;
+
+    // Clear existing region
+    if (loopRegionRef.current) {
+      loopRegionRef.current.remove();
+      loopRegionRef.current = null;
+    }
+
+    // Create new region if valid
+    if (hasValidLoop) {
+      const region = regionsPluginRef.current.addRegion({
+        start: loopRegion.start,
+        end: loopRegion.end,
+        color: `${theme.palette.primary.main}30`,
+        drag: false,
+        resize: false,
+      });
+      loopRegionRef.current = region;
+    }
+  }, [isReady, loopRegion.enabled, loopRegion.start, loopRegion.end, track.buffer, theme]);
 
   // Update progress (throttled for performance)
   const lastUpdateTimeRef = useRef(0);
@@ -185,113 +240,7 @@ const WaveformDisplay = ({ track }: WaveformDisplayProps) => {
         overflow: 'hidden',
         cursor: 'pointer',
       }}
-    >
-      {/* ========================================
-          LOOP OVERLAY - DISABLED FOR ZOOM FEATURE
-          ========================================
-
-          Loop overlays on individual tracks are disabled to allow proper zoom implementation.
-          Loop region is only shown on the PhantomTimeline (dedicated loop panel).
-
-          To re-enable: uncomment the code block below
-      */}
-
-      {/* Loop region overlay - COMMENTED OUT */}
-      {/* {loopPos && (
-        <>
-          <Box
-            sx={{
-              position: 'absolute',
-              top: 0,
-              left: loopPos.left,
-              width: loopPos.width,
-              height: '100%',
-              bgcolor: 'primary.main',
-              opacity: loopRegion.enabled ? 0.15 : 0.05,
-              borderRadius: 1,
-              cursor: isDragging ? 'grabbing' : 'grab',
-              zIndex: 10,
-              pointerEvents: 'auto',
-              touchAction: 'none',
-              transition: 'opacity 0.2s',
-              '&:hover': {
-                opacity: loopRegion.enabled ? 0.25 : 0.1,
-              },
-            }}
-            onMouseDown={(e) => handleLoopMouseDown(e, 'move')}
-            onTouchStart={(e) => handleLoopMouseDown(e, 'move')}
-          />
-
-          <Box
-            ref={loopOverlayRef}
-            sx={{
-              position: 'absolute',
-              top: 0,
-              left: loopPos.left,
-              width: loopPos.width,
-              height: '100%',
-              border: '2px solid',
-              borderColor: 'primary.main',
-              borderRadius: 1,
-              pointerEvents: 'none',
-              zIndex: 11,
-              opacity: loopRegion.enabled ? 1 : 0.3,
-              transition: 'opacity 0.2s',
-            }}
-          >
-            <Box
-              sx={{
-                position: 'absolute',
-                left: -10,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                width: 20,
-                height: 20,
-                borderRadius: '50%',
-                bgcolor: 'primary.main',
-                cursor: 'ew-resize',
-                boxShadow: 1,
-                opacity: loopRegion.enabled ? 1 : 0.3,
-                transition: 'all 0.2s',
-                pointerEvents: 'auto',
-                touchAction: 'none',
-                '&:hover': {
-                  transform: 'translateY(-50%) scale(1.2)',
-                  boxShadow: 2,
-                },
-              }}
-              onMouseDown={(e) => handleLoopMouseDown(e, 'start')}
-              onTouchStart={(e) => handleLoopMouseDown(e, 'start')}
-            />
-
-            <Box
-              sx={{
-                position: 'absolute',
-                right: -10,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                width: 20,
-                height: 20,
-                borderRadius: '50%',
-                bgcolor: 'primary.main',
-                cursor: 'ew-resize',
-                boxShadow: 1,
-                opacity: loopRegion.enabled ? 1 : 0.3,
-                transition: 'all 0.2s',
-                pointerEvents: 'auto',
-                touchAction: 'none',
-                '&:hover': {
-                  transform: 'translateY(-50%) scale(1.2)',
-                  boxShadow: 2,
-                },
-              }}
-              onMouseDown={(e) => handleLoopMouseDown(e, 'end')}
-              onTouchStart={(e) => handleLoopMouseDown(e, 'end')}
-            />
-          </Box>
-        </>
-      )} */}
-    </Box>
+    />
   );
 };
 

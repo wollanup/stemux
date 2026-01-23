@@ -30,6 +30,7 @@ export interface AudioStore {
   audioContext: AudioContext | null;
   masterVolume: number; // 0-1
   showLoopPanel: boolean;
+  zoomLevel: number;
   
   addTrack: (file: File) => void;
   removeTrack: (id: string) => void;
@@ -50,6 +51,9 @@ export interface AudioStore {
   toggleLoop: () => void;
   setActiveLoopTrack: (trackId: string | null) => void;
   toggleLoopPanel: () => void;
+
+  zoomIn: () => void;
+  zoomOut: () => void;
   
   initAudioContext: () => void;
 }

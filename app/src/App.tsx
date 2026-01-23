@@ -15,7 +15,7 @@ import {
   IconButton,
   Slide,
 } from '@mui/material';
-import { Loop, HelpOutline } from '@mui/icons-material';
+import { Loop, HelpOutline, ZoomIn, ZoomOut } from '@mui/icons-material';
 import { useAudioStore, restoreTracks } from './hooks/useAudioStore';
 import { useAudioEngine } from './hooks/useAudioEngine';
 import FileUploader from './components/FileUploader';
@@ -30,7 +30,7 @@ import { useTranslation } from 'react-i18next';
 
 function App() {
   const { t } = useTranslation();
-  const { tracks, initAudioContext, showLoopPanel, loopRegion, toggleLoopPanel } = useAudioStore();
+  const { tracks, initAudioContext, showLoopPanel, loopRegion, toggleLoopPanel, zoomIn, zoomOut, zoomLevel } = useAudioStore();
   const [isLoadingStorage, setIsLoadingStorage] = useState(true);
   const [helpModalOpen, setHelpModalOpen] = useState(false);
   
@@ -157,6 +157,25 @@ function App() {
               Stemux
             </Typography>
             <Box sx={{ flexGrow: 1 }} />
+            {/* Zoom controls */}
+            <IconButton
+              color="inherit"
+              onClick={zoomOut}
+              disabled={!hasLoadedTracks || zoomLevel <= 1}
+              aria-label="Zoom out"
+              sx={{ mr: 1 }}
+            >
+              <ZoomOut />
+            </IconButton>
+            <IconButton
+              color="inherit"
+              onClick={zoomIn}
+              disabled={!hasLoadedTracks || zoomLevel >= 20}
+              aria-label="Zoom in"
+              sx={{ mr: 1 }}
+            >
+              <ZoomIn />
+            </IconButton>
             {/* Loop button on the right */}
             <IconButton
               color="inherit"
