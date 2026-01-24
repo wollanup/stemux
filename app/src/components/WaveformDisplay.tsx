@@ -1,7 +1,6 @@
 import {memo, useEffect, useRef, useState} from 'react';
 import {Box, useTheme} from '@mui/material';
 import WaveSurfer from 'wavesurfer.js';
-import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions.esm.js';
 import TimelinePlugin from 'wavesurfer.js/dist/plugins/timeline.esm.js';
 import Minimap from 'wavesurfer.js/dist/plugins/minimap.esm.js';
 import type {AudioTrack} from '../types/audio';
@@ -17,16 +16,15 @@ interface WaveformDisplayProps {
 const WaveformDisplay = ({ track }: WaveformDisplayProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const wavesurferRef = useRef<WaveSurfer | null>(null);
-  const regionsPluginRef = useRef<RegionsPlugin | null>(null);
-  const loopRegionRef = useRef<ReturnType<RegionsPlugin['addRegion']> | null>(null);
   const [isReady, setIsReady] = useState(false);
   const isDraggingRef = useRef(false);
+  const lastZoomRef = useRef(0);
+  const zoomRafRef = useRef<number | null>(null);
 
   const theme = useTheme();
   const {
     seek,
     zoomLevel,
-    loopRegion,
     playbackState,
     masterVolume,
     waveformStyle,
@@ -50,11 +48,6 @@ const WaveformDisplay = ({ track }: WaveformDisplayProps) => {
 
     // Create plugins array
     const plugins = [];
-    
-    // Always add regions plugin
-    const regions = RegionsPlugin.create();
-    regionsPluginRef.current = regions;
-    plugins.push(regions);
     
     // Add timeline if enabled
     if (waveformTimeline) {
@@ -98,15 +91,6 @@ const WaveformDisplay = ({ track }: WaveformDisplayProps) => {
     // Register this instance
     registerWavesurfer(track.id, wavesurfer);
 
-    // Style regions when created
-    regions.on('region-created', (region) => {
-      if (!region.element) return;
-      const handles = region.element.querySelectorAll('[part~="region-handle"]');
-      handles.forEach((handle: Element) => {
-        const htmlHandle = handle as HTMLElement;
-        htmlHandle.style.display = 'none';
-      });
-    });
 
     // Load audio directly from file - NO CONVERSION!
     wavesurfer.loadBlob(track.file);
@@ -235,55 +219,96 @@ const WaveformDisplay = ({ track }: WaveformDisplayProps) => {
       });
     }
 
-    // Listen for redrawcomplete to ensure regions persist after resize
-    wavesurfer.on('redrawcomplete', () => {
-      // Trigger region re-render by forcing isReady update
-      setIsReady(false);
-      setTimeout(() => setIsReady(true), 0);
-    });
+    // Pinch-to-zoom on mobile
+    let initialPinchDistance: number | null = null;
+    let initialZoomLevel: number | null = null;
+
+    const getTouchDistance = (touch1: Touch, touch2: Touch) => {
+      const dx = touch2.clientX - touch1.clientX;
+      const dy = touch2.clientY - touch1.clientY;
+      return Math.sqrt(dx * dx + dy * dy);
+    };
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        initialPinchDistance = getTouchDistance(e.touches[0], e.touches[1]);
+        initialZoomLevel = useAudioStore.getState().zoomLevel;
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 2 && initialPinchDistance && initialZoomLevel !== null) {
+        e.preventDefault(); // Prevent browser zoom
+        
+        const currentDistance = getTouchDistance(e.touches[0], e.touches[1]);
+        const scale = currentDistance / initialPinchDistance;
+        
+        // Calculate new zoom level (scale from initial)
+        const newZoom = Math.max(0, Math.min(500, initialZoomLevel * scale));
+        
+        useAudioStore.setState({ zoomLevel: newZoom });
+      }
+    };
+
+    const handleTouchEnd = () => {
+      initialPinchDistance = null;
+      initialZoomLevel = null;
+    };
+
+    const scrollElement = wavesurfer.getWrapper().shadowRoot?.querySelector('.scroll') as HTMLElement;
+    if (scrollElement) {
+      scrollElement.addEventListener('touchstart', handleTouchStart, { passive: false });
+      scrollElement.addEventListener('touchmove', handleTouchMove, { passive: false });
+      scrollElement.addEventListener('touchend', handleTouchEnd);
+    }
+
+    // Note: Removed redrawcomplete listener - not needed with Shadow DOM marker system
 
     return () => {
       setIsReady(false);
+      
+      // Cleanup pinch-to-zoom listeners
+      if (scrollElement) {
+        scrollElement.removeEventListener('touchstart', handleTouchStart);
+        scrollElement.removeEventListener('touchmove', handleTouchMove);
+        scrollElement.removeEventListener('touchend', handleTouchEnd);
+      }
+      
       unregisterWavesurfer(track.id);
       wavesurferRef.current = null;
-      regionsPluginRef.current = null;
-      loopRegionRef.current = null;
       wavesurfer.destroy();
     };
   }, [track.file, track.id, waveformStyle, waveformNormalize, waveformTimeline, waveformMinimap]); // Recreate when settings change
 
-  // Handle zoom separately without recreating wavesurfer
+  // Handle zoom separately without recreating wavesurfer - THROTTLED with RAF
   useEffect(() => {
     if (!wavesurferRef.current || !isReady) return;
-
-    // Direct passthrough - zoomLevel = minPxPerSec
-    wavesurferRef.current.zoom(zoomLevel);
+    
+    // Skip if already at this zoom level
+    if (lastZoomRef.current === zoomLevel) return;
+    
+    // Cancel any pending zoom
+    if (zoomRafRef.current !== null) {
+      cancelAnimationFrame(zoomRafRef.current);
+    }
+    
+    // Schedule zoom on next animation frame (throttles to ~60fps)
+    zoomRafRef.current = requestAnimationFrame(() => {
+      if (wavesurferRef.current) {
+        wavesurferRef.current.zoom(zoomLevel);
+        lastZoomRef.current = zoomLevel;
+      }
+      zoomRafRef.current = null;
+    });
+    
+    return () => {
+      if (zoomRafRef.current !== null) {
+        cancelAnimationFrame(zoomRafRef.current);
+      }
+    };
   }, [zoomLevel, isReady]);
 
-  // Manage loop region separately - only when ready
-  useEffect(() => {
-    if (!isReady || !regionsPluginRef.current || !wavesurferRef.current) return;
-
-    const hasValidLoop = loopRegion.enabled && loopRegion.start < loopRegion.end && loopRegion.end > 0;
-
-    // Clear existing region
-    if (loopRegionRef.current) {
-      loopRegionRef.current.remove();
-      loopRegionRef.current = null;
-    }
-
-    // Create new region if valid (visual only, no loop logic here)
-    if (hasValidLoop) {
-      const region = regionsPluginRef.current.addRegion({
-        start: loopRegion.start,
-        end: loopRegion.end,
-        color: `${theme.palette.primary.main}30`,
-        drag: false,
-        resize: false,
-      });
-      loopRegionRef.current = region;
-    }
-  }, [isReady, loopRegion.enabled, loopRegion.start, loopRegion.end, theme]);
+  // Note: Old loop region system removed - now using Loop v2 Shadow DOM markers
 
   // Update waveform colors when mute state changes (visual feedback only)
   useEffect(() => {
@@ -297,11 +322,10 @@ const WaveformDisplay = ({ track }: WaveformDisplayProps) => {
     wavesurferRef.current.setOptions({ waveColor, progressColor });
   }, [track.isMuted, track.color, theme, isReady]);
 
-  // Re-inject markers/loops when they change (but NOT during drag)
+  // Re-inject markers/loops ONLY when they actually change (not on play/pause/zoom)
   useEffect(() => {
     if (!isReady) return;
     if (isDraggingRef.current) {
-      console.log('⏭️ Skipping re-injection during drag');
       return; // Don't re-inject while dragging
     }
     
@@ -311,12 +335,9 @@ const WaveformDisplay = ({ track }: WaveformDisplayProps) => {
     const wrapper = wsElement.shadowRoot?.querySelector('.wrapper') as HTMLElement;
     if (!wrapper) return;
 
-    // Skip re-injection during drag to avoid interrupting the drag operation
-    if (isDraggingRef.current) return;
-
     injectMarkersAndLoops(wsElement, loopState, playbackState, theme);
     setupEditModeInteractions(wrapper, wsElement, loopState, playbackState, isDraggingRef, theme);
-  }, [isReady, loopState.markers, loopState.loops, loopState.editMode, playbackState.duration, playbackState.isPlaying, theme]);
+  }, [isReady, loopState.markers, loopState.loops, loopState.editMode]); // REMOVED: playbackState.isPlaying, playbackState.duration, theme
 
   // Update volume when it changes (NOT mute - that's handled in store)
   useEffect(() => {
@@ -342,7 +363,6 @@ const WaveformDisplay = ({ track }: WaveformDisplayProps) => {
     if (!wavesurferRef.current || !isReady) return;
     
     const interact = !loopState.editMode; // Disable interact in edit mode
-    console.log(`🎛️ WaveSurfer interact: ${interact} (editMode: ${loopState.editMode})`);
     wavesurferRef.current.setOptions({ interact });
   }, [loopState.editMode, isReady]);
 

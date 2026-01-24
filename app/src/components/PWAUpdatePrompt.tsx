@@ -1,11 +1,9 @@
-import { useEffect, useState } from 'react';
 import { Button, Snackbar, Alert } from '@mui/material';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { useTranslation } from 'react-i18next';
 
 export function PWAUpdatePrompt() {
   const { t } = useTranslation();
-  const [showReload, setShowReload] = useState(false);
   
   const {
     needRefresh: [needRefresh, setNeedRefresh],
@@ -25,15 +23,11 @@ export function PWAUpdatePrompt() {
     },
   });
 
-  useEffect(() => {
-    if (needRefresh) {
-      setShowReload(true);
-    }
-  }, [needRefresh]);
+  // Derive showReload from needRefresh (no setState in effect)
+  const showReload = needRefresh;
 
   const close = () => {
     setNeedRefresh(false);
-    setShowReload(false);
   };
 
   return (

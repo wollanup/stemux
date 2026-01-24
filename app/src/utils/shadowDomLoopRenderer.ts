@@ -45,8 +45,6 @@ export const injectMarkersAndLoops = (
     // Remove existing markers/loops
     wrapper.querySelectorAll('[data-loop-marker], [data-loop-zone]').forEach(el => el.remove());
 
-    console.log('🎨 Injecting markers and loops...');
-
     const isPlaying = playbackState.isPlaying;
 
     // Inject loops first (under markers visually)
@@ -158,8 +156,6 @@ export const injectMarkersAndLoops = (
 
         wrapper.appendChild(markerDiv);
     });
-
-    console.log(`✅ Injected ${loopState.markers.length} markers and ${loopState.loops.length} loops`);
 };
 
 // Setup edit mode interactions in Shadow DOM
@@ -382,5 +378,4 @@ export const setupEditModeInteractions = (
     });
 
     wrapper.appendChild(editLayer);
-    console.log('✅ Edit mode interaction layer added');
 };

@@ -18,53 +18,54 @@ interface HelpModalProps {
   onClose: () => void;
 }
 
-const HelpModal = ({ open, onClose }: HelpModalProps) => {
-  const { t } = useTranslation();
+// Helper components defined OUTSIDE of render to avoid recreation
+const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
+  <Box mb={3}>
+    <Typography variant="h6" gutterBottom color="primary" fontWeight={600}>
+      {title}
+    </Typography>
+    {children}
+  </Box>
+);
 
-  const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
-    <Box mb={3}>
-      <Typography variant="h6" gutterBottom color="primary" fontWeight={600}>
+const ControlItem = ({ 
+  icon, 
+  title, 
+  description 
+}: { 
+  icon: React.ReactNode; 
+  title: string; 
+  description: string;
+}) => (
+  <Stack direction="row" spacing={2} mb={2} alignItems="flex-start">
+    <Box
+      sx={{
+        minWidth: 40,
+        height: 40,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        bgcolor: 'primary.main',
+        color: 'white',
+        borderRadius: 1,
+      }}
+    >
+      {icon}
+    </Box>
+    <Box flex={1}>
+      <Typography variant="subtitle2" fontWeight={600} gutterBottom>
         {title}
       </Typography>
-      {children}
+      <Typography variant="body2" color="text.secondary">
+        {description}
+      </Typography>
     </Box>
-  );
+  </Stack>
+);
 
-  const ControlItem = ({ 
-    icon, 
-    title, 
-    description 
-  }: { 
-    icon: React.ReactNode; 
-    title: string; 
-    description: string;
-  }) => (
-    <Stack direction="row" spacing={2} mb={2} alignItems="flex-start">
-      <Box
-        sx={{
-          minWidth: 40,
-          height: 40,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          bgcolor: 'primary.main',
-          color: 'white',
-          borderRadius: 1,
-        }}
-      >
-        {icon}
-      </Box>
-      <Box flex={1}>
-        <Typography variant="subtitle2" fontWeight={600} gutterBottom>
-          {title}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {description}
-        </Typography>
-      </Box>
-    </Stack>
-  );
-
+const HelpModal = ({ open, onClose }: HelpModalProps) => {
+  const { t } = useTranslation();
+  
   return (
     <Dialog
       open={open}

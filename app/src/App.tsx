@@ -66,13 +66,30 @@ const ZOOM_PRESETS = [
 
 function App() {
   const { t } = useTranslation();
-  const { tracks, initAudioContext, loopState, toggleLoopEditMode, zoomLevel, waveformStyle, setWaveformStyle, waveformNormalize, setWaveformNormalize, waveformTimeline, setWaveformTimeline, waveformMinimap, setWaveformMinimap, removeAllTracks } = useAudioStore();
+  const { tracks, initAudioContext, loopState, toggleLoopEditMode, zoomLevel, waveformStyle, setWaveformStyle, waveformNormalize, setWaveformNormalize, removeAllTracks } = useAudioStore();
+  const waveformTimeline = useAudioStore(state => state.waveformTimeline);
+  const setWaveformTimeline = useAudioStore(state => state.setWaveformTimeline);
+  const waveformMinimap = useAudioStore(state => state.waveformMinimap);
+  const setWaveformMinimap = useAudioStore(state => state.setWaveformMinimap);
 
   // Sync waveform scroll across all tracks (for touch gestures)
   useSyncWaveformScroll(zoomLevel > 0);
 
-  // Local slider state (controlled)
-  const [sliderValue, setSliderValue] = useState(0);
+  // Slider value derivation: derive from zoomLevel UNLESS user is actively dragging
+  const [isDraggingSlider, setIsDraggingSlider] = useState(false);
+  const [dragSliderValue, setDragSliderValue] = useState(0);
+
+  // Helper to calculate slider position from zoom level
+  const calculateSliderFromZoom = useCallback((zoom: number) => {
+    const preset = ZOOM_PRESETS.find(p => p.zoom === zoom);
+    if (preset) return preset.slider;
+    if (zoom === 0) return 0;
+    const sliderPos = Math.round(Math.log(zoom) / Math.log(2.74) * 20);
+    return Math.min(Math.max(sliderPos, 0), 100);
+  }, []);
+
+  // Derive slider value: use drag value when dragging, otherwise sync with zoomLevel
+  const sliderValue = isDraggingSlider ? dragSliderValue : calculateSliderFromZoom(zoomLevel);
 
   // Zoom change handler - logarithmic scale
   const handleZoomChange = (newSliderValue: number) => {
@@ -95,11 +112,9 @@ function App() {
     const currentIndex = ZOOM_PRESETS.findIndex(preset => preset.zoom > zoomLevel);
     if (currentIndex !== -1 && currentIndex < ZOOM_PRESETS.length) {
       const nextSlider = ZOOM_PRESETS[currentIndex].slider;
-      setSliderValue(nextSlider);
       handleZoomChange(nextSlider);
     } else if (zoomLevel < 500) {
       // Si on est entre deux presets ou au-delà du dernier, aller au max
-      setSliderValue(100);
       handleZoomChange(100);
     }
   }, [zoomLevel]);
@@ -110,7 +125,6 @@ function App() {
     if (currentIndex === -1) currentIndex = ZOOM_PRESETS.length - 1;
     if (currentIndex > 0) {
       const prevSlider = ZOOM_PRESETS[currentIndex - 1].slider;
-      setSliderValue(prevSlider);
       handleZoomChange(prevSlider);
     }
   }, [zoomLevel]);
@@ -227,7 +241,7 @@ function App() {
       setIsLoadingStorage(false);
     };
     loadApp();
-  }, []);
+  }, [initAudioContext]);
 
   // Handle Ctrl+Wheel for zooming and Alt+Wheel for horizontal scroll
   useEffect(() => {
@@ -287,23 +301,6 @@ function App() {
     };
   }, [tracks.length, zoomLevel, zoomIn, zoomOut]);
 
-  // Sync slider value with zoomLevel from store
-  useEffect(() => {
-    // Find closest slider value for current zoom level
-    const preset = ZOOM_PRESETS.find(p => p.zoom === zoomLevel);
-    if (preset) {
-      setSliderValue(preset.slider);
-    } else {
-      // Calculate slider position for custom zoom values
-      if (zoomLevel === 0) {
-        setSliderValue(0);
-      } else {
-        const sliderPos = Math.round(Math.log(zoomLevel) / Math.log(2.74) * 20);
-        setSliderValue(Math.min(Math.max(sliderPos, 0), 100));
-      }
-    }
-  }, [zoomLevel]);
-
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -334,8 +331,12 @@ function App() {
               value={sliderValue}
               onChange={(_, value) => {
                 const newValue = value as number;
-                setSliderValue(newValue);
+                setIsDraggingSlider(true);
+                setDragSliderValue(newValue);
                 handleZoomChange(newValue);
+              }}
+              onChangeCommitted={() => {
+                setIsDraggingSlider(false);
               }}
               min={0}
               max={100}
@@ -576,10 +577,10 @@ function App() {
                 }}
               >
                 <Typography variant="h5" color="text.secondary" gutterBottom>
-                  No tracks loaded
+                  {t('app.noTracksTitle')}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Drop your audio files above to get started
+                  {t('app.noTracksMessage')}
                 </Typography>
               </Box>
             </Box>

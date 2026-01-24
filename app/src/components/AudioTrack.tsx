@@ -1,4 +1,4 @@
-import {useEffect, useRef, useState} from 'react';
+import {useRef, useState} from 'react';
 import {
   Box,
   Button,
@@ -36,7 +36,7 @@ const AudioTrack = ({ track }: AudioTrackProps) => {
     tracks,
     updateTrack,
     loopState,
-  } = useAudioStore();
+} = useAudioStore();
   
   // Check if any track has solo enabled
   const hasSolo = tracks.some((t) => t.isSolo);
@@ -45,18 +45,14 @@ const AudioTrack = ({ track }: AudioTrackProps) => {
   // Track name editing
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(track.name);
-  const [localVolume, setLocalVolume] = useState(track.volume * 100);
+  // Volume state: use drag value when dragging, otherwise sync with track.volume
+  const [isDraggingVolume, setIsDraggingVolume] = useState(false);
+  const [dragVolume, setDragVolume] = useState(track.volume * 100);
+  
+  const localVolume = isDraggingVolume ? dragVolume : track.volume * 100;
 
   // Ref for waveform container (for overlay positioning)
   const waveformContainerRef = useRef<HTMLDivElement>(null);
-
-  // Sync local volume with track volume when it changes externally
-  useEffect(() => {
-    if (Math.abs(track.volume * 100 - localVolume) > 1) {
-      setLocalVolume(track.volume * 100);
-    }
-  }, [track.volume]); // Removed localVolume from deps to avoid cascade
-  
   // Delete confirmation dialog
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
@@ -124,11 +120,13 @@ const AudioTrack = ({ track }: AudioTrackProps) => {
   };
 
   const handleVolumeChange = (_: Event, value: number | number[]) => {
-    setLocalVolume(value as number);
+    setIsDraggingVolume(true);
+    setDragVolume(value as number);
   };
 
   const handleVolumeChangeCommitted = (_: Event | React.SyntheticEvent, value: number | number[]) => {
     setVolume(track.id, (value as number) / 100);
+    setIsDraggingVolume(false);
   };
 
   const handleStartEditName = () => {

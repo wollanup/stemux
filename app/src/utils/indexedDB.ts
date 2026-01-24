@@ -80,7 +80,7 @@ export const getAllAudioFiles = async (): Promise<{ id: string; file: File }[]> 
     const request = store.getAll();
 
     request.onsuccess = () => {
-      const results = request.result.map((item: any) => ({
+      const results = request.result.map((item: { id: string; data: ArrayBuffer; name: string; type: string }) => ({
         id: item.id,
         file: new File([item.data], item.name, { type: item.type }),
       }));
