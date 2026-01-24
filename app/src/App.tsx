@@ -44,15 +44,19 @@ function App() {
 
   // Zoom change handler - logarithmic scale
   const handleZoomChange = (newSliderValue: number) => {
-    // Logarithmic: zoom = 1 * 2.74^(sliderValue/20)
-    // This gives: slider 0→1, 20→5, 40→10, 60→50, 80→250, 100→500
-    const zoom = Math.round(Math.pow(2.74, newSliderValue / 20));
-    useAudioStore.setState({ zoomLevel: Math.min(zoom, 500) });
+    // Logarithmic: zoom = 0 at slider 0, then exponential growth
+    if (newSliderValue === 0) {
+      useAudioStore.setState({ zoomLevel: 0 });
+    } else {
+      const zoom = Math.round(Math.pow(2.74, newSliderValue / 20));
+      useAudioStore.setState({ zoomLevel: Math.min(zoom, 500) });
+    }
   };
 
   // Zoom presets with logarithmic slider positions
   const ZOOM_PRESETS = [
-    { zoom: 1, slider: 0 },
+    { zoom: 0, slider: 0 },
+    { zoom: 1, slider: 5 },
     { zoom: 5, slider: 20 },
     { zoom: 10, slider: 40 },
     { zoom: 50, slider: 60 },
@@ -61,16 +65,18 @@ function App() {
   ];
 
   const zoomIn = () => {
-    const currentIndex = ZOOM_PRESETS.findIndex(preset => preset.zoom >= zoomLevel);
-    if (currentIndex < ZOOM_PRESETS.length - 1) {
-      const nextSlider = ZOOM_PRESETS[currentIndex + 1].slider;
+    const currentIndex = ZOOM_PRESETS.findIndex(preset => preset.zoom > zoomLevel);
+    if (currentIndex !== -1) {
+      const nextSlider = ZOOM_PRESETS[currentIndex].slider;
       setSliderValue(nextSlider);
       handleZoomChange(nextSlider);
     }
   };
 
   const zoomOut = () => {
-    const currentIndex = ZOOM_PRESETS.findIndex(preset => preset.zoom >= zoomLevel);
+    // Find current or next higher preset
+    let currentIndex = ZOOM_PRESETS.findIndex(preset => preset.zoom >= zoomLevel);
+    if (currentIndex === -1) currentIndex = ZOOM_PRESETS.length - 1;
     if (currentIndex > 0) {
       const prevSlider = ZOOM_PRESETS[currentIndex - 1].slider;
       setSliderValue(prevSlider);
@@ -208,7 +214,7 @@ function App() {
             <IconButton
               color="inherit"
               onClick={zoomOut}
-              disabled={!hasLoadedTracks || zoomLevel <= 1}
+              disabled={!hasLoadedTracks || zoomLevel <= 0}
               aria-label="Zoom out"
             >
               <ZoomOut />

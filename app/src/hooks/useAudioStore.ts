@@ -97,7 +97,7 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
   masterVolume: loadMasterVolume(),
   audioContext: null,
   showLoopPanel: false,
-  zoomLevel: 1, // Direct px/sec value
+  zoomLevel: 0, // Direct px/sec value - 0 means fit to width without scrolling
 
   initAudioContext: () => {
     const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();

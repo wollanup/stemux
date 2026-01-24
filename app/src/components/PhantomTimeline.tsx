@@ -133,7 +133,7 @@ const PhantomTimeline = () => {
 
     try {
       // Always keep at zoom level 1 (fit all content)
-      wavesurfer.zoom(1);
+      wavesurfer.zoom(0);
     } catch {
       // Silently ignore if audio not loaded yet
     }
@@ -159,7 +159,7 @@ const PhantomTimeline = () => {
         color: theme.palette.warning.main,
       });
       loopRegionRef.current = marker;
-      
+
       // Allow clicking on marker to seek to that position
       marker.on('click', () => {
         console.log('⏱ Marker clicked, seeking to:', loopRegion.loopStartMarker);

@@ -105,14 +105,14 @@ const LoopControls = () => {
                                 {/* Loop info */}
                                 <Stack direction="row" spacing={2} alignItems="center"
                                        sx={{justifyContent: 'center', mb: 2}}>
-                                    <Typography variant="h6" fontWeight={500} color="text.secondary">
+                                    <Typography variant="body1" fontWeight={500} color="text.secondary">
                                         {formatTime(loopRegion.start)}
                                     </Typography>
                                     <EastIcon fontSize="small" sx={{color: 'text.secondary'}}/>
-                                    <Typography variant="h6" fontWeight={500} color="text.secondary">
+                                    <Typography variant="body1" fontWeight={500} color="text.secondary">
                                         {formatTime(loopRegion.end)}
                                     </Typography>
-                                    <Typography variant="h6" color="text.secondary">
+                                    <Typography variant="body1" color="text.secondary">
                                         ({formatTime(loopRegion.end - loopRegion.start)})
                                     </Typography>
                                 </Stack>
@@ -132,105 +132,45 @@ const LoopControls = () => {
 
                                 {/* Single row of adjustment buttons */}
                                 <Stack direction="row" spacing={1.5} sx={{justifyContent: 'center'}}>
-                                    <Button
-                                        size="large"
-                                        variant="outlined"
-                                        color="inherit"
-                                        onClick={() => adjustLoop(adjustMode, -1)}
-                                        sx={{
-                                            width: 80,
-                                            height: 80,
-                                            borderRadius: '50%',
-                                            p: 0,
-                                            minWidth: 'unset',
-                                            fontSize: '1.2rem',
-                                            fontWeight: 700
-                                        }}
+                                    <Button size="small"
+                                            variant="outlined"
+                                            color="inherit"
+                                            onClick={() => adjustLoop(adjustMode, -1)}
                                     >
                                         -1
                                     </Button>
-                                    <Button
-                                        size="large"
-                                        variant="outlined"
-                                        color="inherit"
-                                        onClick={() => adjustLoop(adjustMode, -0.5)}
-                                        sx={{
-                                            width: 80,
-                                            height: 80,
-                                            borderRadius: '50%',
-                                            p: 0,
-                                            minWidth: 'unset',
-                                            fontSize: '1.2rem',
-                                            fontWeight: 700
-                                        }}
+                                    <Button size="small"
+                                            variant="outlined"
+                                            color="inherit"
+                                            onClick={() => adjustLoop(adjustMode, -0.5)}
                                     >
                                         -0.5
                                     </Button>
-                                    <Button
-                                        size="large"
-                                        variant="outlined"
-                                        color="inherit"
-                                        onClick={() => adjustLoop(adjustMode, -0.1)}
-                                        sx={{
-                                            width: 80,
-                                            height: 80,
-                                            borderRadius: '50%',
-                                            p: 0,
-                                            minWidth: 'unset',
-                                            fontSize: '1.2rem',
-                                            fontWeight: 700
-                                        }}
+                                    <Button size="small"
+                                            variant="outlined"
+                                            color="inherit"
+                                            onClick={() => adjustLoop(adjustMode, -0.1)}
                                     >
                                         -0.1
                                     </Button>
-                                    <Button
-                                        size="large"
-                                        variant="outlined"
-                                        color="inherit"
-                                        onClick={() => adjustLoop(adjustMode, 0.1)}
-                                        sx={{
-                                            width: 80,
-                                            height: 80,
-                                            borderRadius: '50%',
-                                            p: 0,
-                                            minWidth: 'unset',
-                                            fontSize: '1.2rem',
-                                            fontWeight: 700
-                                        }}
+                                    <Button size="small"
+                                            variant="outlined"
+                                            color="inherit"
+                                            onClick={() => adjustLoop(adjustMode, 0.1)}
                                     >
                                         +0.1
                                     </Button>
-                                    <Button
-                                        size="large"
-                                        variant="outlined"
-                                        color="inherit"
-                                        onClick={() => adjustLoop(adjustMode, 0.5)}
-                                        sx={{
-                                            width: 80,
-                                            height: 80,
-                                            borderRadius: '50%',
-                                            p: 0,
-                                            minWidth: 'unset',
-                                            fontSize: '1.2rem',
-                                            fontWeight: 700
-                                        }}
+                                    <Button size="small"
+                                            variant="outlined"
+                                            color="inherit"
+                                            onClick={() => adjustLoop(adjustMode, 0.5)}
                                     >
                                         +0.5
                                     </Button>
-                                    <Button
-                                        size="large"
-                                        variant="outlined"
-                                        color="inherit"
-                                        onClick={() => adjustLoop(adjustMode, 1)}
-                                        sx={{
-                                            width: 80,
-                                            height: 80,
-                                            borderRadius: '50%',
-                                            p: 0,
-                                            minWidth: 'unset',
-                                            fontSize: '1.2rem',
-                                            fontWeight: 700
-                                        }}
+                                    <Button size="small"
+                                            variant="outlined"
+                                            color="inherit"
+                                            onClick={() => adjustLoop(adjustMode, 1)}
                                     >
                                         +1
                                     </Button>
