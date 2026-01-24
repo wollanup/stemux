@@ -105,12 +105,16 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
   },
 
   addTrack: async (file: File) => {
-    const { tracks } = get();
+    const { tracks, pause, seek } = get();
 
     if (tracks.length >= 8) {
       alert('Maximum 8 tracks allowed');
       return;
     }
+
+    // Pause and reset position when adding a track
+    pause();
+    seek(0);
 
     const id = `track-${Date.now()}-${Math.random()}`;
     const color = COLORS[tracks.length % COLORS.length];

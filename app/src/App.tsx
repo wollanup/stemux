@@ -44,12 +44,18 @@ function App() {
 
   // Zoom change handler - logarithmic scale
   const handleZoomChange = (newSliderValue: number) => {
-    // Logarithmic: zoom = 0 at slider 0, then exponential growth
-    if (newSliderValue === 0) {
-      useAudioStore.setState({ zoomLevel: 0 });
+    // Find the closest preset for this slider value
+    const preset = ZOOM_PRESETS.find(p => p.slider === newSliderValue);
+    if (preset) {
+      useAudioStore.setState({ zoomLevel: preset.zoom });
     } else {
-      const zoom = Math.round(Math.pow(2.74, newSliderValue / 20));
-      useAudioStore.setState({ zoomLevel: Math.min(zoom, 500) });
+      // Fallback for manual slider adjustments between presets
+      if (newSliderValue === 0) {
+        useAudioStore.setState({ zoomLevel: 0 });
+      } else {
+        const zoom = Math.round(Math.pow(2.74, newSliderValue / 20));
+        useAudioStore.setState({ zoomLevel: Math.min(zoom, 500) });
+      }
     }
   };
 
@@ -66,10 +72,14 @@ function App() {
 
   const zoomIn = () => {
     const currentIndex = ZOOM_PRESETS.findIndex(preset => preset.zoom > zoomLevel);
-    if (currentIndex !== -1) {
+    if (currentIndex !== -1 && currentIndex < ZOOM_PRESETS.length) {
       const nextSlider = ZOOM_PRESETS[currentIndex].slider;
       setSliderValue(nextSlider);
       handleZoomChange(nextSlider);
+    } else if (zoomLevel < 500) {
+      // Si on est entre deux presets ou au-delà du dernier, aller au max
+      setSliderValue(100);
+      handleZoomChange(100);
     }
   };
 
