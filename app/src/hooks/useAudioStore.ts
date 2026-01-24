@@ -195,10 +195,10 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
   toggleMute: (id: string) => {
     const track = get().tracks.find((t) => t.id === id);
     if (!track) return;
-    
+
     const newMutedState = !track.isMuted;
     get().updateTrack(id, { isMuted: newMutedState });
-    
+
     // Update WaveSurfer instance directly
     const ws = wavesurferInstances.get(id);
     if (ws) {
@@ -213,18 +213,18 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
     const tracks = get().tracks;
     const track = tracks.find((t) => t.id === id);
     if (!track) return;
-    
+
     const newSoloState = !track.isSolo;
-    
+
     // Update track state
     get().updateTrack(id, { isSolo: newSoloState });
-    
+
     // Calculate with the NEW state
-    const allTracks = tracks.map(t => 
+    const allTracks = tracks.map(t =>
       t.id === id ? { ...t, isSolo: newSoloState } : t
     );
     const hasSoloedTracks = allTracks.some(t => t.isSolo);
-    
+
     // Apply mute to ALL instances
     allTracks.forEach(t => {
       const ws = wavesurferInstances.get(t.id);
@@ -242,7 +242,7 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
     }));
     set({ tracks: newTracks });
     saveTrackSettings(newTracks);
-    
+
     // Update all WaveSurfer instances - all except 'id' are muted
     newTracks.forEach(t => {
       const ws = wavesurferInstances.get(t.id);
@@ -260,7 +260,7 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
     }));
     set({ tracks: newTracks });
     saveTrackSettings(newTracks);
-    
+
     // Update all WaveSurfer instances
     const hasSoloedTracks = newTracks.some(t => t.isSolo);
     newTracks.forEach(t => {
@@ -274,10 +274,10 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
 
   play: () => {
     console.log('🎵 PLAY called - instances:', wavesurferInstances.size);
-    
+
     // Clear finished set at the start of each play
     finishedInstances.clear();
-    
+
     // If loop enabled, seek to loop start before playing
     const { loopRegion } = get();
     if (loopRegion.enabled && loopRegion.start < loopRegion.end && loopRegion.end > 0) {
@@ -286,7 +286,7 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
         ws.seekTo(loopRegion.start / ws.getDuration());
       });
     }
-    
+
     // Call play on all WaveSurfer instances SIMULTANEOUSLY
     const instances = Array.from(wavesurferInstances.entries());
     Promise.all(
@@ -295,7 +295,7 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
         return ws.play().catch(err => console.warn('WaveSurfer play error:', err));
       })
     );
-    
+
     set((state) => ({
       playbackState: { ...state.playbackState, isPlaying: true },
     }));
@@ -307,7 +307,7 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
     instances.forEach((ws) => {
       ws.pause();
     });
-    
+
     set((state) => ({
       playbackState: { ...state.playbackState, isPlaying: false },
     }));
@@ -318,14 +318,11 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
     set((state) => ({
       playbackState: { ...state.playbackState, currentTime: time },
     }));
-    
+
     // Seek all WaveSurfer instances synchronously (no await)
     // Use Array.from to avoid iterator issues
     const instances = Array.from(wavesurferInstances.values());
-    
-    // Disable event listeners temporarily to avoid feedback loops
-    const wasPlaying = get().playbackState.isPlaying;
-    
+
     // Seek all at once (WaveSurfer's setTime is sync for the call, async for rendering)
     instances.forEach((ws) => {
       ws.setTime(time);
@@ -337,7 +334,7 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
     wavesurferInstances.forEach((ws) => {
       ws.setPlaybackRate(rate, true); // true = preserve pitch
     });
-    
+
     set((state) => ({
       playbackState: { ...state.playbackState, playbackRate: rate },
     }));
@@ -391,18 +388,18 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
   },
 
   zoomIn: () => {
-    set((state) => ({ 
-      zoomLevel: state.zoomLevel < 10 
-        ? state.zoomLevel + 1 
-        : state.zoomLevel + 10 
+    set((state) => ({
+      zoomLevel: state.zoomLevel < 10
+        ? state.zoomLevel + 1
+        : state.zoomLevel + 10
     }));
   },
 
   zoomOut: () => {
-    set((state) => ({ 
-      zoomLevel: state.zoomLevel > 10 
-        ? state.zoomLevel - 10 
-        : Math.max(state.zoomLevel - 1, 1) 
+    set((state) => ({
+      zoomLevel: state.zoomLevel > 10
+        ? state.zoomLevel - 10
+        : Math.max(state.zoomLevel - 1, 1)
     }));
   },
 }));
@@ -456,11 +453,11 @@ export const unregisterWavesurfer = (trackId: string) => {
 
 export const markTrackFinished = (trackId: string) => {
   finishedInstances.add(trackId);
-  
+
   // Check if ALL tracks have finished
-  const allFinished = wavesurferInstances.size > 0 && 
+  const allFinished = wavesurferInstances.size > 0 &&
                       finishedInstances.size === wavesurferInstances.size;
-  
+
   if (allFinished) {
     console.log('🏁 All tracks finished playing');
     const { loopRegion, pause, seek } = useAudioStore.getState();
