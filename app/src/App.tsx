@@ -40,7 +40,6 @@ import {
   ZoomOut
 } from '@mui/icons-material';
 import {restoreTracks, useAudioStore} from './hooks/useAudioStore';
-import {useSyncWaveformScroll} from './hooks/useSyncWaveformScroll';
 import FileUploader from './components/FileUploader';
 import AudioTrack from './components/AudioTrack';
 import BottomControlBar from './components/BottomControlBar';
@@ -67,9 +66,6 @@ const ZOOM_PRESETS = [
 function App() {
   const { t } = useTranslation();
   const { tracks, initAudioContext, loopState, toggleLoopEditMode, zoomLevel, waveformStyle, setWaveformStyle, waveformNormalize, setWaveformNormalize, waveformTimeline, setWaveformTimeline, waveformMinimap, setWaveformMinimap, removeAllTracks } = useAudioStore();
-
-  // Sync waveform scroll across all tracks (for touch gestures)
-  useSyncWaveformScroll(zoomLevel > 0);
 
   // Local slider state (controlled)
   const [sliderValue, setSliderValue] = useState(0);

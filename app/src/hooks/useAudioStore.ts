@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { AudioStore, AudioTrack } from '../types/audio';
+import type { AudioStore, AudioTrack, LoopRegion, Marker, Loop } from '../types/audio';
 import { saveAudioFile, deleteAudioFile, getAllAudioFiles } from '../utils/indexedDB';
 import type WaveSurfer from 'wavesurfer.js';
 
@@ -29,7 +29,7 @@ export const loadTrackSettings = () => {
 };
 
 // Save loop region to localStorage
-const saveLoopRegion = (loopRegion: any) => {
+const saveLoopRegion = (loopRegion: LoopRegion) => {
   localStorage.setItem('practice-tracks-loop', JSON.stringify(loopRegion));
 };
 
@@ -128,7 +128,7 @@ const saveWaveformMinimap = (minimap: boolean) => {
 };
 
 // Save loop v2 state (markers + loops) to localStorage
-const saveLoopV2State = (markers: any[], loops: any[], activeLoopId: string | null) => {
+const saveLoopV2State = (markers: Marker[], loops: Loop[], activeLoopId: string | null) => {
   const state = {
     markers,
     loops,
@@ -181,7 +181,7 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
   waveformMinimap: loadWaveformMinimap(),
 
   initAudioContext: () => {
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
     set({ audioContext: ctx });
   },
 
@@ -407,7 +407,7 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
     
     // Update state first
     set((state) => {
-      const updates: any = {
+      const updates: Partial<AudioStore> = {
         playbackState: { ...state.playbackState, currentTime: time },
         _preserveLoopOnNextSeek: false, // Reset flag
       };
@@ -776,7 +776,7 @@ export const restoreTracks = async () => {
 
     // Create all tracks immediately with null buffers
     const restoredTracks: AudioTrack[] = trackSettings
-      .map((setting: any) => {
+      .map((setting: Partial<AudioTrack> & { id: string }) => {
         const storedFile = storedFiles.find(f => f.id === setting.id);
         if (storedFile) {
           return {

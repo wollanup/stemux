@@ -217,10 +217,8 @@ const MarkersPanel = () => {
               onPointerDown={(e) => handlePointerDown(e, marker.id)}
               onPointerUp={handlePointerUp}
               onPointerCancel={handlePointerUp}
-              onDelete={(e) => handleMenuClick(e as any, marker.id)}
+              onDelete={(e) => handleMenuClick(e as React.MouseEvent<HTMLElement>, marker.id)}
               deleteIcon={<MoreVert fontSize="small" />}
-              // onMouseEnter={() => handleMarkerHover(marker.id)}
-              // onMouseLeave={() => handleMarkerHover(null)}
               sx={{
                 cursor: 'pointer',
                 bgcolor: isLoopStartSelection ? 'primary.main' : undefined,
@@ -263,10 +261,8 @@ const MarkersPanel = () => {
                 icon={<LoopIcon fontSize="small" />}
                 color={isActive ? 'primary' : 'default'}
                 onClick={() => handleLoopClick(loop.id)}
-                onDelete={(e) => handleLoopMenuClick(e as any, loop.id)}
+                onDelete={(e) => handleLoopMenuClick(e as React.MouseEvent<HTMLElement>, loop.id)}
                 deleteIcon={<MoreVert fontSize="small" />}
-                // onMouseEnter={() => handleLoopHover(loop.id)}
-                // onMouseLeave={() => handleLoopHover(null)}
                 sx={{
                   cursor: 'pointer',
                   '&:hover': {

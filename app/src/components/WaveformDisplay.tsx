@@ -17,8 +17,8 @@ interface WaveformDisplayProps {
 const WaveformDisplay = ({ track }: WaveformDisplayProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const wavesurferRef = useRef<WaveSurfer | null>(null);
-  const regionsPluginRef = useRef<any>(null);
-  const loopRegionRef = useRef<any>(null);
+  const regionsPluginRef = useRef<RegionsPlugin | null>(null);
+  const loopRegionRef = useRef<ReturnType<RegionsPlugin['addRegion']> | null>(null);
   const [isReady, setIsReady] = useState(false);
   const isDraggingRef = useRef(false);
 
