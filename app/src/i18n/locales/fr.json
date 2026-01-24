@@ -127,8 +127,9 @@
         "space": "ESPACE - Lecture/Pause",
         "arrowLeft": "← - Reculer de 5 secondes (maintenir pour continu)",
         "arrowRight": "→ - Avancer de 5 secondes (maintenir pour continu)",
+        "ctrlLeft": "Ctrl + ← - Retour au début",
         "ctrlWheel": "Ctrl + Molette - Zoom avant/arrière",
-        "wheel": "Molette - Défilement horizontal (si zoomé)",
+        "altWheel": "Alt + Molette - Défilement horizontal (si zoomé)",
         "more": "D'autres raccourcis arrivent bientôt !"
       },
       "tips": {

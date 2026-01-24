@@ -212,15 +212,21 @@ const HelpModal = ({ open, onClose }: HelpModalProps) => {
               </Typography>
             </Stack>
             <Stack direction="row" spacing={1} alignItems="center">
+              <Chip label="Ctrl + ←" size="small" />
+              <Typography variant="body2">
+                {t('help.sections.keyboard.ctrlLeft')}
+              </Typography>
+            </Stack>
+            <Stack direction="row" spacing={1} alignItems="center">
               <Chip label="Ctrl + 🖱️" size="small" />
               <Typography variant="body2">
                 {t('help.sections.keyboard.ctrlWheel')}
               </Typography>
             </Stack>
             <Stack direction="row" spacing={1} alignItems="center">
-              <Chip label="🖱️" size="small" />
+              <Chip label="Alt + 🖱️" size="small" />
               <Typography variant="body2">
-                {t('help.sections.keyboard.wheel')}
+                {t('help.sections.keyboard.altWheel')}
               </Typography>
             </Stack>
           </Stack>

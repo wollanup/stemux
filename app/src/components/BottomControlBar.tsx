@@ -141,6 +141,12 @@ const BottomControlBar = () => {
         e.preventDefault();
         e.stopPropagation();
 
+        // Ctrl+Left : retour au début
+        if (e.ctrlKey && e.code === 'ArrowLeft') {
+          seek(0);
+          return;
+        }
+
         const direction = e.code === 'ArrowLeft' ? -1 : 1;
 
         // Si c'est la première pression (pas de repeat)

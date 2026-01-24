@@ -22,6 +22,7 @@ import {
 } from '@mui/material';
 import { Loop, HelpOutline, ZoomIn, ZoomOut, MoreVert, Refresh, GraphicEq, DeleteSweep } from '@mui/icons-material';
 import { useAudioStore, restoreTracks } from './hooks/useAudioStore';
+import { useSyncWaveformScroll } from './hooks/useSyncWaveformScroll';
 import FileUploader from './components/FileUploader';
 import AudioTrack from './components/AudioTrack';
 import BottomControlBar from './components/BottomControlBar';
@@ -49,6 +50,9 @@ const ZOOM_PRESETS = [
 function App() {
   const { t } = useTranslation();
   const { tracks, initAudioContext, showLoopPanel, loopRegion, toggleLoopPanel, zoomLevel, waveformStyle, setWaveformStyle, waveformNormalize, setWaveformNormalize, removeAllTracks } = useAudioStore();
+
+  // Sync waveform scroll across all tracks (for touch gestures)
+  useSyncWaveformScroll(zoomLevel > 0);
 
   // Local slider state (controlled)
   const [sliderValue, setSliderValue] = useState(0);
@@ -207,67 +211,44 @@ function App() {
     loadApp();
   }, []);
 
-  // Handle Ctrl+Wheel for zooming and normal Wheel for horizontal scroll
+  // Handle Ctrl+Wheel for zooming and Alt+Wheel for horizontal scroll
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
-      console.log('🖱️ Wheel event:', {
-        ctrlKey: e.ctrlKey,
-        deltaY: e.deltaY,
-        tracksLength: tracks.length,
-        zoomLevel,
-      });
-
       // Only handle if there are tracks loaded
       if (tracks.length === 0) {
-        console.log('❌ No tracks loaded, ignoring');
         return;
       }
 
       // Ctrl+Wheel = Zoom
       if (e.ctrlKey) {
-        console.log('⌨️ Ctrl+Wheel detected - zooming');
         e.preventDefault();
         
         // deltaY < 0 = scroll up = zoom in
         // deltaY > 0 = scroll down = zoom out
         if (e.deltaY < 0) {
-          console.log('🔍 Zoom in');
           zoomIn();
         } else {
-          console.log('🔍 Zoom out');
           zoomOut();
         }
       } 
-      // Normal Wheel (without Ctrl) = Horizontal scroll when zoomed
-      else if (zoomLevel > 0) {
-        console.log('↔️ Normal wheel with zoom - horizontal scroll');
+      // Alt+Wheel = Horizontal scroll when zoomed
+      else if (e.altKey && zoomLevel > 0) {
         e.preventDefault();
         
         // Get all waveform containers and scroll them
         const waveformWrappers = document.querySelectorAll('[data-wavesurfer]');
-        console.log('📜 Found waveform containers:', waveformWrappers.length);
         
         waveformWrappers.forEach((wrapper) => {
           // WaveSurfer uses Shadow DOM - find the first child with shadowRoot
           const firstChild = wrapper.firstElementChild;
           
           if (firstChild && firstChild.shadowRoot) {
-            console.log('🌑 Found Shadow DOM');
-            
             // Find the .scroll element inside Shadow DOM
             const scrollElement = firstChild.shadowRoot.querySelector('.scroll') as HTMLElement;
             
             if (scrollElement) {
-              console.log('✅ Found .scroll element in Shadow DOM:', {
-                scrollLeft: scrollElement.scrollLeft,
-                scrollWidth: scrollElement.scrollWidth,
-                clientWidth: scrollElement.clientWidth,
-                hasScroll: scrollElement.scrollWidth > scrollElement.clientWidth
-              });
-              
               const currentScroll = scrollElement.scrollLeft;
               scrollElement.scrollLeft = currentScroll + e.deltaY;
-              console.log('📜 Scrolled from', currentScroll, 'to', scrollElement.scrollLeft);
             } else {
               console.log('❌ No .scroll element found in Shadow DOM');
             }
