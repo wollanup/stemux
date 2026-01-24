@@ -210,14 +210,32 @@ export const setupEditModeInteractions = (
 
     // Helper: Get time from pointer event
     const getTimeFromEvent = (e: PointerEvent): number => {
-        const rect = wrapper.getBoundingClientRect();
         const scrollElement = wsElement.shadowRoot!.querySelector('.scroll') as HTMLElement;
         const scrollLeft = scrollElement?.scrollLeft || 0;
-
-        const relativeX = e.clientX - rect.left + scrollLeft;
-        const wrapperWidth = wrapper.offsetWidth;
-        const percent = (relativeX / wrapperWidth) * 100;
-        return (percent / 100) * duration;
+        
+        // Get position relative to the scroll container (not wrapper)
+        const scrollRect = scrollElement.getBoundingClientRect();
+        
+        // Use wrapper.scrollWidth (total scrollable width with zoom)
+        const totalWidth = wrapper.scrollWidth;
+        
+        // Position relative to scroll container + scroll offset
+        const relativeX = (e.clientX - scrollRect.left) + scrollLeft;
+        const percent = (relativeX / totalWidth) * 100;
+        const calculatedTime = (percent / 100) * duration;
+        
+        console.log('🔍 getTimeFromEvent:', {
+            clientX: e.clientX,
+            scrollRectLeft: scrollRect.left.toFixed(1),
+            scrollLeft,
+            relativeX: relativeX.toFixed(1),
+            totalWidth,
+            percent: percent.toFixed(2),
+            time: calculatedTime.toFixed(2),
+            duration
+        });
+        
+        return calculatedTime;
     };
 
     // Update cursor based on hover
