@@ -18,9 +18,9 @@ import {
   MenuItem,
   ListItemIcon,
   ListItemText,
-  Slider, Stack
+  Slider, Stack, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button
 } from '@mui/material';
-import { Loop, HelpOutline, ZoomIn, ZoomOut, MoreVert, Refresh, GraphicEq } from '@mui/icons-material';
+import { Loop, HelpOutline, ZoomIn, ZoomOut, MoreVert, Refresh, GraphicEq, DeleteSweep } from '@mui/icons-material';
 import { useAudioStore, restoreTracks } from './hooks/useAudioStore';
 import FileUploader from './components/FileUploader';
 import AudioTrack from './components/AudioTrack';
@@ -37,7 +37,7 @@ declare const __BUILD_DATE__: string;
 
 function App() {
   const { t } = useTranslation();
-  const { tracks, initAudioContext, showLoopPanel, loopRegion, toggleLoopPanel, zoomLevel, waveformStyle, setWaveformStyle, waveformNormalize, setWaveformNormalize } = useAudioStore();
+  const { tracks, initAudioContext, showLoopPanel, loopRegion, toggleLoopPanel, zoomLevel, waveformStyle, setWaveformStyle, waveformNormalize, setWaveformNormalize, removeAllTracks } = useAudioStore();
 
   // Local slider state (controlled)
   const [sliderValue, setSliderValue] = useState(0);
@@ -96,6 +96,7 @@ function App() {
   const [isLoadingStorage, setIsLoadingStorage] = useState(true);
   const [helpModalOpen, setHelpModalOpen] = useState(false);
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
+  const [deleteAllDialogOpen, setDeleteAllDialogOpen] = useState(false);
 
   // Show phantom timeline if loop panel is open OR if a loop is active
   const hasActiveLoop = loopRegion.enabled && loopRegion.start < loopRegion.end && loopRegion.end > 0;
@@ -330,6 +331,18 @@ function App() {
                   {waveformNormalize ? t('menu.normalizeOff') : t('menu.normalizeOn')}
                 </ListItemText>
               </MenuItem>
+              <MenuItem 
+                onClick={() => {
+                  setMenuAnchorEl(null);
+                  setDeleteAllDialogOpen(true);
+                }} 
+                disabled={tracks.length === 0}
+              >
+                <ListItemIcon>
+                  <DeleteSweep fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>{t('menu.deleteAllTracks')}</ListItemText>
+              </MenuItem>
               <MenuItem onClick={async () => {
                 setMenuAnchorEl(null);
                 // Unregister all service workers and hard reload
@@ -362,6 +375,34 @@ function App() {
 
         {/* Help Modal */}
         <HelpModal open={helpModalOpen} onClose={() => setHelpModalOpen(false)} />
+
+        {/* Delete All Tracks Confirmation Dialog */}
+        <Dialog
+          open={deleteAllDialogOpen}
+          onClose={() => setDeleteAllDialogOpen(false)}
+        >
+          <DialogTitle>{t('menu.deleteAllConfirmTitle')}</DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              {t('menu.deleteAllConfirmMessage')}
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setDeleteAllDialogOpen(false)}>
+              {t('track.cancelButton')}
+            </Button>
+            <Button 
+              onClick={async () => {
+                await removeAllTracks();
+                setDeleteAllDialogOpen(false);
+              }} 
+              color="error"
+              variant="contained"
+            >
+              {t('menu.deleteAllConfirmButton')}
+            </Button>
+          </DialogActions>
+        </Dialog>
 
         {/* Main content */}
         <Container maxWidth="xl" sx={{ pt: 10, pb: 10, flex: 1 }}>

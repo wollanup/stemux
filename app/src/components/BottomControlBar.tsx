@@ -60,7 +60,69 @@ const BottomControlBar = () => {
   }, [masterVolume]);
 
   useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
+    const seekIntervalRef = { current: null as number | null };
+    const holdTimeoutRef = { current: null as number | null };
+    const keyPressTimeRef = { current: null as number | null };
+    const isInContinuousModeRef = { current: false };
+    const currentDirectionRef = { current: 0 };
+    const continuousStartTimeRef = { current: null as number | null };
+    
+    const HOLD_THRESHOLD = 300; // ms avant de commencer le défilement continu
+    const SEEK_INTERVAL = 50; // ms entre chaque seek en mode continu
+    const SINGLE_PRESS_SEEK = 5; // secondes pour un appui simple
+    const CONTINUOUS_SEEK_BASE = 0.5; // secondes par interval en mode continu (vitesse de base)
+    const MAX_ACCELERATION = 5; // multiplier max (5x la vitesse de base)
+    const ACCELERATION_DURATION = 3000; // ms pour atteindre la vitesse max
+
+    const getAcceleratedSeekAmount = () => {
+      if (continuousStartTimeRef.current === null) return CONTINUOUS_SEEK_BASE;
+      
+      const elapsed = Date.now() - continuousStartTimeRef.current;
+      // Accélération progressive linéaire de 1x à 5x sur ACCELERATION_DURATION ms
+      const progress = Math.min(elapsed / ACCELERATION_DURATION, 1);
+      const multiplier = 1 + (progress * (MAX_ACCELERATION - 1));
+      const seekAmount = CONTINUOUS_SEEK_BASE * multiplier;
+      
+      return seekAmount;
+    };
+
+    const startContinuousSeek = (direction: number) => {
+      if (seekIntervalRef.current !== null) return;
+      
+      isInContinuousModeRef.current = true;
+      continuousStartTimeRef.current = Date.now();
+      
+      seekIntervalRef.current = window.setInterval(() => {
+        const currentTime = useAudioStore.getState().playbackState.currentTime;
+        const duration = useAudioStore.getState().playbackState.duration;
+        const seekAmount = getAcceleratedSeekAmount();
+        const newTime = Math.max(0, Math.min(
+          currentTime + (direction * seekAmount),
+          duration
+        ));
+        seek(newTime);
+      }, SEEK_INTERVAL);
+    };
+
+    const stopContinuousSeek = () => {
+      if (seekIntervalRef.current !== null) {
+        clearInterval(seekIntervalRef.current);
+        seekIntervalRef.current = null;
+      }
+      if (holdTimeoutRef.current !== null) {
+        clearTimeout(holdTimeoutRef.current);
+        holdTimeoutRef.current = null;
+      }
+      continuousStartTimeRef.current = null;
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore si on est dans un input ou textarea
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+        return;
+      }
+
       if (e.code === 'Space') {
         e.preventDefault();
         e.stopPropagation();
@@ -75,12 +137,60 @@ const BottomControlBar = () => {
         if (document.activeElement instanceof HTMLElement) {
           document.activeElement.blur();
         }
+      } else if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const direction = e.code === 'ArrowLeft' ? -1 : 1;
+
+        // Si c'est la première pression (pas de repeat)
+        if (!e.repeat) {
+          keyPressTimeRef.current = Date.now();
+          currentDirectionRef.current = direction;
+          isInContinuousModeRef.current = false;
+
+          // Démarrer un timeout pour passer en mode continu
+          holdTimeoutRef.current = window.setTimeout(() => {
+            startContinuousSeek(direction);
+          }, HOLD_THRESHOLD);
+        }
       }
     };
 
-    document.addEventListener('keydown', handleKeyPress);
-    return () => document.removeEventListener('keydown', handleKeyPress);
-  }, [playbackState.isPlaying, play, pause]);
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') {
+        e.preventDefault();
+        e.stopPropagation();
+
+        // Arrêter le défilement continu
+        stopContinuousSeek();
+
+        // Si c'était un appui court (pas en mode continu)
+        if (keyPressTimeRef.current !== null && !isInContinuousModeRef.current) {
+          const currentTime = useAudioStore.getState().playbackState.currentTime;
+          const duration = useAudioStore.getState().playbackState.duration;
+          const newTime = Math.max(0, Math.min(
+            currentTime + (currentDirectionRef.current * SINGLE_PRESS_SEEK),
+            duration
+          ));
+          seek(newTime);
+        }
+
+        keyPressTimeRef.current = null;
+        isInContinuousModeRef.current = false;
+        currentDirectionRef.current = 0;
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('keyup', handleKeyUp);
+    
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('keyup', handleKeyUp);
+      stopContinuousSeek();
+    };
+  }, [playbackState.isPlaying, play, pause, seek]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);

@@ -182,6 +182,25 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
     saveTrackSettings(newTracks);
   },
 
+  removeAllTracks: async () => {
+    const { tracks, pause, seek } = get();
+    
+    // Pause and reset position
+    pause();
+    seek(0);
+
+    // Delete all files from IndexedDB
+    try {
+      await Promise.all(tracks.map((track) => deleteAudioFile(track.id)));
+    } catch (error) {
+      console.error('Failed to delete audio files:', error);
+    }
+
+    // Clear tracks
+    set({ tracks: [] });
+    saveTrackSettings([]);
+  },
+
   updateTrack: (id: string, updates: Partial<AudioTrack>) => {
     const newTracks = get().tracks.map((t) => (t.id === id ? { ...t, ...updates } : t));
     set({ tracks: newTracks });

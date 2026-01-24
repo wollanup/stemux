@@ -79,7 +79,11 @@
     "waveformModern": "Modern style",
     "waveformClassic": "Classic style",
     "normalizeOn": "Normalize",
-    "normalizeOff": "Don't normalize"
+    "normalizeOff": "Don't normalize",
+    "deleteAllTracks": "Delete All Tracks",
+    "deleteAllConfirmTitle": "Delete All Tracks?",
+    "deleteAllConfirmMessage": "Are you sure you want to delete all tracks? This action cannot be undone.",
+    "deleteAllConfirmButton": "Delete All"
   },
   "help": {
     "title": "User Guide",
@@ -121,6 +125,8 @@
       "keyboard": {
         "title": "Keyboard Shortcuts",
         "space": "SPACE - Play/Pause",
+        "arrowLeft": "← - Rewind 5 seconds (hold for continuous)",
+        "arrowRight": "→ - Forward 5 seconds (hold for continuous)",
         "more": "More shortcuts coming soon!"
       },
       "tips": {

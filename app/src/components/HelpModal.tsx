@@ -192,11 +192,25 @@ const HelpModal = ({ open, onClose }: HelpModalProps) => {
 
         {/* Keyboard Shortcuts */}
         <Section title={t('help.sections.keyboard.title')}>
-          <Stack direction="row" spacing={1} mb={1} alignItems="center">
-            <Chip label="SPACE" size="small" />
-            <Typography variant="body2">
-              {t('help.sections.keyboard.space')}
-            </Typography>
+          <Stack spacing={1} mb={2}>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Chip label="SPACE" size="small" />
+              <Typography variant="body2">
+                {t('help.sections.keyboard.space')}
+              </Typography>
+            </Stack>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Chip label="←" size="small" />
+              <Typography variant="body2">
+                {t('help.sections.keyboard.arrowLeft')}
+              </Typography>
+            </Stack>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Chip label="→" size="small" />
+              <Typography variant="body2">
+                {t('help.sections.keyboard.arrowRight')}
+              </Typography>
+            </Stack>
           </Stack>
           <Typography variant="caption" color="text.secondary" fontStyle="italic">
             {t('help.sections.keyboard.more')}

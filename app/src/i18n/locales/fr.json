@@ -79,7 +79,11 @@
     "waveformModern": "Style moderne",
     "waveformClassic": "Style classique",
     "normalizeOn": "Normaliser",
-    "normalizeOff": "Ne pas normaliser"
+    "normalizeOff": "Ne pas normaliser",
+    "deleteAllTracks": "Supprimer toutes les pistes",
+    "deleteAllConfirmTitle": "Supprimer toutes les pistes ?",
+    "deleteAllConfirmMessage": "Êtes-vous sûr de vouloir supprimer toutes les pistes ? Cette action est irréversible.",
+    "deleteAllConfirmButton": "Tout supprimer"
   },
   "help": {
     "title": "Guide d'utilisation",
@@ -121,6 +125,8 @@
       "keyboard": {
         "title": "Raccourcis clavier",
         "space": "ESPACE - Lecture/Pause",
+        "arrowLeft": "← - Reculer de 5 secondes (maintenir pour continu)",
+        "arrowRight": "→ - Avancer de 5 secondes (maintenir pour continu)",
         "more": "D'autres raccourcis arrivent bientôt !"
       },
       "tips": {
