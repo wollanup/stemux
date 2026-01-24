@@ -3,7 +3,7 @@ import { Box, useTheme } from '@mui/material';
 import WaveSurfer from 'wavesurfer.js';
 import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions.esm.js';
 import type { AudioTrack } from '../types/audio';
-import { useAudioStore, registerWavesurfer, unregisterWavesurfer } from '../hooks/useAudioStore';
+import { useAudioStore, registerWavesurfer, unregisterWavesurfer, markTrackFinished } from '../hooks/useAudioStore';
 
 import { setPlaybackTime } from '../hooks/usePlaybackTime';
 
@@ -26,6 +26,8 @@ const WaveformDisplay = ({ track }: WaveformDisplayProps) => {
     loopRegion,
     playbackState,
     masterVolume,
+    waveformStyle,
+    waveformNormalize,
   } = useAudioStore();
 
   // Use ref to avoid recreating WaveSurfer when seek changes
@@ -50,15 +52,17 @@ const WaveformDisplay = ({ track }: WaveformDisplayProps) => {
       progressColor,
       cursorColor: theme.palette.text.primary,
       cursorWidth: 2,
-      barWidth: 5,
-      barGap: 3,
-      barRadius: 20,
+      ...(waveformStyle === 'modern' ? {
+        barWidth: 5,
+        barGap: 3,
+        barRadius: 20,
+      } : {}),
       height: 60,
-      normalize: false,
+      normalize: waveformNormalize,
       interact: true,
       autoScroll: true,
       autoCenter: true,
-      dragToSeek: true,
+      dragToSeek: false, // Disable built-in to avoid double-seek
       // hideScrollbar: true,
       plugins: [regions],
     });
@@ -99,6 +103,12 @@ const WaveformDisplay = ({ track }: WaveformDisplayProps) => {
 
         lastTimeUpdate = now;
       }
+    });
+
+    // Detect when playback finishes
+    wavesurfer.on('finish', () => {
+      console.log('🏁 Playback finished for track:', track.id);
+      markTrackFinished(track.id);
     });
 
     // Mark as ready when waveform is loaded
@@ -149,7 +159,7 @@ const WaveformDisplay = ({ track }: WaveformDisplayProps) => {
       loopRegionRef.current = null;
       wavesurfer.destroy();
     };
-  }, [track.file, track.id]); // Only recreate when file or track changes
+  }, [track.file, track.id, waveformStyle, waveformNormalize]); // Recreate when settings change
 
   // Handle zoom separately without recreating wavesurfer
   useEffect(() => {

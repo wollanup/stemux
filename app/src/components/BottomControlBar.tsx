@@ -21,6 +21,7 @@ import {
   Loop,
 } from '@mui/icons-material';
 import { useAudioStore } from '../hooks/useAudioStore';
+import { usePlaybackTime } from '../hooks/usePlaybackTime';
 import PlaybackSpeedDrawer from './PlaybackSpeedDrawer';
 import { useTranslation } from 'react-i18next';
 
@@ -46,6 +47,8 @@ const BottomControlBar = () => {
     seek,
     loopRegion,
   } = useAudioStore();
+  
+  const currentTime = usePlaybackTime(); // Use lightweight time tracker
 
   const [speedDrawerOpen, setSpeedDrawerOpen] = useState(false);
   const [tempMasterVolume, setTempMasterVolume] = useState(masterVolume);
@@ -131,7 +134,7 @@ const BottomControlBar = () => {
           </IconButton>
           <Stack direction="row" spacing={1} alignItems="center" minWidth={120}>
             <Typography variant="body2" fontFamily="monospace">
-              {formatTime(playbackState.currentTime)}
+              {formatTime(currentTime)}
             </Typography>
             <Typography variant="body2" color="text.secondary">
               /

@@ -84,6 +84,29 @@ const loadMasterVolume = () => {
 // WaveSurfer instances registry (outside Zustand to avoid re-renders)
 const wavesurferInstances = new Map<string, WaveSurfer>();
 
+// Track which instances have finished playing
+const finishedInstances = new Set<string>();
+
+// Waveform style preference
+const loadWaveformStyle = () => {
+  const stored = localStorage.getItem('waveform-style');
+  return stored || 'modern';
+};
+
+const saveWaveformStyle = (style: string) => {
+  localStorage.setItem('waveform-style', style);
+};
+
+// Waveform normalize preference
+const loadWaveformNormalize = () => {
+  const stored = localStorage.getItem('waveform-normalize');
+  return stored ? stored === 'true' : false;
+};
+
+const saveWaveformNormalize = (normalize: boolean) => {
+  localStorage.setItem('waveform-normalize', normalize.toString());
+};
+
 export const useAudioStore = create<AudioStore>((set, get) => ({
   tracks: [],
   playbackState: {
@@ -98,6 +121,8 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
   audioContext: null,
   showLoopPanel: false,
   zoomLevel: 0, // Direct px/sec value - 0 means fit to width without scrolling
+  waveformStyle: loadWaveformStyle() as 'modern' | 'classic',
+  waveformNormalize: loadWaveformNormalize(),
 
   initAudioContext: () => {
     const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -250,6 +275,9 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
   play: () => {
     console.log('🎵 PLAY called - instances:', wavesurferInstances.size);
     
+    // Clear finished set at the start of each play
+    finishedInstances.clear();
+    
     // If loop enabled, seek to loop start before playing
     const { loopRegion } = get();
     if (loopRegion.enabled && loopRegion.start < loopRegion.end && loopRegion.end > 0) {
@@ -259,11 +287,14 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
       });
     }
     
-    // Call play on all WaveSurfer instances
-    wavesurferInstances.forEach((ws, id) => {
-      console.log('Playing instance:', id);
-      ws.play().catch(err => console.warn('WaveSurfer play error:', err));
-    });
+    // Call play on all WaveSurfer instances SIMULTANEOUSLY
+    const instances = Array.from(wavesurferInstances.entries());
+    Promise.all(
+      instances.map(([id, ws]) => {
+        console.log('Playing instance:', id);
+        return ws.play().catch(err => console.warn('WaveSurfer play error:', err));
+      })
+    );
     
     set((state) => ({
       playbackState: { ...state.playbackState, isPlaying: true },
@@ -271,8 +302,9 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
   },
 
   pause: () => {
-    // Call pause on all WaveSurfer instances
-    wavesurferInstances.forEach((ws) => {
+    // Pause all WaveSurfer instances simultaneously
+    const instances = Array.from(wavesurferInstances.values());
+    instances.forEach((ws) => {
       ws.pause();
     });
     
@@ -282,14 +314,22 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
   },
 
   seek: (time: number) => {
-    // Seek all WaveSurfer instances
-    wavesurferInstances.forEach((ws) => {
-      ws.setTime(time);
-    });
-    
+    // Update state first
     set((state) => ({
       playbackState: { ...state.playbackState, currentTime: time },
     }));
+    
+    // Seek all WaveSurfer instances synchronously (no await)
+    // Use Array.from to avoid iterator issues
+    const instances = Array.from(wavesurferInstances.values());
+    
+    // Disable event listeners temporarily to avoid feedback loops
+    const wasPlaying = get().playbackState.isPlaying;
+    
+    // Seek all at once (WaveSurfer's setTime is sync for the call, async for rendering)
+    instances.forEach((ws) => {
+      ws.setTime(time);
+    });
   },
 
   setPlaybackRate: (rate: number) => {
@@ -338,6 +378,16 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
 
   toggleLoopPanel: () => {
     set((state) => ({ showLoopPanel: !state.showLoopPanel }));
+  },
+
+  setWaveformStyle: (style: 'modern' | 'classic') => {
+    set({ waveformStyle: style });
+    saveWaveformStyle(style);
+  },
+
+  setWaveformNormalize: (normalize: boolean) => {
+    set({ waveformNormalize: normalize });
+    saveWaveformNormalize(normalize);
   },
 
   zoomIn: () => {
@@ -396,10 +446,31 @@ export const restoreTracks = async () => {
 // Helper functions to manage WaveSurfer instances
 export const registerWavesurfer = (trackId: string, instance: WaveSurfer) => {
   wavesurferInstances.set(trackId, instance);
+  finishedInstances.delete(trackId); // Reset finish state when registering
 };
 
 export const unregisterWavesurfer = (trackId: string) => {
   wavesurferInstances.delete(trackId);
+  finishedInstances.delete(trackId);
+};
+
+export const markTrackFinished = (trackId: string) => {
+  finishedInstances.add(trackId);
+  
+  // Check if ALL tracks have finished
+  const allFinished = wavesurferInstances.size > 0 && 
+                      finishedInstances.size === wavesurferInstances.size;
+  
+  if (allFinished) {
+    console.log('🏁 All tracks finished playing');
+    const { loopRegion, pause, seek } = useAudioStore.getState();
+    if (!loopRegion.enabled) {
+      pause();
+      seek(0); // Reset to start
+    }
+    // Clear finished set for next playback
+    finishedInstances.clear();
+  }
 };
 
 export const getWavesurfer = (trackId: string) => {

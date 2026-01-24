@@ -32,6 +32,8 @@ export interface AudioStore {
   masterVolume: number; // 0-1
   showLoopPanel: boolean;
   zoomLevel: number;
+  waveformStyle: 'modern' | 'classic';
+  waveformNormalize: boolean;
   
   addTrack: (file: File) => void;
   removeTrack: (id: string) => void;
@@ -57,6 +59,8 @@ export interface AudioStore {
 
   zoomIn: () => void;
   zoomOut: () => void;
+  setWaveformStyle: (style: 'modern' | 'classic') => void;
+  setWaveformNormalize: (normalize: boolean) => void;
   
   initAudioContext: () => void;
 }

@@ -75,7 +75,11 @@
   },
   "menu": {
     "title": "Menu",
-    "refresh": "Refresh app"
+    "refresh": "Refresh app",
+    "waveformModern": "Modern style",
+    "waveformClassic": "Classic style",
+    "normalizeOn": "Normalize",
+    "normalizeOff": "Don't normalize"
   },
   "help": {
     "title": "User Guide",

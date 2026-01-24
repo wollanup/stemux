@@ -20,7 +20,7 @@ import {
   ListItemText,
   Slider, Stack
 } from '@mui/material';
-import { Loop, HelpOutline, ZoomIn, ZoomOut, MoreVert, Refresh } from '@mui/icons-material';
+import { Loop, HelpOutline, ZoomIn, ZoomOut, MoreVert, Refresh, GraphicEq } from '@mui/icons-material';
 import { useAudioStore, restoreTracks } from './hooks/useAudioStore';
 import FileUploader from './components/FileUploader';
 import AudioTrack from './components/AudioTrack';
@@ -37,7 +37,7 @@ declare const __BUILD_DATE__: string;
 
 function App() {
   const { t } = useTranslation();
-  const { tracks, initAudioContext, showLoopPanel, loopRegion, toggleLoopPanel, zoomLevel } = useAudioStore();
+  const { tracks, initAudioContext, showLoopPanel, loopRegion, toggleLoopPanel, zoomLevel, waveformStyle, setWaveformStyle, waveformNormalize, setWaveformNormalize } = useAudioStore();
 
   // Local slider state (controlled)
   const [sliderValue, setSliderValue] = useState(0);
@@ -309,6 +309,26 @@ function App() {
                   <HelpOutline fontSize="small" />
                 </ListItemIcon>
                 <ListItemText>{t('help.title')}</ListItemText>
+              </MenuItem>
+              <MenuItem onClick={() => {
+                setWaveformStyle(waveformStyle === 'modern' ? 'classic' : 'modern');
+              }}>
+                <ListItemIcon>
+                  <GraphicEq fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>
+                  {waveformStyle === 'modern' ? t('menu.waveformClassic') : t('menu.waveformModern')}
+                </ListItemText>
+              </MenuItem>
+              <MenuItem onClick={() => {
+                setWaveformNormalize(!waveformNormalize);
+              }}>
+                <ListItemIcon>
+                  <GraphicEq fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>
+                  {waveformNormalize ? t('menu.normalizeOff') : t('menu.normalizeOn')}
+                </ListItemText>
               </MenuItem>
               <MenuItem onClick={async () => {
                 setMenuAnchorEl(null);

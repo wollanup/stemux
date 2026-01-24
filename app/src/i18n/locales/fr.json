@@ -47,7 +47,7 @@
     "end": "Fin",
     "set": "Définir",
     "setStart": "Début de boucle à ",
-    "setEnd": "Fin de boucle à",
+    "setEnd": "Fin de boucle à ",
     "waitingForEnd": "En attente de la fin, début à",
     "active": "Active",
     "region": "Région",
@@ -75,7 +75,11 @@
   },
   "menu": {
     "title": "Menu",
-    "refresh": "Rafraîchir l'application"
+    "refresh": "Rafraîchir l'application",
+    "waveformModern": "Style moderne",
+    "waveformClassic": "Style classique",
+    "normalizeOn": "Normaliser",
+    "normalizeOff": "Ne pas normaliser"
   },
   "help": {
     "title": "Guide d'utilisation",
