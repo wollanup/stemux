@@ -223,6 +223,7 @@ const WaveformDisplay = ({ track }: WaveformDisplayProps) => {
   return (
     <Box
       ref={containerRef}
+      data-wavesurfer="true"
       sx={{
         position: 'relative',
         width: '100%',

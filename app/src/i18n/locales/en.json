@@ -127,6 +127,8 @@
         "space": "SPACE - Play/Pause",
         "arrowLeft": "← - Rewind 5 seconds (hold for continuous)",
         "arrowRight": "→ - Forward 5 seconds (hold for continuous)",
+        "ctrlWheel": "Ctrl + Wheel - Zoom in/out",
+        "wheel": "Wheel - Horizontal scroll (when zoomed)",
         "more": "More shortcuts coming soon!"
       },
       "tips": {

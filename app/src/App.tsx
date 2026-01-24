@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import {
   Container,
   Box,
@@ -35,6 +35,17 @@ import { useTranslation } from 'react-i18next';
 declare const __APP_VERSION__: string;
 declare const __BUILD_DATE__: string;
 
+// Zoom presets with logarithmic slider positions
+const ZOOM_PRESETS = [
+  { zoom: 0, slider: 0 },
+  { zoom: 1, slider: 5 },
+  { zoom: 5, slider: 20 },
+  { zoom: 10, slider: 40 },
+  { zoom: 50, slider: 60 },
+  { zoom: 250, slider: 80 },
+  { zoom: 500, slider: 100 },
+];
+
 function App() {
   const { t } = useTranslation();
   const { tracks, initAudioContext, showLoopPanel, loopRegion, toggleLoopPanel, zoomLevel, waveformStyle, setWaveformStyle, waveformNormalize, setWaveformNormalize, removeAllTracks } = useAudioStore();
@@ -59,18 +70,7 @@ function App() {
     }
   };
 
-  // Zoom presets with logarithmic slider positions
-  const ZOOM_PRESETS = [
-    { zoom: 0, slider: 0 },
-    { zoom: 1, slider: 5 },
-    { zoom: 5, slider: 20 },
-    { zoom: 10, slider: 40 },
-    { zoom: 50, slider: 60 },
-    { zoom: 250, slider: 80 },
-    { zoom: 500, slider: 100 },
-  ];
-
-  const zoomIn = () => {
+  const zoomIn = useCallback(() => {
     const currentIndex = ZOOM_PRESETS.findIndex(preset => preset.zoom > zoomLevel);
     if (currentIndex !== -1 && currentIndex < ZOOM_PRESETS.length) {
       const nextSlider = ZOOM_PRESETS[currentIndex].slider;
@@ -81,9 +81,9 @@ function App() {
       setSliderValue(100);
       handleZoomChange(100);
     }
-  };
+  }, [zoomLevel]);
 
-  const zoomOut = () => {
+  const zoomOut = useCallback(() => {
     // Find current or next higher preset
     let currentIndex = ZOOM_PRESETS.findIndex(preset => preset.zoom >= zoomLevel);
     if (currentIndex === -1) currentIndex = ZOOM_PRESETS.length - 1;
@@ -92,11 +92,13 @@ function App() {
       setSliderValue(prevSlider);
       handleZoomChange(prevSlider);
     }
-  };
+  }, [zoomLevel]);
+
   const [isLoadingStorage, setIsLoadingStorage] = useState(true);
   const [helpModalOpen, setHelpModalOpen] = useState(false);
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [deleteAllDialogOpen, setDeleteAllDialogOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Show phantom timeline if loop panel is open OR if a loop is active
   const hasActiveLoop = loopRegion.enabled && loopRegion.start < loopRegion.end && loopRegion.end > 0;
@@ -204,6 +206,104 @@ function App() {
     };
     loadApp();
   }, []);
+
+  // Handle Ctrl+Wheel for zooming and normal Wheel for horizontal scroll
+  useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      console.log('🖱️ Wheel event:', {
+        ctrlKey: e.ctrlKey,
+        deltaY: e.deltaY,
+        tracksLength: tracks.length,
+        zoomLevel,
+      });
+
+      // Only handle if there are tracks loaded
+      if (tracks.length === 0) {
+        console.log('❌ No tracks loaded, ignoring');
+        return;
+      }
+
+      // Ctrl+Wheel = Zoom
+      if (e.ctrlKey) {
+        console.log('⌨️ Ctrl+Wheel detected - zooming');
+        e.preventDefault();
+        
+        // deltaY < 0 = scroll up = zoom in
+        // deltaY > 0 = scroll down = zoom out
+        if (e.deltaY < 0) {
+          console.log('🔍 Zoom in');
+          zoomIn();
+        } else {
+          console.log('🔍 Zoom out');
+          zoomOut();
+        }
+      } 
+      // Normal Wheel (without Ctrl) = Horizontal scroll when zoomed
+      else if (zoomLevel > 0) {
+        console.log('↔️ Normal wheel with zoom - horizontal scroll');
+        e.preventDefault();
+        
+        // Get all waveform containers and scroll them
+        const waveformWrappers = document.querySelectorAll('[data-wavesurfer]');
+        console.log('📜 Found waveform containers:', waveformWrappers.length);
+        
+        waveformWrappers.forEach((wrapper) => {
+          // WaveSurfer uses Shadow DOM - find the first child with shadowRoot
+          const firstChild = wrapper.firstElementChild;
+          
+          if (firstChild && firstChild.shadowRoot) {
+            console.log('🌑 Found Shadow DOM');
+            
+            // Find the .scroll element inside Shadow DOM
+            const scrollElement = firstChild.shadowRoot.querySelector('.scroll') as HTMLElement;
+            
+            if (scrollElement) {
+              console.log('✅ Found .scroll element in Shadow DOM:', {
+                scrollLeft: scrollElement.scrollLeft,
+                scrollWidth: scrollElement.scrollWidth,
+                clientWidth: scrollElement.clientWidth,
+                hasScroll: scrollElement.scrollWidth > scrollElement.clientWidth
+              });
+              
+              const currentScroll = scrollElement.scrollLeft;
+              scrollElement.scrollLeft = currentScroll + e.deltaY;
+              console.log('📜 Scrolled from', currentScroll, 'to', scrollElement.scrollLeft);
+            } else {
+              console.log('❌ No .scroll element found in Shadow DOM');
+            }
+          } else {
+            console.log('⚠️ No Shadow DOM found on first child');
+          }
+        });
+      } else {
+        console.log('⚠️ Conditions not met for scroll - zoomLevel:', zoomLevel);
+      }
+    };
+
+    // Add listener with passive: false to allow preventDefault
+    window.addEventListener('wheel', handleWheel, { passive: false });
+    
+    return () => {
+      window.removeEventListener('wheel', handleWheel);
+    };
+  }, [tracks.length, zoomLevel, zoomIn, zoomOut]);
+
+  // Sync slider value with zoomLevel from store
+  useEffect(() => {
+    // Find closest slider value for current zoom level
+    const preset = ZOOM_PRESETS.find(p => p.zoom === zoomLevel);
+    if (preset) {
+      setSliderValue(preset.slider);
+    } else {
+      // Calculate slider position for custom zoom values
+      if (zoomLevel === 0) {
+        setSliderValue(0);
+      } else {
+        const sliderPos = Math.round(Math.log(zoomLevel) / Math.log(2.74) * 20);
+        setSliderValue(Math.min(Math.max(sliderPos, 0), 100));
+      }
+    }
+  }, [zoomLevel]);
 
   return (
     <ThemeProvider theme={theme}>
@@ -405,7 +505,17 @@ function App() {
         </Dialog>
 
         {/* Main content */}
-        <Container maxWidth="xl" sx={{ pt: 10, pb: 10, flex: 1 }}>
+        <Container 
+          ref={containerRef}
+          maxWidth="xl" 
+          sx={{ 
+            pt: 10, 
+            pb: 10, 
+            flex: 1,
+            overflowX: zoomLevel > 0 ? 'auto' : 'visible',
+            overflowY: 'visible',
+          }}
+        >
           {/* Track list or empty state */}
           {isLoadingStorage ? (
             <Box

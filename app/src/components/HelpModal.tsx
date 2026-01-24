@@ -211,6 +211,18 @@ const HelpModal = ({ open, onClose }: HelpModalProps) => {
                 {t('help.sections.keyboard.arrowRight')}
               </Typography>
             </Stack>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Chip label="Ctrl + 🖱️" size="small" />
+              <Typography variant="body2">
+                {t('help.sections.keyboard.ctrlWheel')}
+              </Typography>
+            </Stack>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Chip label="🖱️" size="small" />
+              <Typography variant="body2">
+                {t('help.sections.keyboard.wheel')}
+              </Typography>
+            </Stack>
           </Stack>
           <Typography variant="caption" color="text.secondary" fontStyle="italic">
             {t('help.sections.keyboard.more')}
