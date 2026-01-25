@@ -1,6 +1,7 @@
 import {memo, useEffect, useRef, useState} from 'react';
 import {Box, useTheme} from '@mui/material';
 import WaveSurfer from 'wavesurfer.js';
+import type { WaveSurferOptions } from 'wavesurfer.js';
 import TimelinePlugin from 'wavesurfer.js/dist/plugins/timeline.esm.js';
 import Minimap from 'wavesurfer.js/dist/plugins/minimap.esm.js';
 import type {AudioTrack} from '../types/audio';
@@ -178,6 +179,19 @@ const WaveformDisplay = ({ track }: WaveformDisplayProps) => {
       wavesurfer.setMuted(shouldBeMuted);
       wavesurfer.setVolume(track.volume * useAudioStore.getState().masterVolume);
       wavesurfer.setPlaybackRate(useAudioStore.getState().playbackState.playbackRate, true);
+
+      // Restore zoom level from store
+      const currentZoom = useAudioStore.getState().zoomLevel;
+      if (currentZoom > 0) {
+        wavesurfer.zoom(currentZoom);
+        lastZoomRef.current = currentZoom;
+      }
+
+      // Restore playback position
+      const currentTime = useAudioStore.getState().playbackState.currentTime;
+      if (currentTime > 0) {
+        wavesurfer.setTime(currentTime);
+      }
     });
 
     // Simple click handler - seek only if not in loop edit mode
@@ -279,7 +293,33 @@ const WaveformDisplay = ({ track }: WaveformDisplayProps) => {
       wavesurferRef.current = null;
       wavesurfer.destroy();
     };
-  }, [track.file, track.id, waveformStyle, waveformNormalize, waveformTimeline, waveformMinimap]); // Recreate when settings change
+  }, [track.file, track.id, waveformTimeline, waveformMinimap]); // Only recreate when plugins change
+
+  // Handle waveform style and normalize with setOptions (no recreation needed)
+  useEffect(() => {
+    if (!wavesurferRef.current || !isReady) return;
+
+    const options: Partial<WaveSurferOptions> = {
+      normalize: waveformNormalize,
+    };
+
+    if (waveformStyle === 'modern') {
+      Object.assign(options, {
+        barWidth: 5,
+        barGap: 3,
+        barRadius: 20,
+      });
+    } else {
+      Object.assign(options, {
+        barWidth: undefined,
+        barGap: undefined,
+        barRadius: undefined,
+      });
+    }
+
+    wavesurferRef.current.setOptions(options);
+    logger.debug('🎨 Waveform style updated without recreation');
+  }, [waveformStyle, waveformNormalize, isReady]);
 
   // Handle zoom separately without recreating wavesurfer - THROTTLED with RAF
   useEffect(() => {
