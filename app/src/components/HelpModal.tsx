@@ -167,19 +167,18 @@ const HelpModal = ({ open, onClose }: HelpModalProps) => {
           />
 
           <Typography variant="subtitle1" fontWeight={600} gutterBottom mt={3}>
-            {t('help.sections.loops.setTitle')}
+            {t('help.sections.loops.editTitle')}
           </Typography>
-          <Stack spacing={1} ml={2} mb={2}>
-            <Typography variant="body2">
-              {t('help.sections.loops.setStep1')}
-            </Typography>
-            <Typography variant="body2">
-              {t('help.sections.loops.setStep2')}
-            </Typography>
-            <Typography variant="body2">
-              {t('help.sections.loops.setStep3')}
-            </Typography>
-          </Stack>
+          <Typography variant="body2" color="text.secondary" mb={2}>
+            {t('help.sections.loops.editDesc')}
+          </Typography>
+
+          <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+            {t('help.sections.loops.manageTitle')}
+          </Typography>
+          <Typography variant="body2" color="text.secondary" mb={2}>
+            {t('help.sections.loops.manageDesc')}
+          </Typography>
 
           <Typography variant="subtitle1" fontWeight={600} gutterBottom>
             {t('help.sections.loops.activeTitle')}
@@ -248,10 +247,10 @@ const HelpModal = ({ open, onClose }: HelpModalProps) => {
               💾 {t('help.sections.tips.tip2')}
             </Typography>
             <Typography variant="body2">
-              ⏮️ {t('help.sections.tips.tip3')}
+              🎯 {t('help.sections.tips.tip3')}
             </Typography>
             <Typography variant="body2">
-              🎯 {t('help.sections.tips.tip4')}
+              🖱️ {t('help.sections.tips.tip4')}
             </Typography>
           </Stack>
         </Section>
