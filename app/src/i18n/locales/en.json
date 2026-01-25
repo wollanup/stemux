@@ -29,15 +29,15 @@
         "title": "Keyboard Shortcuts"
       },
       "loops": {
-        "activeDesc": "Click on a loop zone to activate it. The active loop will automatically restart playback when reaching the end. Click it again to deactivate.",
-        "activeTitle": "Activating Loops",
-        "editDesc": "Click 'Edit Mode' to create markers and loops. In edit mode, click anywhere on the waveform to place markers, or drag to create a loop zone directly.",
-        "editTitle": "Edit Mode",
-        "manageDesc": "Open the markers panel (left button in bottom bar) to view all markers and loops. Click on markers to jump to them, use the menu to set loop points, or delete unwanted markers.",
-        "manageTitle": "Managing Markers & Loops",
-        "openDesc": "Click the loop button (top-right corner) to toggle edit mode. You'll see a visual overlay on your waveforms.",
-        "openTitle": "Opening Edit Mode",
-        "title": "Markers & Loop System"
+        "activeDesc": "Click on a loop chip to activate it: playback will automatically jump back to the start when reaching the end. Click again to deactivate.",
+        "activeTitle": "Activating a loop",
+        "editDesc": "Click the 'Edit' icon in the top bar to enter edit mode. In edit mode, click on the waveform to place markers. Click-and-drag to create loops directly. Markers can be repositioned by dragging them.",
+        "editTitle": "Edit mode",
+        "manageDesc": "Markers and loops appear as clickable chips. Click a marker: jump to that position. Click a loop: activate it. Menu (⋮): set as loop start/end or delete. Long-press a marker: create a loop.",
+        "manageTitle": "Managing markers and loops",
+        "openDesc": "Markers (numbered) and loops (colored zones) are displayed directly on the waveform.",
+        "openTitle": "Visualization",
+        "title": "Markers and loops"
       },
       "tips": {
         "tip1": "Click on track names to rename them",
@@ -66,6 +66,19 @@
   },
   "loading": {
     "tracks": "Loading tracks..."
+  },
+  "markers": {
+    "cancelLoopStart": "Cancel loop start",
+    "deleteAllConfirmMessage": "This action will permanently delete all markers ({markerCount}) and all loops ({loopCount}). This action cannot be undone.",
+    "deleteAllConfirmTitle": "Delete all markers and loops?",
+    "deleteAllDialogCancel": "Cancel",
+    "deleteAllDialogConfirm": "Delete all",
+    "deleteLoop": "Delete loop",
+    "deleteMarker": "Delete marker",
+    "loops": "Loops:",
+    "markers": "Markers:",
+    "setLoopEnd": "Set as loop end",
+    "setLoopStart": "Set as loop start"
   },
   "menu": {
     "darkMode": "Dark mode",

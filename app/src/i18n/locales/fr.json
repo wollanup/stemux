@@ -29,15 +29,15 @@
         "title": "Raccourcis clavier"
       },
       "loops": {
-        "activeDesc": "Quand une boucle est active, la lecture retourne automatiquement au début en atteignant la fin. Parfait pour travailler les passages difficiles !",
-        "activeTitle": "Boucle active",
-        "openDesc": "Cliquez sur le bouton de boucle (coin supérieur droit) pour ouvrir les contrôles. La timeline affiche la progression audio.",
-        "openTitle": "Ouvrir le panneau de boucle",
-        "setStep1": "1. Lancez la lecture et cliquez sur 'Marquer début de boucle' au point de départ souhaité",
-        "setStep2": "2. Continuez la lecture et cliquez sur 'Marquer fin de boucle' au point d'arrivée souhaité",
-        "setStep3": "3. La boucle est automatiquement activée. Activez/désactivez-la ou effacez-la avec les contrôles.",
-        "setTitle": "Définir une boucle",
-        "title": "Système de boucle"
+        "activeDesc": "Cliquez sur une boucle pour l'activer : la lecture reprend automatiquement au début en atteignant la fin. Cliquez à nouveau pour désactiver.",
+        "activeTitle": "Activer une boucle",
+        "editDesc": "Cliquez sur l'icône 'Modifier' dans la barre supérieure pour entrer en mode édition. En mode édition, cliquez sur la forme d'onde pour placer des repères. Cliquez-glissez pour créer des boucles directement. Les repères peuvent être déplacés en les glissant.",
+        "editTitle": "Mode édition",
+        "manageDesc": "Les repères et boucles apparaissent sous forme de chips cliquables. Clic sur un repère : aller à cette position. Clic sur une boucle : l'activer. Menu 3 points (⋮) : définir comme début/fin de boucle ou supprimer. Appui long sur un repère : créer une boucle.",
+        "manageTitle": "Gérer les repères et boucles",
+        "openDesc": "Les repères (numérotés) et boucles (plages colorées) s'affichent directement sur la forme d'onde.",
+        "openTitle": "Visualisation",
+        "title": "Repères et boucles"
       },
       "tips": {
         "tip1": "Cliquez sur les noms de pistes pour les renommer",
@@ -66,6 +66,19 @@
   },
   "loading": {
     "tracks": "Chargement des pistes..."
+  },
+  "markers": {
+    "cancelLoopStart": "Annuler début de boucle",
+    "deleteAllConfirmMessage": "Cette action supprimera définitivement tous les repères ({markerCount}) et toutes les boucles ({loopCount}). Cette action est irréversible.",
+    "deleteAllConfirmTitle": "Supprimer tous les repères et boucles ?",
+    "deleteAllDialogCancel": "Annuler",
+    "deleteAllDialogConfirm": "Supprimer tout",
+    "deleteLoop": "Supprimer la boucle",
+    "deleteMarker": "Supprimer le repère",
+    "loops": "Boucles:",
+    "markers": "Repères:",
+    "setLoopEnd": "Définir comme fin de boucle",
+    "setLoopStart": "Définir comme début de boucle"
   },
   "menu": {
     "darkMode": "Mode sombre",

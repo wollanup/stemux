@@ -3,8 +3,10 @@ import { Close, MoreVert, Loop as LoopIcon, Delete, PlayArrow } from '@mui/icons
 import { useAudioStore } from '../hooks/useAudioStore';
 import { useState } from 'react';
 import {logger} from '../utils/logger';
+import { useTranslation } from 'react-i18next';
 
 const MarkersPanel = () => {
+  const { t } = useTranslation();
   const { loopState, removeMarker, removeLoop, seek, createLoop, setActiveLoop, play } = useAudioStore();
   const [menuAnchor, setMenuAnchor] = useState<{ element: HTMLElement; markerId: string } | null>(null);
   const [loopMenuAnchor, setLoopMenuAnchor] = useState<{ element: HTMLElement; loopId: string } | null>(null);
@@ -198,7 +200,7 @@ const MarkersPanel = () => {
       {/* Markers Section */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
         <Typography variant="body2" sx={{ color: 'text.secondary', mr: 1 }}>
-          Repères:
+          {t('markers.markers')}
         </Typography>
         {loopState.markers.map((marker, index) => {
           const isInActiveLoop = loopState.loops.find(
@@ -252,7 +254,7 @@ const MarkersPanel = () => {
       {loopState.loops.length > 0 && (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
           <Typography variant="body2" sx={{ color: 'text.secondary', mr: 1 }}>
-            Boucles:
+            {t('markers.loops')}
           </Typography>
           {loopState.loops.map((loop) => {
             const startNum = getMarkerNumber(loop.startMarkerId);
@@ -292,15 +294,15 @@ const MarkersPanel = () => {
             <LoopIcon fontSize="small" />
           </ListItemIcon>
           <ListItemText>
-            {loopStartMarker === menuAnchor?.markerId ? 'Cancel loop start' : 
-             loopStartMarker ? 'Set as loop end' : 'Set as loop start'}
+            {loopStartMarker === menuAnchor?.markerId ? t('markers.cancelLoopStart') : 
+             loopStartMarker ? t('markers.setLoopEnd') : t('markers.setLoopStart')}
           </ListItemText>
         </MenuItem>
         <MenuItem onClick={() => menuAnchor && handleDelete(menuAnchor.markerId)}>
           <ListItemIcon>
             <Delete fontSize="small" />
           </ListItemIcon>
-          <ListItemText>Delete marker</ListItemText>
+          <ListItemText>{t('markers.deleteMarker')}</ListItemText>
         </MenuItem>
       </Menu>
 
@@ -314,7 +316,7 @@ const MarkersPanel = () => {
           <ListItemIcon>
             <Delete fontSize="small" />
           </ListItemIcon>
-          <ListItemText>Delete loop</ListItemText>
+          <ListItemText>{t('markers.deleteLoop')}</ListItemText>
         </MenuItem>
       </Menu>
 
@@ -323,18 +325,21 @@ const MarkersPanel = () => {
         open={deleteAllDialogOpen}
         onClose={() => setDeleteAllDialogOpen(false)}
       >
-        <DialogTitle>Supprimer tous les repères et boucles ?</DialogTitle>
+        <DialogTitle>{t('markers.deleteAllConfirmTitle')}</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Cette action supprimera définitivement tous les repères ({loopState.markers.length}) et toutes les boucles ({loopState.loops.length}). Cette action est irréversible.
+            {t('markers.deleteAllConfirmMessage', { 
+              markerCount: loopState.markers.length, 
+              loopCount: loopState.loops.length 
+            })}
           </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDeleteAllDialogOpen(false)}>
-            Annuler
+            {t('markers.deleteAllDialogCancel')}
           </Button>
           <Button onClick={handleDeleteAll} color="error" autoFocus>
-            Supprimer tout
+            {t('markers.deleteAllDialogConfirm')}
           </Button>
         </DialogActions>
       </Dialog>
