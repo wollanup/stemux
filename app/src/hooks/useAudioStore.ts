@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { AudioStore, AudioTrack, LoopRegion, Marker, Loop } from '../types/audio';
 import { saveAudioFile, deleteAudioFile, getAllAudioFiles } from '../utils/indexedDB';
 import type WaveSurfer from 'wavesurfer.js';
+import {logger} from '../utils/logger';
 
 const COLORS = [
   '#4ECDC4','#FFA07A','#BB8FCE', '#F7DC6F',
@@ -348,7 +349,7 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
   },
 
   play: () => {
-    console.log('🎵 PLAY called - instances:', wavesurferInstances.size);
+    logger.debug('🎵 PLAY called - instances:', wavesurferInstances.size);
 
     // Clear finished set at the start of each play
     finishedInstances.clear();
@@ -356,7 +357,7 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
     // If loop enabled, seek to loop start before playing
     const { loopRegion } = get();
     if (loopRegion.enabled && loopRegion.start < loopRegion.end && loopRegion.end > 0) {
-      console.log('🔁 Loop enabled, seeking to start:', loopRegion.start);
+      logger.debug('🔁 Loop enabled, seeking to start:', loopRegion.start);
       wavesurferInstances.forEach((ws) => {
         ws.seekTo(loopRegion.start / ws.getDuration());
       });
@@ -366,7 +367,7 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
     const instances = Array.from(wavesurferInstances.entries());
     Promise.all(
       instances.map(([id, ws]) => {
-        console.log('Playing instance:', id);
+        logger.debug('Playing instance:', id);
         return ws.play().catch(err => console.warn('WaveSurfer play error:', err));
       })
     );
@@ -414,7 +415,7 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
       
       // Disable active loop only if seeking outside of it
       if (!preserveLoop && !seekingInsideActiveLoop && state.loopState.activeLoopId) {
-        console.log('🔓 Disabling loop (seeking outside loop)');
+        logger.debug('🔓 Disabling loop (seeking outside loop)');
         updates.loopState = {
           ...state.loopState,
           activeLoopId: null,
@@ -422,7 +423,7 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
         };
         saveLoopV2State(updates.loopState.markers, updates.loopState.loops, null);
       } else if (seekingInsideActiveLoop) {
-        console.log('✅ Keeping loop active (seeking inside loop)');
+        logger.debug('✅ Keeping loop active (seeking inside loop)');
       }
       
       return updates;
@@ -498,7 +499,7 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
   toggleLoopEditMode: () => {
     set((state) => {
       const newEditMode = !state.loopState.editMode;
-      console.log('🎯 Loop edit mode:', newEditMode ? 'ON' : 'OFF');
+      logger.debug('🎯 Loop edit mode:', newEditMode ? 'ON' : 'OFF');
       return {
         loopState: {
           ...state.loopState,
@@ -528,7 +529,7 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
     const newMarkers = [...loopState.markers, newMarker]
       .sort((a, b) => a.time - b.time);
 
-    console.log(`📍 Created marker #${newMarkers.length} at ${newMarker.time.toFixed(2)}s`);
+    logger.debug(`📍 Created marker #${newMarkers.length} at ${newMarker.time.toFixed(2)}s`);
 
     const newLoopState = {
       ...loopState,
@@ -552,7 +553,7 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
     );
 
     loopsToRemove.forEach(loop => {
-      console.log(`🗑️ Removing loop ${loop.id} (uses deleted marker)`);
+      logger.debug(`🗑️ Removing loop ${loop.id} (uses deleted marker)`);
     });
 
     const newMarkers = loopState.markers.filter(m => m.id !== id);
@@ -560,7 +561,7 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
       loop => loop.startMarkerId !== id && loop.endMarkerId !== id
     );
 
-    console.log(`📍 Removed marker ${id}`);
+    logger.debug(`📍 Removed marker ${id}`);
 
     const newLoopState = {
       ...loopState,
@@ -585,7 +586,7 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
         : m
     ).sort((a, b) => a.time - b.time);
 
-    console.log(`📍 Updated marker ${id} to ${time.toFixed(2)}s`);
+    logger.debug(`📍 Updated marker ${id} to ${time.toFixed(2)}s`);
 
     const newLoopState = {
       ...loopState,
@@ -629,7 +630,7 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
       createdAt: Date.now(),
     };
 
-    console.log(`🔁 Created loop ${id} from ${startMarker.time.toFixed(2)}s to ${endMarker.time.toFixed(2)}s`);
+    logger.debug(`🔁 Created loop ${id} from ${startMarker.time.toFixed(2)}s to ${endMarker.time.toFixed(2)}s`);
 
     const newLoopState = {
       ...loopState,
@@ -648,7 +649,7 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
     const { loopState } = get();
     const newLoops = loopState.loops.filter(l => l.id !== id);
 
-    console.log(`🗑️ Removed loop ${id}`);
+    logger.debug(`🗑️ Removed loop ${id}`);
 
     const newLoopState = {
       ...loopState,
@@ -677,7 +678,7 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
         : { ...l, enabled: false }
     );
 
-    console.log(`🔁 Loop ${id} ${newEnabled ? 'ENABLED' : 'DISABLED'}`);
+    logger.debug(`🔁 Loop ${id} ${newEnabled ? 'ENABLED' : 'DISABLED'}`);
 
     const newLoopState = {
       ...loopState,
@@ -694,7 +695,7 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
     if (newEnabled) {
       const startMarker = loopState.markers.find(m => m.id === loop.startMarkerId);
       if (startMarker) {
-        console.log(`⏩ Seeking to loop start: ${startMarker.time.toFixed(2)}s`);
+        logger.debug(`⏩ Seeking to loop start: ${startMarker.time.toFixed(2)}s`);
         seek(startMarker.time);
       }
     }
@@ -708,7 +709,7 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
       enabled: l.id === id,
     }));
 
-    console.log(`🔁 Active loop set to: ${id || 'NONE'}`);
+    logger.debug(`🔁 Active loop set to: ${id || 'NONE'}`);
 
     const newLoopState = {
       ...loopState,
@@ -818,7 +819,7 @@ export const markTrackFinished = (trackId: string) => {
                       finishedInstances.size === wavesurferInstances.size;
 
   if (allFinished) {
-    console.log('🏁 All tracks finished playing');
+    logger.debug('🏁 All tracks finished playing');
     const { loopRegion, pause, seek } = useAudioStore.getState();
     if (!loopRegion.enabled) {
       pause();

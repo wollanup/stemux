@@ -2,6 +2,7 @@ import { Box, IconButton, Typography, Chip, Menu, MenuItem, ListItemIcon, ListIt
 import { Close, MoreVert, Loop as LoopIcon, Delete, PlayArrow } from '@mui/icons-material';
 import { useAudioStore } from '../hooks/useAudioStore';
 import { useState } from 'react';
+import {logger} from '../utils/logger';
 
 const MarkersPanel = () => {
   const { loopState, removeMarker, removeLoop, seek, createLoop, setActiveLoop, play } = useAudioStore();
@@ -31,11 +32,11 @@ const MarkersPanel = () => {
     if (loopStartMarker === null) {
       // First click: set as loop start
       setLoopStartMarker(markerId);
-      console.log('🔁 Loop start marker set:', markerId);
+      logger.debug('🔁 Loop start marker set:', markerId);
     } else if (loopStartMarker === markerId) {
       // Same marker clicked twice: cancel
       setLoopStartMarker(null);
-      console.log('❌ Loop start marker cancelled');
+      logger.debug('❌ Loop start marker cancelled');
     } else {
       // Second click: create loop
       const markers = [...loopState.markers].sort((a, b) => a.time - b.time);
@@ -52,10 +53,10 @@ const MarkersPanel = () => {
       );
       
       if (existingLoop) {
-        console.log('⚠️ Identical loop already exists, skipping creation');
+        logger.debug('⚠️ Identical loop already exists, skipping creation');
       } else {
         createLoop(start, end);
-        console.log('✅ Loop created:', start, '→', end);
+        logger.debug('✅ Loop created:', start, '→', end);
       }
       
       setLoopStartMarker(null);

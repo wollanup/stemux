@@ -1,7 +1,7 @@
 import { Button, Snackbar, Alert } from '@mui/material';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { useTranslation } from 'react-i18next';
-
+import {logger} from '../utils/logger';
 export function PWAUpdatePrompt() {
   const { t } = useTranslation();
   
@@ -10,7 +10,7 @@ export function PWAUpdatePrompt() {
     updateServiceWorker,
   } = useRegisterSW({
     onRegistered(r: ServiceWorkerRegistration | undefined) {
-      console.log('SW Registered: ' + r);
+      logger.debug('SW Registered: ' + r);
       // Check for updates every hour
       if (r) {
         setInterval(() => {
@@ -19,7 +19,7 @@ export function PWAUpdatePrompt() {
       }
     },
     onRegisterError(error: Error) {
-      console.log('SW registration error', error);
+      logger.debug('SW registration error', error);
     },
   });
 

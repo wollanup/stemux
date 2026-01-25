@@ -49,6 +49,7 @@ import {PWAUpdatePrompt} from './components/PWAUpdatePrompt';
 import {StemuxIcon} from './components/StemuxIcon';
 import HelpModal from './components/HelpModal';
 import {useTranslation} from 'react-i18next';
+import {logger} from './utils/logger';
 
 declare const __APP_VERSION__: string;
 declare const __BUILD_DATE__: string;
@@ -282,14 +283,14 @@ function App() {
               const currentScroll = scrollElement.scrollLeft;
               scrollElement.scrollLeft = currentScroll + e.deltaY;
             } else {
-              console.log('❌ No .scroll element found in Shadow DOM');
+              logger.debug('❌ No .scroll element found in Shadow DOM');
             }
           } else {
-            console.log('⚠️ No Shadow DOM found on first child');
+            logger.debug('⚠️ No Shadow DOM found on first child');
           }
         });
       } else {
-        console.log('⚠️ Conditions not met for scroll - zoomLevel:', zoomLevel);
+        logger.debug('⚠️ Conditions not met for scroll - zoomLevel:', zoomLevel);
       }
     };
 

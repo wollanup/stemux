@@ -7,6 +7,7 @@ import type {AudioTrack} from '../types/audio';
 import {markTrackFinished, registerWavesurfer, unregisterWavesurfer, useAudioStore} from '../hooks/useAudioStore';
 import {setPlaybackTime} from '../hooks/usePlaybackTime';
 import {getWaveSurferElement, injectMarkersAndLoops, setupEditModeInteractions} from '../utils/shadowDomLoopRenderer';
+import {logger} from '../utils/logger';
 
 interface WaveformDisplayProps {
   track: AudioTrack;
@@ -115,7 +116,7 @@ const WaveformDisplay = ({ track }: WaveformDisplayProps) => {
             const endMarker = loopState.markers.find(m => m.id === activeLoop.endMarkerId);
 
             if (startMarker && endMarker && currentTime >= endMarker.time) {
-              console.log(`🔁 Loop v2 end reached (${endMarker.time.toFixed(2)}s), seeking back to ${startMarker.time.toFixed(2)}s`);
+              logger.debug(`🔁 Loop v2 end reached (${endMarker.time.toFixed(2)}s), seeking back to ${startMarker.time.toFixed(2)}s`);
               seekRef.current(startMarker.time);
             }
           }
@@ -123,7 +124,7 @@ const WaveformDisplay = ({ track }: WaveformDisplayProps) => {
           // Fallback to old loop system
           const { loopRegion } = useAudioStore.getState();
           if (loopRegion.enabled && loopRegion.start < loopRegion.end && currentTime >= loopRegion.end) {
-            console.log('🔁 Loop end reached, seeking back to:', loopRegion.start);
+            logger.debug('🔁 Loop end reached, seeking back to:', loopRegion.start);
             seekRef.current(loopRegion.start);
           }
         }
@@ -134,7 +135,7 @@ const WaveformDisplay = ({ track }: WaveformDisplayProps) => {
 
     // Detect when playback finishes
     wavesurfer.on('finish', () => {
-      console.log('🏁 Playback finished for track:', track.id);
+      logger.debug('🏁 Playback finished for track:', track.id);
       markTrackFinished(track.id);
     });
 
@@ -185,13 +186,13 @@ const WaveformDisplay = ({ track }: WaveformDisplayProps) => {
       
       // Don't seek if in edit mode (handled by LoopEditorOverlay)
       if (loopState.editMode) {
-        console.log('🚫 Click ignored (edit mode active)');
+        logger.debug('🚫 Click ignored (edit mode active)');
         return;
       }
 
       // Clicking on waveform always disables any active loop
       if (loopState.activeLoopId) {
-        console.log('🔓 Disabling loop on waveform click');
+        logger.debug('🔓 Disabling loop on waveform click');
         setActiveLoop(null);
       }
 

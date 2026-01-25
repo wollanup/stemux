@@ -3,6 +3,7 @@ import { Box } from '@mui/material';
 import { useAudioStore } from '../hooks/useAudioStore';
 import MarkerLine from './MarkerLine';
 import LoopZone from './LoopZone';
+import {logger} from '../utils/logger';
 
 interface LoopEditorOverlayProps {
   containerRef: React.RefObject<HTMLDivElement | null>;
@@ -110,7 +111,7 @@ const LoopEditorOverlay = ({ containerRef }: LoopEditorOverlayProps) => {
 
     const time = pixelToTime(e.clientX);
 
-    console.log(`🖱️ Mouse down at ${time.toFixed(2)}s`);
+    logger.debug(`🖱️ Mouse down at ${time.toFixed(2)}s`);
 
     setDragStart(time);
     setDragCurrent(time);
@@ -133,11 +134,11 @@ const LoopEditorOverlay = ({ containerRef }: LoopEditorOverlayProps) => {
 
     const distance = Math.abs(endTime - dragStart);
 
-    console.log(`🖱️ Mouse up: distance = ${distance.toFixed(2)}s`);
+    logger.debug(`🖱️ Mouse up: distance = ${distance.toFixed(2)}s`);
 
     // If very small drag (< 0.5s), create single marker
     if (distance < 0.5) {
-      console.log('📍 Creating single marker');
+      logger.debug('📍 Creating single marker');
       addMarker(dragStart);
     } else {
       // Create 2 markers and a loop
@@ -145,7 +146,7 @@ const LoopEditorOverlay = ({ containerRef }: LoopEditorOverlayProps) => {
         ? [dragStart, endTime]
         : [endTime, dragStart];
 
-      console.log(`🔁 Creating loop from ${start.toFixed(2)}s to ${end.toFixed(2)}s`);
+      logger.debug(`🔁 Creating loop from ${start.toFixed(2)}s to ${end.toFixed(2)}s`);
 
       const startMarkerId = addMarker(start);
       const endMarkerId = addMarker(end);
@@ -164,7 +165,7 @@ const LoopEditorOverlay = ({ containerRef }: LoopEditorOverlayProps) => {
   const handleMarkerClick = (id: string) => {
     const marker = loopState.markers.find(m => m.id === id);
     if (marker && !loopState.editMode) {
-      console.log(`📍 Seeking to marker at ${marker.time.toFixed(2)}s`);
+      logger.debug(`📍 Seeking to marker at ${marker.time.toFixed(2)}s`);
       seek(marker.time);
     }
   };
@@ -172,7 +173,7 @@ const LoopEditorOverlay = ({ containerRef }: LoopEditorOverlayProps) => {
   // Handle loop click (toggle enable/disable)
   const handleLoopClick = (id: string) => {
     if (!loopState.editMode) {
-      console.log(`🔁 Toggling loop ${id}`);
+      logger.debug(`🔁 Toggling loop ${id}`);
       toggleLoopById(id);
     }
   };

@@ -1,6 +1,8 @@
 import {useAudioStore} from '../hooks/useAudioStore';
 import type {LoopState, PlaybackState} from '../types/audio';
 import {alpha, type Theme} from '@mui/material/styles';
+import {logger} from './logger.ts';
+
 // Find Shadow DOM wrapper element
 export const getShadowWrapper = (containerRef: React.RefObject<HTMLDivElement>): HTMLElement | null => {
     if (!containerRef.current) return null;
@@ -98,7 +100,7 @@ export const injectMarkersAndLoops = (
             // Click to activate loop and start playback from loop start
             loopDiv.addEventListener('click', (e) => {
                 e.stopPropagation();
-                console.log(`🔁 Loop zone clicked: ${loop.id}`);
+                logger.debug(`🔁 Loop zone clicked: ${loop.id}`);
 
                 const {setActiveLoop, play, seek} = useAudioStore.getState();
 
@@ -220,7 +222,7 @@ export const setupEditModeInteractions = (
         const percent = (relativeX / totalWidth) * 100;
         const calculatedTime = (percent / 100) * duration;
         
-        console.log('🔍 getTimeFromEvent:', {
+        logger.debug('🔍 getTimeFromEvent:', {
             clientX: e.clientX,
             scrollRectLeft: scrollRect.left.toFixed(1),
             scrollLeft,
@@ -255,14 +257,14 @@ export const setupEditModeInteractions = (
         const markerId = findMarkerAtTime(time);
 
         if (markerId) {
-            console.log(`🎯 Dragging existing marker: ${markerId}`);
+            logger.debug(`🎯 Dragging existing marker: ${markerId}`);
             draggedMarkerId = markerId;
             dragStartTime = time;
             isDragging = true;
             isDraggingRef.current = true;
             editLayer.setPointerCapture(e.pointerId);
         } else {
-            console.log(`🖱️ Start at ${time.toFixed(2)}s (new marker/loop)`);
+            logger.debug(`🖱️ Start at ${time.toFixed(2)}s (new marker/loop)`);
             dragStartTime = time;
             isDragging = true;
             isDraggingRef.current = true;
@@ -335,7 +337,7 @@ export const setupEditModeInteractions = (
 
         // If we were dragging a marker, update the store NOW
         if (draggedMarkerId) {
-            console.log(`✅ Marker ${draggedMarkerId} moved to ${endTime.toFixed(2)}s`);
+            logger.debug(`✅ Marker ${draggedMarkerId} moved to ${endTime.toFixed(2)}s`);
             useAudioStore.getState().updateMarkerTime(draggedMarkerId, endTime);
             draggedMarkerId = null;
             isDragging = false;
@@ -344,14 +346,14 @@ export const setupEditModeInteractions = (
             return;
         }
 
-        console.log(`🖱️ End: distance = ${distance.toFixed(2)}s`);
+        logger.debug(`🖱️ End: distance = ${distance.toFixed(2)}s`);
 
         // Create marker or loop
         if (distance < 0.5) {
-            console.log('📍 Creating single marker');
+            logger.debug('📍 Creating single marker');
             useAudioStore.getState().addMarker(dragStartTime);
         } else {
-            console.log('🔁 Creating loop');
+            logger.debug('🔁 Creating loop');
             const start = Math.min(dragStartTime, endTime);
             const end = Math.max(dragStartTime, endTime);
 
