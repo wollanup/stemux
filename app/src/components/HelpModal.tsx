@@ -89,7 +89,7 @@ const HelpModal = ({ open, onClose }: HelpModalProps) => {
       <DialogContent dividers>
         {/* Welcome */}
         <Section title={t('help.sections.welcome.title')}>
-          <Typography variant="body1" paragraph>
+          <Typography variant="body1" >
             {t('help.sections.welcome.description')}
           </Typography>
         </Section>
@@ -101,14 +101,14 @@ const HelpModal = ({ open, onClose }: HelpModalProps) => {
           <Typography variant="subtitle1" fontWeight={600} gutterBottom>
             {t('help.sections.basics.uploadTitle')}
           </Typography>
-          <Typography variant="body2" paragraph color="text.secondary">
+          <Typography variant="body2"  color="text.secondary">
             {t('help.sections.basics.uploadDesc')}
           </Typography>
 
           <Typography variant="subtitle1" fontWeight={600} gutterBottom mt={2}>
             {t('help.sections.basics.playbackTitle')}
           </Typography>
-          <Typography variant="body2" paragraph color="text.secondary">
+          <Typography variant="body2"  color="text.secondary">
             {t('help.sections.basics.playbackDesc')}
           </Typography>
         </Section>
