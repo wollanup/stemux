@@ -81,39 +81,8 @@ export const injectMarkersAndLoops = (
         loopDiv.style.borderColor = isActiveLoop ? primaryColor : "transparent";
         // loopDiv.style.borderRadius = '6px';
         loopDiv.style.zIndex = '5';
-        loopDiv.style.pointerEvents = loopState.editMode ? 'none' : 'auto';
-        loopDiv.style.cursor = loopState.editMode ? 'default' : 'pointer';
+        loopDiv.style.pointerEvents = 'none';
         loopDiv.style.transition = 'background-color 0.2s, border-color 0.2s, transform 0.1s';
-
-        // Add hover effect (only in standard mode)
-        if (!loopState.editMode) {
-            loopDiv.addEventListener('mouseenter', () => {
-                loopDiv.style.backgroundColor = isActiveLoop ?`${alpha(primaryColor, 0.35)}` : `${alpha(primaryColor, 0.25)}`
-                // loopDiv.style.transform = 'scaleY(1.05)';
-            });
-
-            loopDiv.addEventListener('mouseleave', () => {
-                loopDiv.style.backgroundColor = `${alpha(greyColor, 0.2)}`
-                // loopDiv.style.transform = 'scaleY(1)';
-            });
-
-            // Click to activate loop and start playback from loop start
-            loopDiv.addEventListener('click', (e) => {
-                e.stopPropagation();
-                logger.debug(`🔁 Loop zone clicked: ${loop.id}`);
-
-                const {setActiveLoop, play, seek} = useAudioStore.getState();
-
-                // Always activate this loop (disable others)
-                setActiveLoop(loop.id);
-
-                // Seek to loop start
-                seek(startMarker.time);
-
-                // Always start playback
-                play();
-            });
-        }
 
         wrapper.appendChild(loopDiv);
     });
@@ -201,8 +170,12 @@ export const setupEditModeInteractions = (
 
     // Helper: Find marker at given time
     const findMarkerAtTime = (time: number): string | null => {
-        const threshold = duration * 0.02; // 2% tolerance
-        const marker = loopState.markers.find(m => Math.abs(m.time - time) < threshold);
+        // Fixed pixel threshold (10px on each side)
+        const pixelThreshold = 10;
+        const totalWidth = wrapper.scrollWidth;
+        const timeThreshold = (pixelThreshold / totalWidth) * duration;
+        
+        const marker = loopState.markers.find(m => Math.abs(m.time - time) < timeThreshold);
         return marker?.id || null;
     };
 

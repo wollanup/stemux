@@ -50,12 +50,12 @@ const WaveformDisplay = ({ track }: WaveformDisplayProps) => {
 
     // Create plugins array
     const plugins = [];
-    
+
     // Add timeline if enabled
     if (waveformTimeline) {
       plugins.push(TimelinePlugin.create());
     }
-    
+
     // Add minimap if enabled
     let minimapInstance = null;
     if (waveformMinimap) {
@@ -158,10 +158,10 @@ const WaveformDisplay = ({ track }: WaveformDisplayProps) => {
 
       // Find Shadow DOM and inject markers/loops
       const wsElement = getWaveSurferElement(containerRef);
-      
+
       if (wsElement && wsElement.shadowRoot) {
         const wrapper = wsElement.shadowRoot.querySelector('.wrapper') as HTMLElement;
-        
+
         if (wrapper) {
           // Inject markers and loops using external module
           injectMarkersAndLoops(wsElement, loopState, playbackState, theme);
@@ -197,8 +197,8 @@ const WaveformDisplay = ({ track }: WaveformDisplayProps) => {
     // Simple click handler - seek only if not in loop edit mode
     wavesurfer.on('click', (progress) => {
       const { loopState, setActiveLoop } = useAudioStore.getState();
-      
-      // Don't seek if in edit mode (handled by LoopEditorOverlay)
+
+      // Don't seek if in edit mode (handled by loop editor overlay)
       if (loopState.editMode) {
         logger.debug('🚫 Click ignored (edit mode active)');
         return;
@@ -219,16 +219,16 @@ const WaveformDisplay = ({ track }: WaveformDisplayProps) => {
     if (minimapInstance) {
       minimapInstance.on('click', () => {
         const { loopState, setActiveLoop } = useAudioStore.getState();
-        
+
         // The minimap already updated its own track automatically
         // We just need to sync to OTHER tracks
         const newTime = wavesurfer.getCurrentTime();
-        
+
         // Disable active loop when seeking
         if (loopState.activeLoopId) {
           setActiveLoop(null);
         }
-        
+
         // Sync all tracks (including this one, but it's already at the right position)
         seek(newTime);
       });
@@ -254,13 +254,13 @@ const WaveformDisplay = ({ track }: WaveformDisplayProps) => {
     const handleTouchMove = (e: TouchEvent) => {
       if (e.touches.length === 2 && initialPinchDistance && initialZoomLevel !== null) {
         e.preventDefault(); // Prevent browser zoom
-        
+
         const currentDistance = getTouchDistance(e.touches[0], e.touches[1]);
         const scale = currentDistance / initialPinchDistance;
-        
+
         // Calculate new zoom level (scale from initial)
         const newZoom = Math.max(0, Math.min(500, initialZoomLevel * scale));
-        
+
         useAudioStore.setState({ zoomLevel: newZoom });
       }
     };
@@ -281,14 +281,14 @@ const WaveformDisplay = ({ track }: WaveformDisplayProps) => {
 
     return () => {
       setIsReady(false);
-      
+
       // Cleanup pinch-to-zoom listeners
       if (scrollElement) {
         scrollElement.removeEventListener('touchstart', handleTouchStart);
         scrollElement.removeEventListener('touchmove', handleTouchMove);
         scrollElement.removeEventListener('touchend', handleTouchEnd);
       }
-      
+
       unregisterWavesurfer(track.id);
       wavesurferRef.current = null;
       wavesurfer.destroy();
@@ -324,15 +324,15 @@ const WaveformDisplay = ({ track }: WaveformDisplayProps) => {
   // Handle zoom separately without recreating wavesurfer - THROTTLED with RAF
   useEffect(() => {
     if (!wavesurferRef.current || !isReady) return;
-    
+
     // Skip if already at this zoom level
     if (lastZoomRef.current === zoomLevel) return;
-    
+
     // Cancel any pending zoom
     if (zoomRafRef.current !== null) {
       cancelAnimationFrame(zoomRafRef.current);
     }
-    
+
     // Schedule zoom on next animation frame (throttles to ~60fps)
     zoomRafRef.current = requestAnimationFrame(() => {
       if (wavesurferRef.current) {
@@ -341,7 +341,7 @@ const WaveformDisplay = ({ track }: WaveformDisplayProps) => {
       }
       zoomRafRef.current = null;
     });
-    
+
     return () => {
       if (zoomRafRef.current !== null) {
         cancelAnimationFrame(zoomRafRef.current);
@@ -369,7 +369,7 @@ const WaveformDisplay = ({ track }: WaveformDisplayProps) => {
     if (isDraggingRef.current) {
       return; // Don't re-inject while dragging
     }
-    
+
     const wsElement = getWaveSurferElement(containerRef);
     if (!wsElement) return;
 
@@ -402,7 +402,7 @@ const WaveformDisplay = ({ track }: WaveformDisplayProps) => {
   // Toggle WaveSurfer interact option based on edit mode
   useEffect(() => {
     if (!wavesurferRef.current || !isReady) return;
-    
+
     const interact = !loopState.editMode; // Disable interact in edit mode
     wavesurferRef.current.setOptions({ interact });
   }, [loopState.editMode, isReady]);

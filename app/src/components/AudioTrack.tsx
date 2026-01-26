@@ -27,10 +27,10 @@ interface AudioTrackProps {
 
 const AudioTrack = ({ track }: AudioTrackProps) => {
   const { t } = useTranslation();
-  const { 
-    setVolume, 
-    toggleMute, 
-    toggleSolo, 
+  const {
+    setVolume,
+    toggleMute,
+    toggleSolo,
     exclusiveSolo,
     unmuteAll,
     removeTrack,
@@ -38,23 +38,23 @@ const AudioTrack = ({ track }: AudioTrackProps) => {
     updateTrack,
     loopState,
 } = useAudioStore();
-  
+
   // Check if any track has solo enabled
   const hasSolo = tracks.some((t) => t.isSolo);
   const isInactive = hasSolo && !track.isSolo;
-  
+
   // Track name editing
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(track.name);
   // Volume state: use drag value when dragging, otherwise sync with track.volume
   const [isDraggingVolume, setIsDraggingVolume] = useState(false);
   const [dragVolume, setDragVolume] = useState(track.volume * 100);
-  
+
   // Throttled volume update (max 20 updates/sec = 50ms)
   const throttledSetVolume = useThrottle((id: string, volume: number) => {
     setVolume(id, volume);
   }, 50);
-  
+
   const localVolume = isDraggingVolume ? dragVolume : track.volume * 100;
 
   // Ref for waveform container (for overlay positioning)
@@ -79,12 +79,12 @@ const AudioTrack = ({ track }: AudioTrackProps) => {
     if (soloTimerRef.current) {
       clearTimeout(soloTimerRef.current);
     }
-    
+
     if (soloStartTimeRef.current === -1) {
       soloStartTimeRef.current = 0;
       return;
     }
-    
+
     const pressDuration = Date.now() - soloStartTimeRef.current;
     if (pressDuration < 500) {
       if (track.isMuted) {
@@ -92,7 +92,7 @@ const AudioTrack = ({ track }: AudioTrackProps) => {
       }
       toggleSolo(track.id);
     }
-    
+
     soloStartTimeRef.current = 0;
   };
 
@@ -108,12 +108,12 @@ const AudioTrack = ({ track }: AudioTrackProps) => {
     if (muteTimerRef.current) {
       clearTimeout(muteTimerRef.current);
     }
-    
+
     if (muteStartTimeRef.current === -1) {
       muteStartTimeRef.current = 0;
       return;
     }
-    
+
     const pressDuration = Date.now() - muteStartTimeRef.current;
     if (pressDuration < 500) {
       if (track.isSolo) {
@@ -121,7 +121,7 @@ const AudioTrack = ({ track }: AudioTrackProps) => {
       }
       toggleMute(track.id);
     }
-    
+
     muteStartTimeRef.current = 0;
   };
 
@@ -190,13 +190,13 @@ const AudioTrack = ({ track }: AudioTrackProps) => {
               sx={{ flex: 1 }}
             />
           ) : (
-            <Typography 
-              variant="subtitle1" 
-              fontWeight={600} 
-              noWrap 
+            <Typography
+              variant="subtitle1"
+              fontWeight={600}
+              noWrap
               flex={1}
               onClick={handleStartEditName}
-              sx={{ 
+              sx={{
                 cursor: 'pointer',
                 '&:hover': {
                   color: 'primary.main',
@@ -219,9 +219,6 @@ const AudioTrack = ({ track }: AudioTrackProps) => {
         {/* Waveform */}
         <Box mb={1.5} ref={waveformContainerRef} sx={{ position: 'relative' }}>
           <WaveformDisplay track={track} trackId={track.id} />
-          
-          {/* Loop editor overlay - DISABLED for Shadow DOM testing */}
-          {/* <LoopEditorOverlay containerRef={waveformContainerRef} /> */}
         </Box>
 
         {/* Controls */}
@@ -300,11 +297,11 @@ const AudioTrack = ({ track }: AudioTrackProps) => {
           <Button onClick={() => setDeleteDialogOpen(false)}>
             {t('track.cancelButton')}
           </Button>
-          <Button 
+          <Button
             onClick={() => {
               removeTrack(track.id);
               setDeleteDialogOpen(false);
-            }} 
+            }}
             color="error"
             variant="contained"
           >
