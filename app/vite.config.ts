@@ -7,9 +7,18 @@ const getGitInfo = () => {
   try {
     const commit = execSync('git rev-parse --short HEAD').toString().trim()
     const date = execSync('git log -1 --format=%ci').toString().trim()
-    return { commit, date }
+    
+    // Try to get current tag
+    let tag = ''
+    try {
+      tag = execSync('git describe --tags --exact-match 2>/dev/null').toString().trim()
+    } catch {
+      // No tag on current commit, that's fine
+    }
+    
+    return { commit, date, tag }
   } catch {
-    return { commit: 'dev', date: new Date().toISOString() }
+    return { commit: 'dev', date: new Date().toISOString(), tag: '' }
   }
 }
 
@@ -18,7 +27,7 @@ const gitInfo = getGitInfo()
 // https://vite.dev/config/
 export default defineConfig({
   define: {
-    '__APP_VERSION__': JSON.stringify(gitInfo.commit),
+    '__APP_VERSION__': JSON.stringify(gitInfo.tag || gitInfo.commit),
     '__BUILD_DATE__': JSON.stringify(gitInfo.date),
   },
   plugins: [
