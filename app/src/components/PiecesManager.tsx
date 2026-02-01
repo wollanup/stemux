@@ -107,6 +107,8 @@ const PiecesManager = ({ open, onClose }: PiecesManagerProps) => {
     if (open) {
       loadData();
     }
+    // loadData is stable and doesn't need to be in deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, currentPieceId]);
 
   const handleCreatePiece = async () => {

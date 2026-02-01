@@ -26,6 +26,7 @@ const COLORS = [
 ];
 
 // Save track settings to piece settings (no longer localStorage)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const saveTrackSettingsToPiece = async (pieceId: string, tracks: AudioTrack[], loopState: any, playbackRate: number, masterVolume: number) => {
   const settings: PieceSettings = {
     trackSettings: tracks.map(t => ({
@@ -1104,7 +1105,7 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
 
     for (const piece of pieces) {
       let totalSize = 0;
-      let maxDuration = 0;
+      const maxDuration = 0;
 
       // Calculate size and duration
       for (const trackId of piece.trackIds) {

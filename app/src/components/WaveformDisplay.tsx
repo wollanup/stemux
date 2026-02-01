@@ -18,6 +18,7 @@ interface WaveformDisplayProps {
 const WaveformDisplay = ({ track }: WaveformDisplayProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const wavesurferRef = useRef<WaveSurfer | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const minimapRef = useRef<any>(null);
   const [isReady, setIsReady] = useState(false);
   const isDraggingRef = useRef(false);

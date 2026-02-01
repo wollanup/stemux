@@ -50,7 +50,10 @@ import {useTranslation} from 'react-i18next';
 import {logger} from './utils/logger';
 import TopBar from "./components/TopBar.tsx";
 
+// Declarations for version info (defined by Vite, may be used later)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 declare const __APP_VERSION__: string;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 declare const __BUILD_DATE__: string;
 
 // Zoom presets with logarithmic slider positions

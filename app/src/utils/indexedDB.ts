@@ -223,7 +223,8 @@ export const getPieceSettings = async (id: string): Promise<PieceSettings | null
     request.onsuccess = () => {
       const result = request.result;
       if (result) {
-        const { id, ...settings } = result;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { id: _id, ...settings } = result;
         resolve(settings as PieceSettings);
       } else {
         resolve(null);
