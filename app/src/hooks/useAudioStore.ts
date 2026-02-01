@@ -1369,7 +1369,7 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
     const newTrack: AudioTrack = {
       id,
       name,
-      volume: 1.0, // Max volume for recordings (normalized)
+      volume: 0.8, // Default volume for recordings
       isMuted: false,
       isSolo: false,
       color,
