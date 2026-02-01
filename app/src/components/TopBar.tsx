@@ -122,8 +122,8 @@ const TopBar = ({
           <StemuxIcon size={28} />
         </Box>
         
-        {/* Title with pieces menu */}
-        {currentPieceName ? (
+        {/* Mobile: Title with pieces menu */}
+        {isMobile && currentPieceName ? (
           <>
             <Button
               color="inherit"
@@ -131,7 +131,7 @@ const TopBar = ({
               endIcon={<KeyboardArrowDown />}
               sx={{ 
                 textTransform: 'none',
-                p: isMobile ? 0.5 : 1,
+                p: 0.5,
               }}
             >
               <Typography variant="body1" component="span">
@@ -146,14 +146,12 @@ const TopBar = ({
               transformOrigin={{ vertical: 'top', horizontal: 'left' }}
             >
               {/* Current piece name (mobile only) */}
-              {isMobile && (
-                <MenuItem disabled>
-                  <ListItemText 
-                    primary={currentPieceName}
-                    slotProps={{ primary: { sx: { fontWeight: 'bold' } } }}
-                  />
-                </MenuItem>
-              )}
+              <MenuItem disabled>
+                <ListItemText 
+                  primary={currentPieceName}
+                  slotProps={{ primary: { sx: { fontWeight: 'bold' } } }}
+                />
+              </MenuItem>
               
               <MenuItem
                 onClick={() => {
@@ -181,10 +179,56 @@ const TopBar = ({
               ))}
             </Menu>
           </>
-        ) : (
+        ) : !isMobile ? (
           <Typography variant="body1" component="div">
             Stemux
           </Typography>
+        ) : null}
+
+        {/* Desktop: Piece name with menu */}
+        {!isMobile && currentPieceName && (
+          <>
+            <Button
+              color="inherit"
+              onClick={handleOpenPiecesMenu}
+              endIcon={<KeyboardArrowDown />}
+              sx={{ ml: 2, textTransform: 'none' }}
+            >
+              {currentPieceName}
+            </Button>
+            <Menu
+              anchorEl={piecesMenuAnchorEl}
+              open={Boolean(piecesMenuAnchorEl)}
+              onClose={() => setPiecesMenuAnchorEl(null)}
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+              transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+            >
+              <MenuItem
+                onClick={() => {
+                  setPiecesMenuAnchorEl(null);
+                  onOpenPiecesManager();
+                }}
+              >
+                <ListItemIcon>
+                  <Settings fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>{t('menu.pieces')}</ListItemText>
+              </MenuItem>
+              
+              {recentPieces.length > 0 && <MenuItem disabled sx={{ opacity: 0.6 }}>
+                <ListItemText
+                  primary={t('pieces.recentPieces')}
+                  slotProps={{ primary: { variant: 'caption', color: 'text.secondary' } }}
+                />
+              </MenuItem>}
+              
+              {recentPieces.map((piece) => (
+                <MenuItem key={piece.id} onClick={() => handleLoadPiece(piece.id)}>
+                  <ListItemText primary={piece.name} />
+                </MenuItem>
+              ))}
+            </Menu>
+          </>
         )}
 
         <Box sx={{ flexGrow: 1 }} />
