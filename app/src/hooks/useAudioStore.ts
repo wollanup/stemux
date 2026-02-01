@@ -84,7 +84,7 @@ const loadLoopV2State = () => {
 };
 
 // WaveSurfer instances registry (outside Zustand to avoid re-renders)
-const wavesurferInstances = new Map<string, WaveSurfer>();
+export const wavesurferInstances = new Map<string, WaveSurfer>();
 
 // Track which instances have finished playing
 const finishedInstances = new Set<string>();
@@ -507,6 +507,16 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
     const instances = Array.from(wavesurferInstances.entries());
     Promise.all(
       instances.map(([id, ws]) => {
+        // Skip if track has already finished (currentTime >= duration)
+        const currentTime = ws.getCurrentTime();
+        const duration = ws.getDuration();
+        
+        if (currentTime >= duration) {
+          logger.debug('Skipping finished instance:', id, `(${currentTime.toFixed(2)}s >= ${duration.toFixed(2)}s)`);
+          finishedInstances.add(id); // Mark as finished
+          return Promise.resolve();
+        }
+        
         logger.debug('Playing instance:', id);
         return ws.play().catch(err => console.warn('WaveSurfer play error:', err));
       })

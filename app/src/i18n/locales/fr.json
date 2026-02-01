@@ -180,6 +180,20 @@
     "addRecordableTrack": "Ajouter piste d'enregistrement",
     "count": "{{current}}/{{max}} pistes"
   },
+  "recordingGuide": {
+    "title": "Guide d'enregistrement",
+    "intro": "Pour enregistrer avec votre microphone, deux autorisations sont nécessaires.",
+    "stepsTitle": "Étapes à suivre :",
+    "step1Title": "1. Autorisation de l'appareil",
+    "step1Description": "Votre appareil (Android/iOS) doit autoriser Chrome/Safari à accéder au microphone. Vérifiez dans Paramètres → Applications → Chrome → Autorisations.",
+    "step2Title": "2. Autorisation du site",
+    "step2Description": "Ce site doit avoir votre permission d'utiliser le micro. Une popup apparaîtra, cliquez sur 'Autoriser'.",
+    "step3Title": "3. C'est prêt !",
+    "step3Description": "Armez une piste (bouton REC), puis appuyez sur Play pour enregistrer.",
+    "troubleshoot": "En cas de problème : vérifiez que Chrome a bien accès au micro dans les paramètres de votre téléphone.",
+    "footer": "Ce message ne s'affichera qu'une fois. Vous pouvez le réafficher depuis le menu d'aide.",
+    "understood": "J'ai compris"
+  },
   "recording": {
     "title": "Enregistrement",
     "armTrack": "Armer pour enregistrement",
@@ -197,7 +211,9 @@
     "clearRecordingFirst": "Effacez d'abord l'enregistrement pour armer",
     "errors": {
       "permissionDenied": "Permission microphone refusée. Veuillez autoriser l'accès pour enregistrer.",
+      "checkPermissions": "Vérifiez que :\n1. Votre appareil autorise Chrome à accéder au micro (Paramètres → Apps → Chrome)\n2. Ce site a la permission d'utiliser le micro",
       "noMicrophone": "Aucun microphone détecté. Veuillez connecter un microphone.",
+      "microphoneInUse": "Le microphone est déjà utilisé par une autre application.",
       "maxTracksReached": "Limite de 8 pistes atteinte",
       "alreadyArmed": "Une autre piste est déjà armée",
       "unknown": "Échec de l'enregistrement"

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Box, Typography } from '@mui/material';
 import WaveSurfer from 'wavesurfer.js';
 import RecordPlugin from 'wavesurfer.js/dist/plugins/record.esm.js';
-import { useAudioStore } from '../hooks/useAudioStore';
+import { useAudioStore, wavesurferInstances } from '../hooks/useAudioStore';
 import { addSilencePadding, formatRecordingTime } from '../utils/audioUtils';
 import { getBestRecordingConfig, logSupportedFormats } from '../utils/recordingConfig';
 import { useTranslation } from 'react-i18next';
@@ -18,6 +18,7 @@ const RecordableWaveform = ({ track }: RecordableWaveformProps) => {
   const wavesurferRef = useRef<WaveSurfer | null>(null);
   const recordPluginRef = useRef<RecordPlugin | null>(null);
   const [recordingTime, setRecordingTime] = useState(0);
+  const recordingStartTimeRef = useRef<number>(0); // Track ACTUAL start time
   
   const { 
     audioContext, 
@@ -64,8 +65,24 @@ const RecordableWaveform = ({ track }: RecordableWaveformProps) => {
 
     // Handle recording START (precise timing)
     record.on('record-start', () => {
-      // RecordPlugin manages its own AudioContext internally
-      console.log(`⏱️ Recording START`);
+      // Get ACTUAL current time from a playing WaveSurfer instance (not this recording one)
+      let actualStartTime = track.recordingStartOffset || 0; // fallback
+      
+      const playingInstances = Array.from(wavesurferInstances.values());
+      if (playingInstances.length > 0) {
+        // Use first playing instance for accurate time
+        actualStartTime = playingInstances[0].getCurrentTime();
+      }
+      
+      recordingStartTimeRef.current = actualStartTime;
+      
+      const expectedStartTime = track.recordingStartOffset || 0;
+      const latency = actualStartTime - expectedStartTime;
+      
+      console.log(`⏱️ Recording START:`);
+      console.log(`  - Expected start: ${expectedStartTime.toFixed(6)}s`);
+      console.log(`  - Actual start: ${actualStartTime.toFixed(6)}s`);
+      console.log(`  - Measured latency: ${(latency * 1000).toFixed(2)}ms`);
     });
 
     // Handle recording progress
@@ -78,15 +95,23 @@ const RecordableWaveform = ({ track }: RecordableWaveformProps) => {
       if (!audioContext) return;
 
       try {
-        // Get the playback offset when recording started (from store)
-        const playbackOffset = track.recordingStartOffset || 0;
+        // Calculate precise offset with half-latency compensation
+        const expectedStartTime = track.recordingStartOffset || 0;
+        const actualStartTime = recordingStartTimeRef.current;
+        const latency = actualStartTime - expectedStartTime;
+        
+        // Use halfway point between expected and actual (empirical best result)
+        const compensatedOffset = expectedStartTime + (latency / 2);
         
         console.log(`⏱️ Recording END:`);
         console.log(`  - Recorded blob: ${blob.type}, ${blob.size} bytes`);
-        console.log(`  - Playback offset (from store): ${playbackOffset.toFixed(6)}s`);
+        console.log(`  - Expected offset: ${expectedStartTime.toFixed(6)}s`);
+        console.log(`  - Actual offset: ${actualStartTime.toFixed(6)}s`);
+        console.log(`  - Latency: ${(latency * 1000).toFixed(2)}ms`);
+        console.log(`  - Using COMPENSATED offset: ${compensatedOffset.toFixed(6)}s (halfway)`);
         
-        // Apply silence padding based on playback offset
-        const paddedBlob = await addSilencePadding(blob, playbackOffset, audioContext);
+        // Apply silence padding with compensated offset
+        const paddedBlob = await addSilencePadding(blob, compensatedOffset, audioContext);
 
         console.log(`  - Padded blob size: ${paddedBlob.size} bytes`);
 
@@ -104,14 +129,20 @@ const RecordableWaveform = ({ track }: RecordableWaveformProps) => {
       record.startRecording(recordingConfig.audioConstraints as any).catch((error: Error) => {
         console.error('Failed to start recording:', error);
         
-        let errorMessage = 'Failed to start recording';
+        let errorMessage = t('recording.errors.unknown');
+        let errorDetails = '';
+        
         if (error.name === 'NotAllowedError') {
-          errorMessage = 'Microphone permission denied. Please allow access to record.';
+          errorMessage = t('recording.errors.permissionDenied');
+          errorDetails = t('recording.errors.checkPermissions');
         } else if (error.name === 'NotFoundError') {
-          errorMessage = 'No microphone detected. Please connect a microphone.';
+          errorMessage = t('recording.errors.noMicrophone');
+        } else if (error.name === 'NotReadableError') {
+          errorMessage = t('recording.errors.microphoneInUse');
         }
         
-        alert(errorMessage);
+        const fullMessage = errorDetails ? `${errorMessage}\n\n${errorDetails}` : errorMessage;
+        alert(fullMessage);
         stopRecordingStore(track.id);
       });
     }

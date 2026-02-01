@@ -78,7 +78,7 @@ export async function addSilencePadding(
   audioBuffer = normalizeAudioBuffer(audioBuffer, audioContext);
 
   // 3. Apply latency compensation
-  const LATENCY_COMPENSATION_MS = 70; // milliseconds
+  const LATENCY_COMPENSATION_MS = 0; // milliseconds
   const compensatedOffset = offsetSeconds + (LATENCY_COMPENSATION_MS / 1000); // ADD delay
   
   console.log(`⏱️ Offset compensation: ${offsetSeconds.toFixed(4)}s + ${LATENCY_COMPENSATION_MS}ms = ${compensatedOffset.toFixed(4)}s`);

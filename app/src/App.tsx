@@ -47,6 +47,7 @@ import {PWAUpdatePrompt} from './components/PWAUpdatePrompt';
 import HelpModal from './components/HelpModal';
 import SettingsUI from './components/SettingsUI';
 import PiecesManager from './components/PiecesManager';
+import RecordingPermissionGuide from './components/RecordingPermissionGuide';
 import {useTranslation} from 'react-i18next';
 import {logger} from './utils/logger';
 import TopBar from "./components/TopBar.tsx";
@@ -167,12 +168,24 @@ function App() {
     const [themeDialogOpen, setThemeDialogOpen] = useState(false);
     const [deleteAllDialogOpen, setDeleteAllDialogOpen] = useState(false);
     const [piecesManagerOpen, setPiecesManagerOpen] = useState(false);
+    const [recordingGuideOpen, setRecordingGuideOpen] = useState(false);
     const [showEditModeAlert, setShowEditModeAlert] = useState(() => {
         return localStorage.getItem('hideEditModeAlert') !== 'true';
     });
     const containerRef = useRef<HTMLDivElement>(null);
 
     const hasLoadedTracks = tracks.length > 0;
+
+    // Show recording guide on first arm
+    useEffect(() => {
+        const hasSeenGuide = localStorage.getItem('hasSeenRecordingGuide') === 'true';
+        const hasArmedTrack = tracks.some(t => t.isArmed);
+        
+        if (!hasSeenGuide && hasArmedTrack) {
+            setRecordingGuideOpen(true);
+            localStorage.setItem('hasSeenRecordingGuide', 'true');
+        }
+    }, [tracks]);
 
     // Detect system theme preference
     const systemPrefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)');
@@ -446,6 +459,10 @@ function App() {
                 <HelpModal open={helpModalOpen} onClose={() => setHelpModalOpen(false)}/>
                 <SettingsUI open={settingsModalOpen} onClose={() => setSettingsModalOpen(false)}/>
                 <PiecesManager open={piecesManagerOpen} onClose={() => setPiecesManagerOpen(false)} />
+                <RecordingPermissionGuide 
+                    open={recordingGuideOpen} 
+                    onClose={() => setRecordingGuideOpen(false)} 
+                />
 
                 {/* Interface Settings Modal */}
                 <SettingsUI open={settingsModalOpen} onClose={() => setSettingsModalOpen(false)}/>

@@ -180,6 +180,20 @@
     "addRecordableTrack": "Add Recording Track",
     "count": "{{current}}/{{max}} tracks"
   },
+  "recordingGuide": {
+    "title": "Recording Guide",
+    "intro": "To record with your microphone, two permissions are required.",
+    "stepsTitle": "Steps to follow:",
+    "step1Title": "1. Device Permission",
+    "step1Description": "Your device (Android/iOS) must allow Chrome/Safari to access the microphone. Check in Settings → Apps → Chrome → Permissions.",
+    "step2Title": "2. Site Permission",
+    "step2Description": "This site needs your permission to use the mic. A popup will appear, click 'Allow'.",
+    "step3Title": "3. Ready!",
+    "step3Description": "Arm a track (REC button), then press Play to record.",
+    "troubleshoot": "If problems occur: check that Chrome has microphone access in your phone settings.",
+    "footer": "This message will only show once. You can show it again from the help menu.",
+    "understood": "Got it"
+  },
   "recording": {
     "title": "Recording",
     "armTrack": "Arm for recording",
@@ -197,7 +211,9 @@
     "clearRecordingFirst": "Delete recording first to arm",
     "errors": {
       "permissionDenied": "Microphone permission denied. Please allow access to record.",
+      "checkPermissions": "Check that:\n1. Your device allows Chrome to access the mic (Settings → Apps → Chrome)\n2. This site has permission to use the mic",
       "noMicrophone": "No microphone detected. Please connect a microphone.",
+      "microphoneInUse": "The microphone is already in use by another application.",
       "maxTracksReached": "8 track limit reached",
       "alreadyArmed": "Another track is already armed",
       "unknown": "Recording failed"
