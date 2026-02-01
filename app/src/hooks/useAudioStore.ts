@@ -609,6 +609,7 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
     // Seek all WaveSurfer instances synchronously (no await)
     // Use Array.from to avoid iterator issues
     const instances = Array.from(wavesurferInstances.entries());
+    const isCurrentlyPlaying = state.playbackState.isPlaying;
 
     // Seek all at once (WaveSurfer's setTime is sync for the call, async for rendering)
     instances.forEach(([id, ws]) => {
@@ -619,6 +620,12 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
       if (finishedInstances.has(id) && time < duration) {
         logger.debug('🔄 Re-enabling finished track:', id, `(${time.toFixed(2)}s < ${duration.toFixed(2)}s)`);
         finishedInstances.delete(id);
+        
+        // If currently playing, restart playback on this track
+        if (isCurrentlyPlaying) {
+          logger.debug('▶️ Auto-playing re-enabled track:', id);
+          ws.play().catch(err => console.warn('Failed to play re-enabled track:', err));
+        }
       }
     });
 
