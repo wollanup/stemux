@@ -2,6 +2,8 @@
  * Audio utilities for recording with time offset (padding)
  */
 
+import {logger} from "./logger.ts";
+
 /**
  * Normalize audio buffer to maximize volume without clipping
  * Finds the peak and scales the entire buffer to use full range
@@ -9,7 +11,7 @@
 function normalizeAudioBuffer(buffer: AudioBuffer, audioContext: AudioContext): AudioBuffer {
   let maxPeak = 0;
 
-  console.log(`🔊 Normalize input: ${buffer.numberOfChannels} channels`);
+  logger.log(`🔊 Normalize input: ${buffer.numberOfChannels} channels`);
 
   // Find the absolute maximum across all channels
   for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
@@ -24,7 +26,7 @@ function normalizeAudioBuffer(buffer: AudioBuffer, audioContext: AudioContext): 
 
   // If already at max or silent, return as-is
   if (maxPeak === 0 || maxPeak >= 0.99) {
-    console.log(`🔊 No normalization needed (peak: ${(maxPeak * 100).toFixed(1)}%)`);
+    logger.log(`🔊 No normalization needed (peak: ${(maxPeak * 100).toFixed(1)}%)`);
     return buffer;
   }
 
@@ -32,7 +34,7 @@ function normalizeAudioBuffer(buffer: AudioBuffer, audioContext: AudioContext): 
   const targetPeak = 0.95;
   const gain = targetPeak / maxPeak;
 
-  console.log(`🔊 Normalizing audio: peak ${(maxPeak * 100).toFixed(1)}% → ${(targetPeak * 100).toFixed(1)}% (gain: +${(20 * Math.log10(gain)).toFixed(1)} dB)`);
+  logger.log(`🔊 Normalizing audio: peak ${(maxPeak * 100).toFixed(1)}% → ${(targetPeak * 100).toFixed(1)}% (gain: +${(20 * Math.log10(gain)).toFixed(1)} dB)`);
 
   // Create new buffer with normalized data (preserve channel count!)
   const normalizedBuffer = audioContext.createBuffer(
@@ -41,7 +43,7 @@ function normalizeAudioBuffer(buffer: AudioBuffer, audioContext: AudioContext): 
     buffer.sampleRate
   );
 
-  console.log(`🔊 Normalize output: ${normalizedBuffer.numberOfChannels} channels`);
+  logger.log(`🔊 Normalize output: ${normalizedBuffer.numberOfChannels} channels`);
 
   // Apply gain to all channels
   for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
@@ -66,13 +68,13 @@ export async function addSilencePadding(
   offsetSeconds: number,
   audioContext: AudioContext
 ): Promise<Blob> {
-  console.log(`🎙️ Processing recording, original format: ${audioBlob.type}`);
+  logger.log(`🎙️ Processing recording, original format: ${audioBlob.type}`);
   
   // 1. Decode the recorded audio
   const arrayBuffer = await audioBlob.arrayBuffer();
   let audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
 
-  console.log(`🎙️ Input: ${audioBuffer.numberOfChannels} channel(s), ${audioBuffer.sampleRate}Hz, ${audioBuffer.length} samples`);
+  logger.log(`🎙️ Input: ${audioBuffer.numberOfChannels} channel(s), ${audioBuffer.sampleRate}Hz, ${audioBuffer.length} samples`);
 
   // 2. Normalize volume to maximize loudness
   audioBuffer = normalizeAudioBuffer(audioBuffer, audioContext);
@@ -81,7 +83,7 @@ export async function addSilencePadding(
   const LATENCY_COMPENSATION_MS = 0; // milliseconds
   const compensatedOffset = offsetSeconds + (LATENCY_COMPENSATION_MS / 1000); // ADD delay
   
-  console.log(`⏱️ Offset compensation: ${offsetSeconds.toFixed(4)}s + ${LATENCY_COMPENSATION_MS}ms = ${compensatedOffset.toFixed(4)}s`);
+  logger.log(`⏱️ Offset compensation: ${offsetSeconds.toFixed(4)}s + ${LATENCY_COMPENSATION_MS}ms = ${compensatedOffset.toFixed(4)}s`);
 
   // 4. Calculate padding samples
   const sampleRate = audioBuffer.sampleRate;
@@ -109,7 +111,7 @@ export async function addSilencePadding(
     leftData.set(originalData, paddingSamples);
     rightData.set(originalData, paddingSamples);
     
-    console.log('🎙️ Mono → Stereo (duplicated)');
+    logger.log('🎙️ Mono → Stereo (duplicated)');
   } else if (audioBuffer.numberOfChannels === 2) {
     // Always duplicate LEFT channel to both sides (mic mono on stereo interface)
     const leftDataIn = audioBuffer.getChannelData(0);
@@ -119,10 +121,10 @@ export async function addSilencePadding(
     leftDataOut.set(leftDataIn, paddingSamples);
     rightDataOut.set(leftDataIn, paddingSamples); // Copy LEFT to RIGHT
     
-    console.log('🎙️ Stereo input → Forced L=R duplication');
+    logger.log('🎙️ Stereo input → Forced L=R duplication');
   } else {
     // Multi-channel: mix down to stereo
-    console.log(`🎙️ Multi-channel (${audioBuffer.numberOfChannels}), mixing to stereo`);
+    logger.log(`🎙️ Multi-channel (${audioBuffer.numberOfChannels}), mixing to stereo`);
     const leftData = paddedBuffer.getChannelData(0);
     const rightData = paddedBuffer.getChannelData(1);
     
@@ -143,13 +145,13 @@ export async function addSilencePadding(
     }
   }
 
-  console.log(`🎙️ Output: 2 channels (stereo), ${paddedBuffer.sampleRate}Hz, ${paddedBuffer.length} samples`);
+  logger.log(`🎙️ Output: 2 channels (stereo), ${paddedBuffer.sampleRate}Hz, ${paddedBuffer.length} samples`);
 
   // 7. Convert padded buffer to WAV blob (always WAV for high quality, or if we need padding)
   // For low/medium quality without padding, we could keep original format, but for simplicity
   // we always encode to WAV to ensure consistency (padding, normalization, stereo conversion)
   const finalBlob = audioBufferToWavBlob(paddedBuffer);
-  console.log(`💾 Final output: ${finalBlob.type}, ${(finalBlob.size / 1024).toFixed(2)} KB`);
+  logger.log(`💾 Final output: ${finalBlob.type}, ${(finalBlob.size / 1024).toFixed(2)} KB`);
   
   return finalBlob;
 }
@@ -163,7 +165,7 @@ function audioBufferToWavBlob(buffer: AudioBuffer): Blob {
   const arrayBuffer = new ArrayBuffer(44 + length);
   const view = new DataView(arrayBuffer);
 
-  console.log(`💾 WAV encoding: ${numberOfChannels} channels, ${buffer.sampleRate}Hz, ${buffer.length} samples`);
+  logger.log(`💾 WAV encoding: ${numberOfChannels} channels, ${buffer.sampleRate}Hz, ${buffer.length} samples`);
 
   // Helper to write string to DataView
   const writeString = (offset: number, string: string) => {
@@ -200,7 +202,7 @@ function audioBufferToWavBlob(buffer: AudioBuffer): Blob {
     }
   }
 
-  console.log(`💾 WAV file created: ${arrayBuffer.byteLength} bytes`);
+  logger.log(`💾 WAV file created: ${arrayBuffer.byteLength} bytes`);
 
   return new Blob([arrayBuffer], { type: 'audio/wav' });
 }

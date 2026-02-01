@@ -7,6 +7,7 @@ import { addSilencePadding, formatRecordingTime } from '../utils/audioUtils';
 import { getBestRecordingConfig, logSupportedFormats } from '../utils/recordingConfig';
 import { useTranslation } from 'react-i18next';
 import type { AudioTrack } from '../types/audio';
+import {logger} from "../utils/logger.ts";
 
 interface RecordableWaveformProps {
   track: AudioTrack;
@@ -79,10 +80,10 @@ const RecordableWaveform = ({ track }: RecordableWaveformProps) => {
       const expectedStartTime = track.recordingStartOffset || 0;
       const latency = actualStartTime - expectedStartTime;
       
-      console.log(`⏱️ Recording START:`);
-      console.log(`  - Expected start: ${expectedStartTime.toFixed(6)}s`);
-      console.log(`  - Actual start: ${actualStartTime.toFixed(6)}s`);
-      console.log(`  - Measured latency: ${(latency * 1000).toFixed(2)}ms`);
+      logger.log(`⏱️ Recording START:`);
+      logger.log(`  - Expected start: ${expectedStartTime.toFixed(6)}s`);
+      logger.log(`  - Actual start: ${actualStartTime.toFixed(6)}s`);
+      logger.log(`  - Measured latency: ${(latency * 1000).toFixed(2)}ms`);
     });
 
     // Handle recording progress
@@ -103,17 +104,17 @@ const RecordableWaveform = ({ track }: RecordableWaveformProps) => {
         // Use halfway point between expected and actual (empirical best result)
         const compensatedOffset = expectedStartTime + (latency / 2);
         
-        console.log(`⏱️ Recording END:`);
-        console.log(`  - Recorded blob: ${blob.type}, ${blob.size} bytes`);
-        console.log(`  - Expected offset: ${expectedStartTime.toFixed(6)}s`);
-        console.log(`  - Actual offset: ${actualStartTime.toFixed(6)}s`);
-        console.log(`  - Latency: ${(latency * 1000).toFixed(2)}ms`);
-        console.log(`  - Using COMPENSATED offset: ${compensatedOffset.toFixed(6)}s (halfway)`);
+        logger.log(`⏱️ Recording END:`);
+        logger.log(`  - Recorded blob: ${blob.type}, ${blob.size} bytes`);
+        logger.log(`  - Expected offset: ${expectedStartTime.toFixed(6)}s`);
+        logger.log(`  - Actual offset: ${actualStartTime.toFixed(6)}s`);
+        logger.log(`  - Latency: ${(latency * 1000).toFixed(2)}ms`);
+        logger.log(`  - Using COMPENSATED offset: ${compensatedOffset.toFixed(6)}s (halfway)`);
         
         // Apply silence padding with compensated offset
         const paddedBlob = await addSilencePadding(blob, compensatedOffset, audioContext);
 
-        console.log(`  - Padded blob size: ${paddedBlob.size} bytes`);
+        logger.log(`  - Padded blob size: ${paddedBlob.size} bytes`);
 
         // Save the padded recording
         await saveRecording(track.id, paddedBlob);

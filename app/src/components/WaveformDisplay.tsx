@@ -87,12 +87,10 @@ const WaveformDisplay = ({ track }: WaveformDisplayProps) => {
       } : {}),
       height: 60,
       normalize: waveformNormalize,
-      // hideScrollbar: true,
       interact: true,
       autoScroll: true,
       autoCenter: true,
-      dragToSeek: false, // Disable built-in to avoid double-seek
-      // hideScrollbar: true,
+      dragToSeek: false,
       plugins,
     });
 
@@ -195,7 +193,7 @@ const WaveformDisplay = ({ track }: WaveformDisplayProps) => {
       // Check if there's a pending seek (e.g., after recording completed)
       const { pendingSeekAfterReady } = useAudioStore.getState();
       if (pendingSeekAfterReady !== null) {
-        console.log(`⏱️ Executing pending seek: ${pendingSeekAfterReady.toFixed(4)}s`);
+        logger.log(`⏱️ Executing pending seek: ${pendingSeekAfterReady.toFixed(4)}s`);
         // Clear the pending seek flag FIRST to avoid re-triggering
         useAudioStore.setState({ pendingSeekAfterReady: null });
         // Then seek all tracks (including this newly ready one)
@@ -306,9 +304,16 @@ const WaveformDisplay = ({ track }: WaveformDisplayProps) => {
 
       unregisterWavesurfer(track.id);
       wavesurferRef.current = null;
+      
+      // Cleanup minimap explicitly
+      if (minimapRef.current) {
+        minimapRef.current.destroy();
+        minimapRef.current = null;
+      }
+      
       wavesurfer.destroy();
     };
-  }, [track.file, track.recordedBlob, track.id, waveformTimeline, waveformMinimap, theme.palette.mode]); // Recreate when theme changes
+  }, [track.file, track.recordedBlob, track.id, waveformTimeline, waveformMinimap]); // REMOVED theme.palette.mode to prevent recreation
 
   // Handle waveform style and normalize with setOptions (no recreation needed)
   useEffect(() => {

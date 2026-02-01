@@ -2,6 +2,7 @@
  * Audio recording configuration utilities
  * Fixed high-quality settings for professional recording
  */
+import {logger} from "./logger.ts";
 
 export interface RecordingConfig {
   mimeType: string;
@@ -27,7 +28,7 @@ export function getBestRecordingConfig(): RecordingConfig {
     mimeType = 'audio/webm';
   }
   
-  console.log(`🎙️ Recording format: ${mimeType} @ 1536 kbps`);
+  logger.log(`🎙️ Recording format: ${mimeType} @ 1536 kbps`);
   
   return {
     mimeType,
@@ -54,7 +55,7 @@ function getHighQualityAudioConstraints(): MediaTrackConstraints {
  */
 export function logSupportedFormats(): void {
   if (typeof MediaRecorder === 'undefined') {
-    console.log('❌ MediaRecorder not available');
+    logger.log('❌ MediaRecorder not available');
     return;
   }
 
@@ -69,9 +70,9 @@ export function logSupportedFormats(): void {
     'audio/mpeg',
   ];
 
-  console.log('🎙️ Supported recording formats:');
+  logger.log('🎙️ Supported recording formats:');
   formats.forEach(format => {
     const supported = MediaRecorder.isTypeSupported(format);
-    console.log(`  ${supported ? '✅' : '❌'} ${format}`);
+    logger.log(`  ${supported ? '✅' : '❌'} ${format}`);
   });
 }

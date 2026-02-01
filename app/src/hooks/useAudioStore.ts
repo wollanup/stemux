@@ -1268,12 +1268,12 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
 
   // Clean orphaned data (files without pieces, trackIds without files)
   cleanOrphanedData: async (): Promise<{ filesDeleted: number; referencesRemoved: number }> => {
-    console.log('🧹 Starting orphaned data cleanup...');
+    logger.log('🧹 Starting orphaned data cleanup...');
     
     const pieces = await getAllPieces();
     const allFiles = await getAllAudioFiles();
     
-    console.log(`📊 Found ${pieces.length} pieces and ${allFiles.length} files in IndexedDB`);
+    logger.log(`📊 Found ${pieces.length} pieces and ${allFiles.length} files in IndexedDB`);
     
     let filesDeleted = 0;
     let referencesRemoved = 0;
@@ -1288,8 +1288,8 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
       
       // Valid track IDs = those in pieceSettings.trackSettings
       const validTrackIds = new Set(settings.trackSettings.map(t => t.id));
-      console.log(`📦 Piece "${piece.name}" has ${settings.trackSettings.length} valid tracks in settings`);
-      console.log(`   piece.trackIds has ${piece.trackIds.length} entries`);
+      logger.log(`📦 Piece "${piece.name}" has ${settings.trackSettings.length} valid tracks in settings`);
+      logger.log(`   piece.trackIds has ${piece.trackIds.length} entries`);
       
       let pieceModified = false;
       
@@ -1297,7 +1297,7 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
       const cleanedTrackIds = piece.trackIds.filter(trackId => {
         const isValid = validTrackIds.has(trackId);
         if (!isValid) {
-          console.log(`🗑️ Removing invalid trackId from piece.trackIds: ${trackId}`);
+          logger.log(`🗑️ Removing invalid trackId from piece.trackIds: ${trackId}`);
           referencesRemoved++;
           pieceModified = true;
         }
@@ -1309,21 +1309,21 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
         piece.trackIds = cleanedTrackIds;
         piece.updatedAt = Date.now();
         await savePiece(piece);
-        console.log(`✅ Updated piece.trackIds for "${piece.name}": ${cleanedTrackIds.length} valid tracks`);
+        logger.log(`✅ Updated piece.trackIds for "${piece.name}": ${cleanedTrackIds.length} valid tracks`);
       }
       
       // Delete files NOT in trackSettings for this piece
       for (const file of allFiles) {
         // Check if this file is referenced by this piece's trackSettings
         if (piece.trackIds.includes(file.id) && !validTrackIds.has(file.id)) {
-          console.log(`🗑️ Deleting orphaned file: ${file.id} (${file.file?.name || 'unknown'})`);
+          logger.log(`🗑️ Deleting orphaned file: ${file.id} (${file.file?.name || 'unknown'})`);
           await deleteAudioFile(file.id);
           filesDeleted++;
         }
       }
     }
     
-    console.log(`🧹 Cleanup complete: ${filesDeleted} orphaned files deleted, ${referencesRemoved} invalid references removed`);
+    logger.log(`🧹 Cleanup complete: ${filesDeleted} orphaned files deleted, ${referencesRemoved} invalid references removed`);
     
     return { filesDeleted, referencesRemoved };
   },
@@ -1438,15 +1438,15 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
     const firstWavesurfer = Array.from(wavesurferInstances.values())[0];
     if (firstWavesurfer) {
       recordingStartOffset = firstWavesurfer.getCurrentTime();
-      console.log(`⏱️ Recording armed at PRECISE time from WaveSurfer: ${recordingStartOffset.toFixed(6)}s`);
+      logger.log(`⏱️ Recording armed at PRECISE time from WaveSurfer: ${recordingStartOffset.toFixed(6)}s`);
     } else {
       // Fallback to playbackState (less precise)
       recordingStartOffset = playbackState.currentTime;
-      console.log(`⏱️ Recording armed at playbackState time: ${recordingStartOffset.toFixed(6)}s (less precise)`);
+      logger.log(`⏱️ Recording armed at playbackState time: ${recordingStartOffset.toFixed(6)}s (less precise)`);
     }
     
     if (audioContext) {
-      console.log(`⏱️ AudioContext.currentTime: ${audioContext.currentTime.toFixed(6)}s`);
+      logger.log(`⏱️ AudioContext.currentTime: ${audioContext.currentTime.toFixed(6)}s`);
     }
     
     set({
@@ -1530,7 +1530,7 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
         pendingSeekAfterReady: recordingStartOffset,
       }));
 
-      console.log(`⏱️ Pending seek after waveform ready: ${recordingStartOffset.toFixed(4)}s`);
+      logger.log(`⏱️ Pending seek after waveform ready: ${recordingStartOffset.toFixed(4)}s`);
 
     } catch (error) {
       console.error('Failed to save recording:', error);

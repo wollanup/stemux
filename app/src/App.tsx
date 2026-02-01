@@ -290,7 +290,7 @@ function App() {
                 const { cleanOrphanedData } = useAudioStore.getState();
                 const result = await cleanOrphanedData();
                 if (result.filesDeleted > 0 || result.referencesRemoved > 0) {
-                    console.log(`🧹 Auto-cleanup: ${result.filesDeleted} orphaned files deleted, ${result.referencesRemoved} invalid references removed`);
+                    logger.log(`🧹 Auto-cleanup: ${result.filesDeleted} orphaned files deleted, ${result.referencesRemoved} invalid references removed`);
                 }
             } catch (error) {
                 console.warn('Failed to clean orphaned data on startup:', error);
