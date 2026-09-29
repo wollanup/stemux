@@ -8,6 +8,16 @@ export const COLORS = [
   '#85C1E2', '#FF6B6B', '#98D8C8', '#e680a5',
 ];
 
+// Serializes track additions: callers fire addTrack() for several files at once
+// without awaiting, and each addition may create the piece and does a
+// read-modify-write of piece.trackIds, so they must not interleave
+let trackAdditionQueue: Promise<unknown> = Promise.resolve();
+export const enqueueTrackAddition = <T>(task: () => Promise<T>): Promise<T> => {
+  const result = trackAdditionQueue.then(task);
+  trackAdditionQueue = result.catch(() => {});
+  return result;
+};
+
 // Generate piece name from date/time
 export const generatePieceName = () => {
   const now = new Date();

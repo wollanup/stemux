@@ -10,7 +10,7 @@ import {
   getPiece,
   savePiece,
 } from '../../utils/indexedDB';
-import { COLORS, generatePieceName } from './shared';
+import { COLORS, generatePieceName, enqueueTrackAddition } from './shared';
 import { audioEngine } from '../../audio/AudioEngine';
 import { saveTrackSettingsToPiece } from './storage';
 
@@ -19,10 +19,10 @@ export const createTrackActions = (set: (partial: Partial<AudioStore> | ((state:
     audioEngine.getContext();
   },
 
-  addTrack: async (file: File) => {
-    const { tracks, pause, seek, currentPieceId, createPiece } = get();
+  addTrack: (file: File) => enqueueTrackAddition(async () => {
+    const { pause, seek, currentPieceId, createPiece } = get();
 
-    if (tracks.length >= 8) {
+    if (get().tracks.length >= 8) {
       alert('Maximum 8 tracks allowed');
       return;
     }
@@ -38,28 +38,27 @@ export const createTrackActions = (set: (partial: Partial<AudioStore> | ((state:
     seek(0);
 
     const id = `track-${Date.now()}-${Math.random()}`;
-    const color = COLORS[tracks.length % COLORS.length];
 
-    const newTrack: AudioTrack = {
-      id,
-      name: file.name,
-      file,
-      volume: 0.8,
-      isMuted: false,
-      isSolo: false,
-      color,
-      isLoading: true,
-    };
-
-    const newTracks = [...tracks, newTrack];
-    set({ tracks: newTracks });
+    set((state: AudioStore) => {
+      const newTrack: AudioTrack = {
+        id,
+        name: file.name,
+        file,
+        volume: 0.8,
+        isMuted: false,
+        isSolo: false,
+        color: COLORS[state.tracks.length % COLORS.length],
+        isLoading: true,
+      };
+      return { tracks: [...state.tracks, newTrack] };
+    });
 
     // Save file to IndexedDB
     try {
       await saveAudioFile(id, file);
 
       // Update piece with new track ID
-      const piece = await getPiece(pieceId!);
+      const piece = await getPiece(pieceId);
       if (piece) {
         piece.trackIds = [...piece.trackIds, id];
         piece.updatedAt = Date.now();
@@ -69,7 +68,7 @@ export const createTrackActions = (set: (partial: Partial<AudioStore> | ((state:
       // Save settings to piece
       const state = get();
       await saveTrackSettingsToPiece(
-        pieceId!,
+        pieceId,
         state.tracks.map(t => t.id === id ? { ...t, isLoading: false } : t),
         state.loopState,
         state.playbackState.playbackRate,
@@ -92,7 +91,7 @@ export const createTrackActions = (set: (partial: Partial<AudioStore> | ((state:
         ),
       }));
     }
-  },
+  }),
 
   removeTrack: async (id: string) => {
     const { currentPieceId } = get();
