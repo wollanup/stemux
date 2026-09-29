@@ -45,7 +45,7 @@ export const createPieceActions = (set: (partial: Partial<AudioStore> | ((state:
       masterVolume: 1.0,
     });
 
-    set({ currentPieceId: id });
+    set({ currentPieceId: id, currentPieceName: name });
     saveCurrentPieceId(id);
 
     logger.debug(`🎼 Created piece: ${name} (${id})`);
