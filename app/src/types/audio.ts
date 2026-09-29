@@ -14,7 +14,7 @@ export interface AudioTrack {
   isArmed?: boolean; // REC toggle state (ON/OFF)
   recordedBlob?: Blob; // Recorded audio data
   recordingState?: 'idle' | 'armed' | 'recording' | 'stopped';
-  recordingStartOffset?: number; // Time offset in seconds when recording started
+  recordingStartOffset?: number; // Piece position (seconds) of the first recorded sample
 }
 
 export interface PlaybackState {
@@ -86,7 +86,6 @@ export interface AudioStore {
   tracks: AudioTrack[];
   playbackState: PlaybackState;
   loopState: LoopState; // Loop v2
-  audioContext: AudioContext | null;
   masterVolume: number; // 0-1
   showLoopPanel: boolean;
   zoomLevel: number;
@@ -100,10 +99,7 @@ export interface AudioStore {
   
   // Recording state
   isRecordingSupported: boolean;
-  mediaStream: MediaStream | null;
-  recordingStartTime: number | null;
   loopBackup: { activeLoopId: string | null } | null;
-  pendingSeekAfterReady: number | null; // Position to seek to when next waveform becomes ready
   
   addTrack: (file: File) => void;
   removeTrack: (id: string) => void;
@@ -119,7 +115,7 @@ export interface AudioStore {
   // Recording actions
   addRecordableTrack: () => Promise<void>;
   toggleRecordArm: (trackId: string) => void;
-  startRecording: (trackId: string) => Promise<void>;
+  startRecording: (trackId: string, ctxTime: number) => Promise<void>;
   stopRecording: (trackId: string) => Promise<void>;
   saveRecording: (trackId: string, blob: Blob) => Promise<void>;
   clearRecording: (trackId: string) => Promise<void>;

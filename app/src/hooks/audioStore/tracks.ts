@@ -10,13 +10,13 @@ import {
   getPiece,
   savePiece,
 } from '../../utils/indexedDB';
-import { COLORS, wavesurferInstances, generatePieceName } from './shared';
+import { COLORS, generatePieceName } from './shared';
+import { audioEngine } from '../../audio/AudioEngine';
 import { saveTrackSettingsToPiece } from './storage';
 
 export const createTrackActions = (set: (partial: Partial<AudioStore> | ((state: AudioStore) => Partial<AudioStore>)) => void, get: () => AudioStore) => ({
   initAudioContext: () => {
-    const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
-    set({ audioContext: ctx });
+    audioEngine.getContext();
   },
 
   addTrack: async (file: File) => {
@@ -218,17 +218,8 @@ export const createTrackActions = (set: (partial: Partial<AudioStore> | ((state:
     const track = get().tracks.find((t) => t.id === id);
     if (!track) return;
 
-    const newMutedState = !track.isMuted;
-    get().updateTrack(id, { isMuted: newMutedState });
-
-    // Update WaveSurfer instance directly
-    const ws = wavesurferInstances.get(id);
-    if (ws) {
-      const allTracks = get().tracks;
-      const hasSoloedTracks = allTracks.some(t => t.isSolo);
-      const shouldBeMuted = newMutedState || (hasSoloedTracks && !track.isSolo);
-      ws.setMuted(shouldBeMuted);
-    }
+    // Engine gains follow the store (see syncEngineMix)
+    get().updateTrack(id, { isMuted: !track.isMuted });
   },
 
   toggleSolo: (id: string) => {
@@ -236,25 +227,7 @@ export const createTrackActions = (set: (partial: Partial<AudioStore> | ((state:
     const track = tracks.find((t) => t.id === id);
     if (!track) return;
 
-    const newSoloState = !track.isSolo;
-
-    // Update track state
-    get().updateTrack(id, { isSolo: newSoloState });
-
-    // Calculate with the NEW state
-    const allTracks = tracks.map(t =>
-      t.id === id ? { ...t, isSolo: newSoloState } : t
-    );
-    const hasSoloedTracks = allTracks.some(t => t.isSolo);
-
-    // Apply mute to ALL instances
-    allTracks.forEach(t => {
-      const ws = wavesurferInstances.get(t.id);
-      if (ws) {
-        const shouldBeMuted = t.isMuted || (hasSoloedTracks && !t.isSolo);
-        ws.setMuted(shouldBeMuted);
-      }
-    });
+    get().updateTrack(id, { isSolo: !track.isSolo });
   },
 
   exclusiveSolo: (id: string) => {
@@ -276,14 +249,6 @@ export const createTrackActions = (set: (partial: Partial<AudioStore> | ((state:
       ).catch(err => console.error('Failed to save track settings:', err));
     }
 
-    // Update all WaveSurfer instances - all except 'id' are muted
-    newTracks.forEach(t => {
-      const ws = wavesurferInstances.get(t.id);
-      if (ws) {
-        const shouldBeMuted = t.isMuted || t.id !== id;
-        ws.setMuted(shouldBeMuted);
-      }
-    });
   },
 
   unmuteAll: () => {
@@ -305,14 +270,5 @@ export const createTrackActions = (set: (partial: Partial<AudioStore> | ((state:
       ).catch(err => console.error('Failed to save track settings:', err));
     }
 
-    // Update all WaveSurfer instances
-    const hasSoloedTracks = newTracks.some(t => t.isSolo);
-    newTracks.forEach(t => {
-      const ws = wavesurferInstances.get(t.id);
-      if (ws) {
-        const shouldBeMuted = hasSoloedTracks && !t.isSolo;
-        ws.setMuted(shouldBeMuted);
-      }
-    });
   },
 });

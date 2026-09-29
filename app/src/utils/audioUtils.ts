@@ -5,22 +5,14 @@
 import {logger} from "./logger.ts";
 
 /**
- * Normalize audio buffer to maximize volume without clipping
- * Finds the peak and scales the entire buffer to use full range
+ * Normalize samples to maximize volume without clipping (in place)
  */
-function normalizeAudioBuffer(buffer: AudioBuffer, audioContext: AudioContext): AudioBuffer {
+function normalizeSamples(samples: Float32Array) {
   let maxPeak = 0;
-
-  logger.log(`🔊 Normalize input: ${buffer.numberOfChannels} channels`);
-
-  // Find the absolute maximum across all channels
-  for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
-    const data = buffer.getChannelData(channel);
-    for (let i = 0; i < data.length; i++) {
-      const absSample = Math.abs(data[i]);
-      if (absSample > maxPeak) {
-        maxPeak = absSample;
-      }
+  for (let i = 0; i < samples.length; i++) {
+    const absSample = Math.abs(samples[i]);
+    if (absSample > maxPeak) {
+      maxPeak = absSample;
     }
   }
 
@@ -29,151 +21,62 @@ function normalizeAudioBuffer(buffer: AudioBuffer, audioContext: AudioContext): 
   if (maxPeak < MIN_SIGNAL_THRESHOLD) {
     console.warn(`⚠️ Recording signal too weak (peak: ${(maxPeak * 100).toFixed(3)}%) - Normalization SKIPPED to avoid amplifying noise`);
     console.warn(`⚠️ Check your microphone level or gain settings`);
-    return buffer;
+    return;
   }
 
-  // If already at max or silent, return as-is
-  if (maxPeak === 0 || maxPeak >= 0.99) {
+  if (maxPeak >= 0.99) {
     logger.log(`🔊 No normalization needed (peak: ${(maxPeak * 100).toFixed(1)}%)`);
-    return buffer;
+    return;
   }
 
-  // Calculate gain to normalize to 0.95 (leave 5% headroom)
+  // Normalize to 0.95 (leave 5% headroom)
   const targetPeak = 0.95;
   const gain = targetPeak / maxPeak;
-
   logger.log(`🔊 Normalizing audio: peak ${(maxPeak * 100).toFixed(1)}% → ${(targetPeak * 100).toFixed(1)}% (gain: +${(20 * Math.log10(gain)).toFixed(1)} dB)`);
-
-  // Create new buffer with normalized data (preserve channel count!)
-  const normalizedBuffer = audioContext.createBuffer(
-    buffer.numberOfChannels,
-    buffer.length,
-    buffer.sampleRate
-  );
-
-  logger.log(`🔊 Normalize output: ${normalizedBuffer.numberOfChannels} channels`);
-
-  // Apply gain to all channels
-  for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
-    const inputData = buffer.getChannelData(channel);
-    const outputData = normalizedBuffer.getChannelData(channel);
-    
-    for (let i = 0; i < inputData.length; i++) {
-      outputData[i] = inputData[i] * gain;
-    }
+  for (let i = 0; i < samples.length; i++) {
+    samples[i] *= gain;
   }
-
-  return normalizedBuffer;
 }
 
 /**
- * Add silence padding to the beginning of an audio blob
- * This aligns the recording to the correct position in the timeline
- * Also converts mono to stereo and normalizes volume
+ * Place a take on the timeline of the piece and encode it as a stereo WAV.
+ *
+ * `timelineOffset` is the position (seconds) in the piece of samples[0]:
+ * - positive: silence is added before the take
+ * - negative: the beginning of the take is trimmed (latency compensation near 0)
  */
-export async function addSilencePadding(
-  audioBlob: Blob,
-  offsetSeconds: number,
-  audioContext: AudioContext
-): Promise<Blob> {
-  logger.log(`🎙️ Processing recording, original format: ${audioBlob.type}`);
-  
-  // 1. Decode the recorded audio
-  const arrayBuffer = await audioBlob.arrayBuffer();
-  let audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+export function buildTakeWav(
+  samples: Float32Array,
+  sampleRate: number,
+  timelineOffset: number
+): Blob {
+  const offsetSamples = Math.round(timelineOffset * sampleRate);
+  const trimmed = offsetSamples < 0 ? samples.subarray(-offsetSamples) : samples;
+  const padding = Math.max(0, offsetSamples);
 
-  logger.log(`🎙️ Input: ${audioBuffer.numberOfChannels} channel(s), ${audioBuffer.sampleRate}Hz, ${audioBuffer.length} samples`);
+  const mono = new Float32Array(padding + trimmed.length);
+  mono.set(trimmed, padding);
+  normalizeSamples(mono);
 
-  // 2. Normalize volume to maximize loudness
-  audioBuffer = normalizeAudioBuffer(audioBuffer, audioContext);
+  logger.log(`🎙️ Take: ${samples.length} samples @${sampleRate}Hz, offset ${timelineOffset.toFixed(4)}s (${offsetSamples} samples)`);
 
-  // 3. Apply latency compensation
-  const LATENCY_COMPENSATION_MS = 0; // milliseconds
-  const compensatedOffset = offsetSeconds + (LATENCY_COMPENSATION_MS / 1000); // ADD delay
-  
-  logger.log(`⏱️ Offset compensation: ${offsetSeconds.toFixed(4)}s + ${LATENCY_COMPENSATION_MS}ms = ${compensatedOffset.toFixed(4)}s`);
-
-  // 4. Calculate padding samples
-  const sampleRate = audioBuffer.sampleRate;
-  const paddingSamples = compensatedOffset > 0 ? Math.floor(compensatedOffset * sampleRate) : 0;
-  const totalSamples = paddingSamples + audioBuffer.length;
-
-  // 4. Force stereo output (always 2 channels)
-  const outputChannels = 2;
-  const isMono = audioBuffer.numberOfChannels === 1;
-
-  // 5. Create new buffer with padding (always stereo output)
-  const paddedBuffer = audioContext.createBuffer(
-    outputChannels,
-    totalSamples,
-    sampleRate
-  );
-
-  // 6. Copy data: silence (zeros) + original audio
-  if (isMono) {
-    // Mono to stereo: duplicate channel to both L and R
-    const originalData = audioBuffer.getChannelData(0);
-    const leftData = paddedBuffer.getChannelData(0);
-    const rightData = paddedBuffer.getChannelData(1);
-    
-    leftData.set(originalData, paddingSamples);
-    rightData.set(originalData, paddingSamples);
-    
-    logger.log('🎙️ Mono → Stereo (duplicated)');
-  } else if (audioBuffer.numberOfChannels === 2) {
-    // Always duplicate LEFT channel to both sides (mic mono on stereo interface)
-    const leftDataIn = audioBuffer.getChannelData(0);
-    const leftDataOut = paddedBuffer.getChannelData(0);
-    const rightDataOut = paddedBuffer.getChannelData(1);
-    
-    leftDataOut.set(leftDataIn, paddingSamples);
-    rightDataOut.set(leftDataIn, paddingSamples); // Copy LEFT to RIGHT
-    
-    logger.log('🎙️ Stereo input → Forced L=R duplication');
-  } else {
-    // Multi-channel: mix down to stereo
-    logger.log(`🎙️ Multi-channel (${audioBuffer.numberOfChannels}), mixing to stereo`);
-    const leftData = paddedBuffer.getChannelData(0);
-    const rightData = paddedBuffer.getChannelData(1);
-    
-    // Mix all channels to stereo
-    for (let i = 0; i < audioBuffer.length; i++) {
-      let leftSum = 0;
-      let rightSum = 0;
-      for (let ch = 0; ch < audioBuffer.numberOfChannels; ch++) {
-        const sample = audioBuffer.getChannelData(ch)[i];
-        if (ch % 2 === 0) {
-          leftSum += sample;
-        } else {
-          rightSum += sample;
-        }
-      }
-      leftData[paddingSamples + i] = leftSum / Math.ceil(audioBuffer.numberOfChannels / 2);
-      rightData[paddingSamples + i] = rightSum / Math.floor(audioBuffer.numberOfChannels / 2);
-    }
-  }
-
-  logger.log(`🎙️ Output: 2 channels (stereo), ${paddedBuffer.sampleRate}Hz, ${paddedBuffer.length} samples`);
-
-  // 7. Convert padded buffer to WAV blob (always WAV for high quality, or if we need padding)
-  // For low/medium quality without padding, we could keep original format, but for simplicity
-  // we always encode to WAV to ensure consistency (padding, normalization, stereo conversion)
-  const finalBlob = audioBufferToWavBlob(paddedBuffer);
+  // Mono mic → both channels
+  const finalBlob = encodeWav([mono, mono], sampleRate);
   logger.log(`💾 Final output: ${finalBlob.type}, ${(finalBlob.size / 1024).toFixed(2)} KB`);
-  
   return finalBlob;
 }
 
 /**
- * Convert AudioBuffer to WAV Blob
+ * Encode channels to a 16-bit PCM WAV Blob
  */
-function audioBufferToWavBlob(buffer: AudioBuffer): Blob {
-  const numberOfChannels = buffer.numberOfChannels;
-  const length = buffer.length * numberOfChannels * 2; // 16-bit samples
+function encodeWav(channels: Float32Array[], sampleRate: number): Blob {
+  const numberOfChannels = channels.length;
+  const frameCount = channels[0].length;
+  const length = frameCount * numberOfChannels * 2; // 16-bit samples
   const arrayBuffer = new ArrayBuffer(44 + length);
   const view = new DataView(arrayBuffer);
 
-  logger.log(`💾 WAV encoding: ${numberOfChannels} channels, ${buffer.sampleRate}Hz, ${buffer.length} samples`);
+  logger.log(`💾 WAV encoding: ${numberOfChannels} channels, ${sampleRate}Hz, ${frameCount} samples`);
 
   // Helper to write string to DataView
   const writeString = (offset: number, string: string) => {
@@ -190,8 +93,8 @@ function audioBufferToWavBlob(buffer: AudioBuffer): Blob {
   view.setUint32(16, 16, true); // Subchunk1Size (16 for PCM)
   view.setUint16(20, 1, true); // AudioFormat (1 for PCM)
   view.setUint16(22, numberOfChannels, true);
-  view.setUint32(24, buffer.sampleRate, true);
-  view.setUint32(28, buffer.sampleRate * numberOfChannels * 2, true); // ByteRate
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * numberOfChannels * 2, true); // ByteRate
   view.setUint16(32, numberOfChannels * 2, true); // BlockAlign
   view.setUint16(34, 16, true); // BitsPerSample
   writeString(36, 'data');
@@ -199,9 +102,9 @@ function audioBufferToWavBlob(buffer: AudioBuffer): Blob {
 
   // Write audio data (interleaved)
   let offset = 44;
-  for (let i = 0; i < buffer.length; i++) {
+  for (let i = 0; i < frameCount; i++) {
     for (let channel = 0; channel < numberOfChannels; channel++) {
-      const sample = buffer.getChannelData(channel)[i];
+      const sample = channels[channel][i];
       // Clamp to [-1, 1] and convert to 16-bit PCM
       const clampedSample = Math.max(-1, Math.min(1, sample));
       const int16Sample = clampedSample < 0 ? clampedSample * 0x8000 : clampedSample * 0x7fff;
@@ -223,4 +126,30 @@ export function formatRecordingTime(milliseconds: number): string {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
   return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+}
+
+/**
+ * Downsample an AudioBuffer for waveform display (keeps the largest sample of
+ * each block, sign included). Returns new arrays: never hand the real channel
+ * data to WaveSurfer, which may normalize it in place.
+ */
+export function computeDisplayPeaks(buffer: AudioBuffer, pointsPerSecond = 8000): Float32Array[] {
+  const channels = Math.min(2, buffer.numberOfChannels);
+  const blockSize = Math.max(1, Math.floor(buffer.sampleRate / pointsPerSecond));
+  const length = Math.ceil(buffer.length / blockSize);
+  const peaks: Float32Array[] = [];
+  for (let c = 0; c < channels; c++) {
+    const data = buffer.getChannelData(c);
+    const out = new Float32Array(length);
+    for (let i = 0; i < length; i++) {
+      let max = 0;
+      const end = Math.min(data.length, (i + 1) * blockSize);
+      for (let j = i * blockSize; j < end; j++) {
+        if (Math.abs(data[j]) > Math.abs(max)) max = data[j];
+      }
+      out[i] = max;
+    }
+    peaks.push(out);
+  }
+  return peaks;
 }

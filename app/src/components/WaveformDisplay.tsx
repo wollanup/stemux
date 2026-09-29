@@ -5,8 +5,10 @@ import type { WaveSurferOptions } from 'wavesurfer.js';
 import TimelinePlugin from 'wavesurfer.js/dist/plugins/timeline.esm.js';
 import Minimap from 'wavesurfer.js/dist/plugins/minimap.esm.js';
 import type {AudioTrack} from '../types/audio';
-import {markTrackFinished, registerWavesurfer, unregisterWavesurfer, useAudioStore} from '../hooks/useAudioStore';
-import {setPlaybackTime} from '../hooks/usePlaybackTime';
+import {useAudioStore} from '../hooks/useAudioStore';
+import {audioEngine} from '../audio/AudioEngine';
+import {EngineMediaProxy} from '../audio/EngineMediaProxy';
+import {computeDisplayPeaks} from '../utils/audioUtils';
 import {getWaveSurferElement, injectMarkersAndLoops, setupEditModeInteractions} from '../utils/shadowDomLoopRenderer';
 import {logger} from '../utils/logger';
 
@@ -21,6 +23,7 @@ const WaveformDisplay = ({ track }: WaveformDisplayProps) => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const minimapRef = useRef<any>(null);
   const [isReady, setIsReady] = useState(false);
+  const [buffer, setBuffer] = useState<AudioBuffer | null>(null);
   const isDraggingRef = useRef(false);
   const lastZoomRef = useRef<number | null>(null);
   const zoomRafRef = useRef<number | null>(null);
@@ -30,7 +33,6 @@ const WaveformDisplay = ({ track }: WaveformDisplayProps) => {
     seek,
     zoomLevel,
     playbackState,
-    masterVolume,
     waveformStyle,
     waveformNormalize,
     waveformTimeline,
@@ -44,11 +46,30 @@ const WaveformDisplay = ({ track }: WaveformDisplayProps) => {
     seekRef.current = seek;
   }, [seek]);
 
+  // Decode the audio into the shared engine (plays in sync with every track)
   useEffect(() => {
-    if (!containerRef.current) return;
-    
-    // Skip if no audio source
-    if (!track.file && !track.recordedBlob) return;
+    const audioSource = track.recordedBlob || track.file;
+    if (!audioSource) return;
+
+    let cancelled = false;
+    audioEngine.decode(audioSource).then((decoded) => {
+      if (cancelled) return;
+      audioEngine.addTrack(track.id, decoded);
+      setBuffer(decoded);
+    }).catch((error) => {
+      console.error('Failed to decode audio for track', track.id, error);
+    });
+
+    return () => {
+      cancelled = true;
+      audioEngine.removeTrack(track.id);
+      setBuffer(null);
+    };
+  }, [track.file, track.recordedBlob, track.id]);
+
+  // WaveSurfer only DRAWS the waveform; its playhead reads the engine clock
+  useEffect(() => {
+    if (!containerRef.current || !buffer) return;
 
     const waveColor = track.color;
     const progressColor = track.color + '40'; // Add 50% opacity
@@ -74,8 +95,13 @@ const WaveformDisplay = ({ track }: WaveformDisplayProps) => {
       minimapRef.current = minimapInstance;
     }
 
+    const media = new EngineMediaProxy(track.id);
+
     const wavesurfer = WaveSurfer.create({
       container: containerRef.current,
+      media: media.asMediaElement(),
+      peaks: computeDisplayPeaks(buffer),
+      duration: buffer.duration,
       waveColor,
       progressColor,
       cursorColor: theme.palette.primary.light,
@@ -96,67 +122,9 @@ const WaveformDisplay = ({ track }: WaveformDisplayProps) => {
 
     wavesurferRef.current = wavesurfer;
 
-    // Register this instance
-    registerWavesurfer(track.id, wavesurfer);
-
-
-    // Load audio from file or recordedBlob
-    const audioSource = track.recordedBlob || track.file;
-    if (audioSource) {
-      wavesurfer.loadBlob(audioSource);
-    }
-
-    // Update playback position during playback (throttled for performance)
-    let lastTimeUpdate = 0;
-    wavesurfer.on('timeupdate', (currentTime) => {
-      const now = Date.now();
-      // Throttle to 50fps (20ms)
-      if (now - lastTimeUpdate > 20) {
-        // Update lightweight time tracker (doesn't trigger Zustand store re-renders!)
-        setPlaybackTime(currentTime);
-
-        // Check Loop v2 first
-        const { loopState } = useAudioStore.getState();
-
-        if (loopState.activeLoopId) {
-          const activeLoop = loopState.loops.find(l => l.id === loopState.activeLoopId);
-
-          if (activeLoop && activeLoop.enabled) {
-            const startMarker = loopState.markers.find(m => m.id === activeLoop.startMarkerId);
-            const endMarker = loopState.markers.find(m => m.id === activeLoop.endMarkerId);
-
-            if (startMarker && endMarker && currentTime >= endMarker.time) {
-              logger.debug(`🔁 Loop v2 end reached (${endMarker.time.toFixed(2)}s), seeking back to ${startMarker.time.toFixed(2)}s`);
-              seekRef.current(startMarker.time);
-            }
-          }
-        }
-
-        lastTimeUpdate = now;
-      }
-    });
-
-    // Detect when playback finishes
-    wavesurfer.on('finish', () => {
-      logger.debug('🏁 Playback finished for track:', track.id);
-      markTrackFinished(track.id);
-    });
-
     // Mark as ready when waveform is loaded
     wavesurfer.on('ready', () => {
       setIsReady(true);
-
-      // Update global duration if this track is longer
-      const duration = wavesurfer.getDuration();
-      const currentDuration = useAudioStore.getState().playbackState.duration;
-      if (duration > currentDuration) {
-        useAudioStore.setState((state) => ({
-          playbackState: {
-            ...state.playbackState,
-            duration,
-          },
-        }));
-      }
 
       // Find Shadow DOM and inject markers/loops
       const wsElement = getWaveSurferElement(containerRef);
@@ -174,36 +142,11 @@ const WaveformDisplay = ({ track }: WaveformDisplayProps) => {
         }
       }
 
-      // Set initial state from track data
-      const allTracks = useAudioStore.getState().tracks;
-      const hasSoloedTracks = allTracks.some(t => t.isSolo);
-      const shouldBeMuted = track.isMuted || (hasSoloedTracks && !track.isSolo);
-
-      wavesurfer.setMuted(shouldBeMuted);
-      wavesurfer.setVolume(track.volume * useAudioStore.getState().masterVolume);
-      wavesurfer.setPlaybackRate(useAudioStore.getState().playbackState.playbackRate, true);
-
       // Restore zoom level from store
       const currentZoom = useAudioStore.getState().zoomLevel;
       if (currentZoom > 0) {
         wavesurfer.zoom(currentZoom);
         lastZoomRef.current = currentZoom;
-      }
-
-      // Check if there's a pending seek (e.g., after recording completed)
-      const { pendingSeekAfterReady } = useAudioStore.getState();
-      if (pendingSeekAfterReady !== null) {
-        logger.log(`⏱️ Executing pending seek: ${pendingSeekAfterReady.toFixed(4)}s`);
-        // Clear the pending seek flag FIRST to avoid re-triggering
-        useAudioStore.setState({ pendingSeekAfterReady: null });
-        // Then seek all tracks (including this newly ready one)
-        seek(pendingSeekAfterReady);
-      } else {
-        // Normal restore: restore playback position from store
-        const currentTime = useAudioStore.getState().playbackState.currentTime;
-        if (currentTime > 0) {
-          wavesurfer.setTime(currentTime);
-        }
       }
     });
 
@@ -230,19 +173,15 @@ const WaveformDisplay = ({ track }: WaveformDisplayProps) => {
 
     // Sync minimap clicks to other tracks
     if (minimapInstance) {
-      minimapInstance.on('click', () => {
+      minimapInstance.on('click', (progress: number) => {
         const { loopState, setActiveLoop } = useAudioStore.getState();
-
-        // The minimap already updated its own track automatically
-        // We just need to sync to OTHER tracks
-        const newTime = wavesurfer.getCurrentTime();
+        const newTime = progress * wavesurfer.getDuration();
 
         // Disable active loop when seeking
         if (loopState.activeLoopId) {
           setActiveLoop(null);
         }
 
-        // Sync all tracks (including this one, but it's already at the right position)
         seek(newTime);
       });
     }
@@ -302,7 +241,6 @@ const WaveformDisplay = ({ track }: WaveformDisplayProps) => {
         scrollElement.removeEventListener('touchend', handleTouchEnd);
       }
 
-      unregisterWavesurfer(track.id);
       wavesurferRef.current = null;
       
       // Cleanup minimap explicitly
@@ -312,8 +250,9 @@ const WaveformDisplay = ({ track }: WaveformDisplayProps) => {
       }
       
       wavesurfer.destroy();
+      media.destroy();
     };
-  }, [track.file, track.recordedBlob, track.id, waveformTimeline, waveformMinimap]); // REMOVED theme.palette.mode to prevent recreation
+  }, [buffer, track.id, waveformTimeline, waveformMinimap]); // REMOVED theme.palette.mode to prevent recreation
 
   // Handle waveform style and normalize with setOptions (no recreation needed)
   useEffect(() => {
@@ -410,19 +349,6 @@ const WaveformDisplay = ({ track }: WaveformDisplayProps) => {
     injectMarkersAndLoops(wsElement, loopState, playbackState, theme, trackDuration);
     setupEditModeInteractions(wrapper, wsElement, loopState, playbackState, isDraggingRef, theme, trackDuration);
   }, [isReady, loopState.markers, loopState.loops, loopState.editMode]); // REMOVED: playbackState.isPlaying, playbackState.duration, theme
-
-  // Update volume when it changes (NOT mute - that's handled in store)
-  useEffect(() => {
-    if (!wavesurferRef.current) return;
-    const volume = track.volume * masterVolume;
-    wavesurferRef.current.setVolume(volume);
-  }, [track.volume, masterVolume]);
-
-  // Update playback rate when it changes
-  useEffect(() => {
-    if (!wavesurferRef.current || !isReady) return;
-    wavesurferRef.current.setPlaybackRate(playbackState.playbackRate, true);
-  }, [playbackState.playbackRate, isReady]);
 
   // Update cursor color when theme changes
   useEffect(() => {

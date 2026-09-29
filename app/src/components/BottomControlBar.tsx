@@ -13,6 +13,7 @@ import {usePlaybackTime} from '../hooks/usePlaybackTime';
 import {useThrottle} from '../hooks/useThrottle';
 import PlaybackSpeedDrawer from './PlaybackSpeedDrawer';
 import {useTranslation} from 'react-i18next';
+import {audioEngine} from '../audio/AudioEngine';
 
 const StyledFab = styled(Fab)({
   position: 'absolute',
@@ -109,7 +110,7 @@ const BottomControlBar = () => {
       continuousStartTimeRef.current = Date.now();
 
       seekIntervalRef.current = window.setInterval(() => {
-        const currentTime = useAudioStore.getState().playbackState.currentTime;
+        const currentTime = audioEngine.getCurrentTime();
         const duration = useAudioStore.getState().playbackState.duration;
         const seekAmount = getAcceleratedSeekAmount();
         const newTime = Math.max(0, Math.min(
@@ -189,7 +190,7 @@ const BottomControlBar = () => {
 
         // Si c'était un appui court (pas en mode continu)
         if (keyPressTimeRef.current !== null && !isInContinuousModeRef.current) {
-          const currentTime = useAudioStore.getState().playbackState.currentTime;
+          const currentTime = audioEngine.getCurrentTime();
           const duration = useAudioStore.getState().playbackState.duration;
           const newTime = Math.max(0, Math.min(
             currentTime + (currentDirectionRef.current * SINGLE_PRESS_SEEK),
@@ -242,7 +243,7 @@ const BottomControlBar = () => {
     rewindPointerTimeoutRef.current = window.setTimeout(() => {
       rewindStartTimeRef.current = Date.now();
       rewindSeekIntervalRef.current = window.setInterval(() => {
-        const currentTime = useAudioStore.getState().playbackState.currentTime;
+        const currentTime = audioEngine.getCurrentTime();
 
         // Calculate accelerated seek amount
         const elapsed = Date.now() - (rewindStartTimeRef.current || 0);
@@ -263,7 +264,7 @@ const BottomControlBar = () => {
       rewindPointerTimeoutRef.current = null;
 
       // Was a short press, jump 5 seconds back
-      const currentTime = playbackState.currentTime;
+      const currentTime = audioEngine.getCurrentTime();
       const newTime = Math.max(0, currentTime - 5);
       seek(newTime);
     }
@@ -287,7 +288,7 @@ const BottomControlBar = () => {
     forwardPointerTimeoutRef.current = window.setTimeout(() => {
       forwardStartTimeRef.current = Date.now();
       forwardSeekIntervalRef.current = window.setInterval(() => {
-        const currentTime = useAudioStore.getState().playbackState.currentTime;
+        const currentTime = audioEngine.getCurrentTime();
         const duration = useAudioStore.getState().playbackState.duration;
         
         // Calculate accelerated seek amount
@@ -309,7 +310,7 @@ const BottomControlBar = () => {
       forwardPointerTimeoutRef.current = null;
       
       // Was a short press, jump 5 seconds forward
-      const currentTime = playbackState.currentTime;
+      const currentTime = audioEngine.getCurrentTime();
       const duration = playbackState.duration;
       const newTime = Math.min(duration, currentTime + 5);
       seek(newTime);

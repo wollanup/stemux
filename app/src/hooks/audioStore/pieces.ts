@@ -4,6 +4,7 @@
  */
 
 import type { AudioStore, AudioTrack, Piece, PieceWithStats } from '../../types/audio';
+import { audioEngine } from '../../audio/AudioEngine';
 import { logger } from '../../utils/logger';
 import {
   getPiece,
@@ -54,8 +55,9 @@ export const createPieceActions = (set: (partial: Partial<AudioStore> | ((state:
   loadPiece: async (id: string): Promise<void> => {
     const { pause } = get();
 
-    // Pause playback
+    // Pause playback and start the new piece from the beginning
     pause();
+    audioEngine.seek(0);
 
     const piece = await getPiece(id);
     if (!piece) {

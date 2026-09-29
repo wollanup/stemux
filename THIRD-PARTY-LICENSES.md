@@ -66,6 +66,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 - **Copyright**: Copyright (c) Emotion team and other contributors
 - **URL**: https://github.com/emotion-js/emotion
 
+### Signalsmith Stretch (signalsmith-stretch)
+- **License**: MIT License
+- **Copyright**: Copyright (c) Geraint Luff / Signalsmith Audio Ltd.
+- **URL**: https://signalsmith-audio.co.uk/code/stretch/
+
 ---
 
 For the complete list of all dependencies and their licenses, please refer to the `package.json` files in this project.

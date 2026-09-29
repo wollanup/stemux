@@ -156,6 +156,17 @@
     "minimap": {
       "title": "Show Minimap",
       "description": "Display small overview of the complete waveform"
+    },
+    "latency": {
+      "title": "Latency compensation (recording)",
+      "auto": "Auto",
+      "autoDescription": "Browser estimate: {{ms}} ms (output only, often too low). Measure it for accurate timing.",
+      "manualDescription": "Offset removed from every take: headphone output + mic input round trip.",
+      "calibrationHelp": "Measurement: put the mic in front of the headphones or speakers (or connect a sound card output to an input), lower the volume a bit, then start. A few clicks will be played.",
+      "calibrate": "Measure latency",
+      "calibrating": "Measuring…",
+      "calibrationDone": "Measured latency: {{ms}} ms",
+      "calibrationFailed": "Clicks not detected or unstable measurement. Move the mic closer, raise the volume or use a loopback cable, then try again."
     }
   },
   "speed": {
@@ -217,7 +228,8 @@
       "maxTracksReached": "8 track limit reached",
       "alreadyArmed": "Another track is already armed",
       "unknown": "Recording failed"
-    }
+    },
+    "normalSpeedRequired": "Set the speed back to 1x to record"
   },
   "units": {
     "bytes": "B",
