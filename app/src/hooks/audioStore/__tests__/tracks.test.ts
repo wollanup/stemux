@@ -118,3 +118,18 @@ describe('addTrack with several files at once', () => {
     expect(store.getState().tracks.map((t) => t.name)).toEqual(['b.wav']);
   });
 });
+
+describe('piece created by the first import', () => {
+  beforeEach(() => db.pieces.clear());
+
+  it('becomes the current piece with its name', async () => {
+    const store = makeStore();
+
+    await importAtOnce(store, ['a.wav']);
+
+    const { currentPieceId, currentPieceName } = store.getState();
+    const piece = db.pieces.get(currentPieceId!) as Piece;
+    expect(currentPieceName).not.toBe('');
+    expect(currentPieceName).toBe(piece.name);
+  });
+});
