@@ -11,8 +11,22 @@ import {
   getPiece,
   savePiece,
 } from '../../utils/indexedDB';
-import { COLORS, wavesurferInstances, generatePieceName } from './shared';
+import { COLORS, generatePieceName } from './shared';
 import { saveTrackSettingsToPiece } from './storage';
+import { audioEngine } from '../../audio/AudioEngine';
+import { openMic, closeMic, getMic, trackStop } from '../../audio/micSession';
+import { getRecordingLatency } from '../../audio/latency';
+import { buildTakeWav } from '../../utils/audioUtils';
+import i18n from '../../i18n/config';
+
+const getMicErrorMessage = (error: Error) => {
+  if (error.name === 'NotAllowedError') {
+    return `${i18n.t('recording.errors.permissionDenied')}\n\n${i18n.t('recording.errors.checkPermissions')}`;
+  }
+  if (error.name === 'NotFoundError') return i18n.t('recording.errors.noMicrophone');
+  if (error.name === 'NotReadableError') return i18n.t('recording.errors.microphoneInUse');
+  return i18n.t('recording.errors.unknown');
+};
 
 export const createRecordingActions = (set: (partial: Partial<AudioStore> | ((state: AudioStore) => Partial<AudioStore>)) => void, get: () => AudioStore) => ({
   addRecordableTrack: async () => {
@@ -74,12 +88,15 @@ export const createRecordingActions = (set: (partial: Partial<AudioStore> | ((st
   },
 
   toggleRecordArm: (trackId: string) => {
-    const { tracks, loopState } = get();
+    const { tracks, loopState, playbackState } = get();
 
     const track = tracks.find((t) => t.id === trackId);
     if (!track || !track.isRecordable) return;
 
     const newArmedState = !track.isArmed;
+
+    // A take recorded at another speed could not be aligned with the piece
+    if (newArmedState && playbackState.playbackRate !== 1) return;
 
     // If arming, save and disable loop
     if (newArmedState && loopState.activeLoopId !== null) {
@@ -94,73 +111,108 @@ export const createRecordingActions = (set: (partial: Partial<AudioStore> | ((st
       const { loopBackup } = get();
       if (loopBackup) {
         set({
-          loopState: { ...loopState, activeLoopId: loopBackup.activeLoopId },
+          loopState: { ...get().loopState, activeLoopId: loopBackup.activeLoopId },
           loopBackup: null,
         });
       }
     }
 
-    // Update tracks (exclusive arm)
-    const updatedTracks = tracks.map((t) => ({
+    // Update tracks (exclusive arm). Keep the state of a take being saved.
+    const updatedTracks = get().tracks.map((t) => ({
       ...t,
       isArmed: t.id === trackId ? newArmedState : false,
-      recordingState: t.id === trackId && newArmedState ? ('armed' as const) : ('idle' as const),
+      recordingState:
+        t.recordingState === 'stopped'
+          ? ('stopped' as const)
+          : t.id === trackId && newArmedState ? ('armed' as const) : ('idle' as const),
     }));
 
     set({ tracks: updatedTracks });
     logger.debug(`🎙️ ${newArmedState ? 'Armed' : 'Disarmed'} track:`, track.name);
+
+    if (newArmedState) {
+      // Open the mic NOW (permission, device start-up) so play starts instantly
+      openMic().catch((error: Error) => {
+        if (error.message === 'mic-closed') return;
+        console.error('Failed to open microphone:', error);
+        alert(getMicErrorMessage(error));
+        const current = get().tracks.find((t) => t.id === trackId);
+        if (current?.isArmed) get().toggleRecordArm(trackId);
+      });
+    } else {
+      closeMic();
+    }
   },
 
-  startRecording: async (trackId: string) => {
-    const { tracks, playbackState, audioContext } = get();
-
-    const track = tracks.find((t) => t.id === trackId);
+  startRecording: async (trackId: string, ctxTime: number) => {
+    const track = get().tracks.find((t) => t.id === trackId);
     if (!track || !track.isArmed) return;
 
-    // Get PRECISE time from WaveSurfer instance (sample-accurate)
-    let recordingStartOffset = 0;
-
-    // Try to get precise time from first WaveSurfer instance
-    const firstWavesurfer = Array.from(wavesurferInstances.values())[0];
-    if (firstWavesurfer) {
-      recordingStartOffset = firstWavesurfer.getCurrentTime();
-      logger.log(`⏱️ Recording armed at PRECISE time from WaveSurfer: ${recordingStartOffset.toFixed(6)}s`);
-    } else {
-      // Fallback to playbackState (less precise)
-      recordingStartOffset = playbackState.currentTime;
-      logger.log(`⏱️ Recording armed at playbackState time: ${recordingStartOffset.toFixed(6)}s (less precise)`);
+    let recorder;
+    try {
+      recorder = await openMic();
+    } catch {
+      return; // error already reported when arming
     }
+    const ctx = audioEngine.getContext();
+    // Normally ctxTime (the frame where playback starts). If the mic was still
+    // opening, start a bit later: the transport position is known for any time.
+    const startTime = Math.max(ctxTime, ctx.currentTime + 0.02);
+    if (!get().playbackState.isPlaying || !audioEngine.isPlaying()) return;
+    const recordingStartOffset = audioEngine.positionAt(startTime);
+    recorder.start(startTime);
 
-    if (audioContext) {
-      logger.log(`⏱️ AudioContext.currentTime: ${audioContext.currentTime.toFixed(6)}s`);
-    }
+    logger.log(`⏱️ Recording starts at ctx=${startTime.toFixed(6)}s = piece position ${recordingStartOffset.toFixed(6)}s`);
 
-    set({
-      recordingStartTime: recordingStartOffset,
-      tracks: tracks.map((t) =>
+    set((state: AudioStore) => ({
+      tracks: state.tracks.map((t) =>
         t.id === trackId
           ? { ...t, recordingState: 'recording' as const, recordingStartOffset }
           : t
       ),
-    });
-
-    logger.debug('🎙️ Recording started at offset:', recordingStartOffset);
+    }));
   },
 
   stopRecording: async (trackId: string) => {
-    const { tracks } = get();
+    const track = get().tracks.find((t) => t.id === trackId);
+    const recorder = getMic();
+    if (!track || !recorder) return;
 
-    set({
-      tracks: tracks.map((t) =>
+    set((state: AudioStore) => ({
+      tracks: state.tracks.map((t) =>
         t.id === trackId ? { ...t, recordingState: 'stopped' as const } : t
       ),
-      recordingStartTime: null,
-    });
+    }));
 
-    logger.debug('🎙️ Recording stopped');
+    const ctx = audioEngine.getContext();
+    const take = await trackStop(recorder.stop(ctx.currentTime));
+
+    if (take.samples.length === 0) {
+      logger.warn('🎙️ Empty take, nothing saved');
+      set((state: AudioStore) => ({
+        tracks: state.tracks.map((t) =>
+          t.id === trackId ? { ...t, recordingState: 'idle' as const } : t
+        ),
+      }));
+      return;
+    }
+
+    // What you heard was late by the output latency, and the mic signal reaches
+    // the browser late by the input latency: shift the take earlier by both.
+    const latency = getRecordingLatency(recorder);
+    const startOffset = track.recordingStartOffset ?? 0;
+    const timelineOffset = startOffset - latency;
+
+    logger.log(`⏱️ Recording END: ${(take.samples.length / take.sampleRate).toFixed(3)}s captured`);
+    logger.log(`  - Started at piece position: ${startOffset.toFixed(6)}s`);
+    logger.log(`  - Latency compensation: ${(latency * 1000).toFixed(1)}ms`);
+    logger.log(`  - Take placed at: ${timelineOffset.toFixed(6)}s`);
+
+    const blob = buildTakeWav(take.samples, take.sampleRate, timelineOffset);
+    await get().saveRecording(trackId, blob);
   },
 
-  // Called by WaveformDisplay when recording is complete with blob
+  // Called when the take has been assembled
   saveRecording: async (trackId: string, blob: Blob) => {
     const { currentPieceId, loopState, playbackState, masterVolume, tracks } = get();
 
@@ -212,11 +264,10 @@ export const createRecordingActions = (set: (partial: Partial<AudioStore> | ((st
             ? { ...t, recordedBlob: blob, file, recordingState: 'stopped' as const }
             : t
         ),
-        // Set pending seek - WaveformDisplay will pick this up on 'ready' event
-        pendingSeekAfterReady: recordingStartOffset,
       }));
 
-      logger.log(`⏱️ Pending seek after waveform ready: ${recordingStartOffset.toFixed(4)}s`);
+      // Go back to where the take started, ready to listen to it
+      get().seek(recordingStartOffset);
 
     } catch (error) {
       console.error('Failed to save recording:', error);

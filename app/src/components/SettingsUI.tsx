@@ -14,6 +14,7 @@ import {
 import { Close, GraphicEq, Timeline, PhotoSizeSelectSmall, Equalizer } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useAudioStore } from '../hooks/useAudioStore';
+import RecordingLatencySetting from './RecordingLatencySetting';
 
 interface SettingsUIProps {
   open: boolean;
@@ -33,6 +34,7 @@ export default function SettingsUI({ open, onClose }: SettingsUIProps) {
   const setWaveformTimeline = useAudioStore(state => state.setWaveformTimeline);
   const waveformMinimap = useAudioStore(state => state.waveformMinimap);
   const setWaveformMinimap = useAudioStore(state => state.setWaveformMinimap);
+  const isRecordingSupported = useAudioStore(state => state.isRecordingSupported);
 
   return (
     <Dialog
@@ -176,6 +178,9 @@ export default function SettingsUI({ open, onClose }: SettingsUIProps) {
               onChange={(e) => setWaveformMinimap(e.target.checked)}
             />
           </ListItem>
+
+          {/* Recording latency compensation */}
+          {isRecordingSupported && <RecordingLatencySetting />}
         </List>
       </DialogContent>
     </Dialog>

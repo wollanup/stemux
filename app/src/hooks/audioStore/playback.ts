@@ -1,49 +1,35 @@
 /**
  * Playback control actions for audioStore
  * Handles play, pause, seek, playback rate, and master volume
+ *
+ * All audio goes through the shared AudioEngine (one AudioContext clock).
  */
 
 import type { AudioStore } from '../../types/audio';
 import { logger } from '../../utils/logger';
-import {
-  wavesurferInstances,
-  finishedInstances,
-  setIsSynchronizing,
-} from './shared';
+import { audioEngine } from '../../audio/AudioEngine';
 import { saveTrackSettingsToPiece } from './storage';
 
 export const createPlaybackActions = (set: (partial: Partial<AudioStore> | ((state: AudioStore) => Partial<AudioStore>)) => void, get: () => AudioStore) => ({
   play: () => {
-    const { tracks } = get();
-    logger.debug('🎵 PLAY called - instances:', wavesurferInstances.size);
+    const { tracks, playbackState } = get();
+    if (playbackState.isPlaying) return;
 
-    // Check if any track is armed for recording
     const armedTrack = tracks.find((t) => t.isArmed && t.isRecordable);
-    if (armedTrack) {
-      get().startRecording(armedTrack.id);
+
+    // Restart from the beginning if the transport reached the end
+    const duration = audioEngine.getDuration();
+    if (duration > 0 && audioEngine.getCurrentTime() >= duration && !armedTrack) {
+      audioEngine.seek(0);
     }
 
-    // Clear finished set at the start of each play
-    finishedInstances.clear();
+    const start = audioEngine.play();
+    logger.debug(`🎵 PLAY at ctx=${start.ctxTime.toFixed(4)}s, pos=${start.pos.toFixed(4)}s`);
 
-    // Call play on all WaveSurfer instances SIMULTANEOUSLY
-    const instances = Array.from(wavesurferInstances.entries());
-    Promise.all(
-      instances.map(([id, ws]) => {
-        // Skip if track has already finished (currentTime >= duration)
-        const currentTime = ws.getCurrentTime();
-        const duration = ws.getDuration();
-
-        if (currentTime >= duration) {
-          logger.debug('Skipping finished instance:', id, `(${currentTime.toFixed(2)}s >= ${duration.toFixed(2)}s)`);
-          finishedInstances.add(id); // Mark as finished
-          return Promise.resolve();
-        }
-
-        logger.debug('Playing instance:', id);
-        return ws.play().catch(err => console.warn('WaveSurfer play error:', err));
-      })
-    );
+    // Recording starts on the very same AudioContext frame as playback
+    if (armedTrack) {
+      get().startRecording(armedTrack.id, start.ctxTime);
+    }
 
     set((state: AudioStore) => ({
       playbackState: { ...state.playbackState, isPlaying: true },
@@ -53,31 +39,38 @@ export const createPlaybackActions = (set: (partial: Partial<AudioStore> | ((sta
   pause: () => {
     const { tracks } = get();
 
-    // Stop recording if any track is recording
+    // Stop recording if any track is recording (stop frame = now)
     const recordingTrack = tracks.find((t) => t.recordingState === 'recording');
     if (recordingTrack) {
-      get().stopRecording(recordingTrack.id);
+      void get().stopRecording(recordingTrack.id);
     }
 
     // Disarm any armed track
-    const armedTrack = tracks.find((t) => t.isArmed);
+    const armedTrack = get().tracks.find((t) => t.isArmed);
     if (armedTrack) {
       get().toggleRecordArm(armedTrack.id); // Will disarm it
     }
 
-    // Pause all WaveSurfer instances simultaneously
-    const instances = Array.from(wavesurferInstances.values());
-    instances.forEach((ws) => {
-      ws.pause();
-    });
+    audioEngine.pause();
 
     set((state: AudioStore) => ({
-      playbackState: { ...state.playbackState, isPlaying: false },
+      playbackState: {
+        ...state.playbackState,
+        isPlaying: false,
+        currentTime: audioEngine.getCurrentTime(),
+      },
     }));
   },
 
   seek: (time: number) => {
     const state = get();
+
+    // Moving the playhead while recording would desync the take
+    if (state.tracks.some((t) => t.recordingState === 'recording')) {
+      logger.debug('🚫 Seek ignored while recording');
+      return;
+    }
+
     const preserveLoop = state._preserveLoopOnNextSeek || false;
 
     // Check if seeking inside the active loop (if any)
@@ -93,7 +86,6 @@ export const createPlaybackActions = (set: (partial: Partial<AudioStore> | ((sta
       }
     }
 
-    // Update state first
     set((state: AudioStore) => {
       const updates: Partial<AudioStore> = {
         playbackState: { ...state.playbackState, currentTime: time },
@@ -126,54 +118,34 @@ export const createPlaybackActions = (set: (partial: Partial<AudioStore> | ((sta
       return updates;
     });
 
-    // Set global flag to prevent feedback loops
-    setIsSynchronizing(true);
-
-    // Seek all WaveSurfer instances synchronously (no await)
-    // Use Array.from to avoid iterator issues
-    const instances = Array.from(wavesurferInstances.entries());
-    const isCurrentlyPlaying = state.playbackState.isPlaying;
-
-    // Seek all at once (WaveSurfer's setTime is sync for the call, async for rendering)
-    instances.forEach(([id, ws]) => {
-      ws.setTime(time);
-
-      // If seeking back, check if this track can now play (was finished but new time < duration)
-      const duration = ws.getDuration();
-      if (finishedInstances.has(id) && time < duration) {
-        logger.debug('🔄 Re-enabling finished track:', id, `(${time.toFixed(2)}s < ${duration.toFixed(2)}s)`);
-        finishedInstances.delete(id);
-
-        // If currently playing, restart playback on this track
-        if (isCurrentlyPlaying) {
-          logger.debug('▶️ Auto-playing re-enabled track:', id);
-          ws.play().catch(err => console.warn('Failed to play re-enabled track:', err));
-        }
-      }
-    });
-
-    // Reset flag after a short delay
-    setTimeout(() => {
-      setIsSynchronizing(false);
-    }, 50);
+    // Every track follows: they all share the engine transport
+    audioEngine.seek(time);
   },
 
   setPlaybackRate: (rate: number) => {
-    // Set playback rate on all WaveSurfer instances
-    wavesurferInstances.forEach((ws) => {
-      ws.setPlaybackRate(rate, true); // true = preserve pitch
-    });
+    const { tracks } = get();
 
+    // A take recorded at another speed could not be aligned
+    if (tracks.some((t) => t.recordingState === 'recording')) {
+      logger.debug('🚫 Playback rate change ignored while recording');
+      return;
+    }
+    const armedTrack = tracks.find((t) => t.isArmed);
+    if (armedTrack && rate !== 1) {
+      get().toggleRecordArm(armedTrack.id); // Disarm: recording requires 1x
+    }
+
+    // The engine follows playbackState.playbackRate (see useAudioStore)
     set((state: AudioStore) => ({
       playbackState: { ...state.playbackState, playbackRate: rate },
     }));
 
     // Save to piece
-    const { currentPieceId, tracks, loopState, masterVolume } = get();
+    const { currentPieceId, loopState, masterVolume } = get();
     if (currentPieceId) {
       saveTrackSettingsToPiece(
         currentPieceId,
-        tracks,
+        get().tracks,
         loopState,
         rate,
         masterVolume

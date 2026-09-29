@@ -1,169 +1,120 @@
 import { useEffect, useRef, useState } from 'react';
 import { Box, Typography } from '@mui/material';
-import WaveSurfer from 'wavesurfer.js';
-import RecordPlugin from 'wavesurfer.js/dist/plugins/record.esm.js';
-import { useAudioStore, wavesurferInstances } from '../hooks/useAudioStore';
-import { addSilencePadding, formatRecordingTime } from '../utils/audioUtils';
-import { getBestRecordingConfig, logSupportedFormats } from '../utils/recordingConfig';
 import { useTranslation } from 'react-i18next';
+import { useAudioStore } from '../hooks/useAudioStore';
+import { audioEngine } from '../audio/AudioEngine';
+import { getMic, subscribeMic } from '../audio/micSession';
+import type { MicRecorder } from '../audio/MicRecorder';
+import { formatRecordingTime } from '../utils/audioUtils';
 import type { AudioTrack } from '../types/audio';
-import {logger} from "../utils/logger.ts";
 
 interface RecordableWaveformProps {
   track: AudioTrack;
 }
 
+/** Samples per drawn bar */
+const BAR_SAMPLES = 1024;
+
+const useMic = () => {
+  const [recorder, setRecorder] = useState<MicRecorder | null>(getMic);
+  useEffect(() => subscribeMic(setRecorder), []);
+  return recorder;
+};
+
+/** Input level meter, visible as soon as the track is armed */
+const LevelMeter = ({ recorder }: { recorder: MicRecorder | null }) => {
+  const [level, setLevel] = useState(0);
+  useEffect(() => {
+    if (!recorder) return;
+    return recorder.onLevel(setLevel);
+  }, [recorder]);
+
+  const db = level > 0 ? 20 * Math.log10(level) : -60;
+  const percent = Math.max(0, Math.min(100, ((db + 60) / 60) * 100));
+  const color = level > 0.9 ? 'error.main' : level > 0.5 ? 'warning.main' : 'success.main';
+
+  return (
+    <Box sx={{ width: '60%', height: 6, bgcolor: 'action.selected', borderRadius: 3, overflow: 'hidden', mt: 0.5 }}>
+      <Box sx={{ width: `${percent}%`, height: '100%', bgcolor: color, transition: 'width 50ms linear' }} />
+    </Box>
+  );
+};
+
 const RecordableWaveform = ({ track }: RecordableWaveformProps) => {
   const { t } = useTranslation();
-  const containerRef = useRef<HTMLDivElement>(null);
-  const wavesurferRef = useRef<WaveSurfer | null>(null);
-  const recordPluginRef = useRef<RecordPlugin | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [recordingTime, setRecordingTime] = useState(0);
-  const recordingStartTimeRef = useRef<number>(0); // Track ACTUAL start time
-  
-  const { 
-    audioContext, 
-    saveRecording, 
-    stopRecording: stopRecordingStore,
-    playbackState 
-  } = useAudioStore();
+  const recorder = useMic();
+  const isPlaying = useAudioStore((state) => state.playbackState.isPlaying);
+  const isRecording = track.recordingState === 'recording';
 
+  // Live waveform, drawn at its position on the piece timeline
   useEffect(() => {
-    if (!containerRef.current || !track.isArmed) return;
+    if (!isRecording || !recorder) return;
 
-    // Log supported formats on first mount
-    logSupportedFormats();
-    
-    // Get recording config
-    const recordingConfig = getBestRecordingConfig();
+    const startOffset = track.recordingStartOffset ?? 0;
+    const peaks: number[] = [];
+    let sampleRate = 48000;
+    let current = 0;
+    let currentCount = 0;
+    let recorded = 0;
+    let shownSeconds = -1;
+    let raf = 0;
 
-    // Create WaveSurfer for live recording display
-    const wavesurfer = WaveSurfer.create({
-      container: containerRef.current,
-      waveColor: track.color,
-      progressColor: track.color + '80',
-      height: 60,
-      barWidth: 2,
-      barGap: 1,
-      barRadius: 2,
-    });
-
-    wavesurferRef.current = wavesurfer;
-
-    // Create RecordPlugin with best quality settings
-    const record = wavesurfer.registerPlugin(
-      RecordPlugin.create({
-        renderRecordedAudio: false,
-        scrollingWaveform: false,
-        continuousWaveform: true,
-        continuousWaveformDuration: 300,
-        audioBitsPerSecond: recordingConfig.audioBitsPerSecond,
-        mimeType: recordingConfig.mimeType || undefined,
-      })
-    );
-
-    recordPluginRef.current = record;
-
-    // Handle recording START (precise timing)
-    record.on('record-start', () => {
-      // Get ACTUAL current time from a playing WaveSurfer instance (not this recording one)
-      let actualStartTime = track.recordingStartOffset || 0; // fallback
-      
-      const playingInstances = Array.from(wavesurferInstances.values());
-      if (playingInstances.length > 0) {
-        // Use first playing instance for accurate time
-        actualStartTime = playingInstances[0].getCurrentTime();
-      }
-      
-      recordingStartTimeRef.current = actualStartTime;
-      
-      const expectedStartTime = track.recordingStartOffset || 0;
-      const latency = actualStartTime - expectedStartTime;
-      
-      logger.log(`⏱️ Recording START:`);
-      logger.log(`  - Expected start: ${expectedStartTime.toFixed(6)}s`);
-      logger.log(`  - Actual start: ${actualStartTime.toFixed(6)}s`);
-      logger.log(`  - Measured latency: ${(latency * 1000).toFixed(2)}ms`);
-    });
-
-    // Handle recording progress
-    record.on('record-progress', (time) => {
-      setRecordingTime(time);
-    });
-
-    // Handle recording end
-    record.on('record-end', async (blob) => {
-      if (!audioContext) return;
-
-      try {
-        // Calculate precise offset with half-latency compensation
-        const expectedStartTime = track.recordingStartOffset || 0;
-        const actualStartTime = recordingStartTimeRef.current;
-        const latency = actualStartTime - expectedStartTime;
-        
-        // Use halfway point between expected and actual (empirical best result)
-        const compensatedOffset = expectedStartTime + (latency / 2);
-        
-        logger.log(`⏱️ Recording END:`);
-        logger.log(`  - Recorded blob: ${blob.type}, ${blob.size} bytes`);
-        logger.log(`  - Expected offset: ${expectedStartTime.toFixed(6)}s`);
-        logger.log(`  - Actual offset: ${actualStartTime.toFixed(6)}s`);
-        logger.log(`  - Latency: ${(latency * 1000).toFixed(2)}ms`);
-        logger.log(`  - Using COMPENSATED offset: ${compensatedOffset.toFixed(6)}s (halfway)`);
-        
-        // Apply silence padding with compensated offset
-        const paddedBlob = await addSilencePadding(blob, compensatedOffset, audioContext);
-
-        logger.log(`  - Padded blob size: ${paddedBlob.size} bytes`);
-
-        // Save the padded recording
-        await saveRecording(track.id, paddedBlob);
-
-        setRecordingTime(0);
-      } catch (error) {
-        console.error('Failed to process recording:', error);
-      }
-    });
-
-    // Auto-start recording when armed and playing
-    if (track.recordingState === 'recording' && playbackState.isPlaying) {
-      record.startRecording(recordingConfig.audioConstraints as any).catch((error: Error) => {
-        console.error('Failed to start recording:', error);
-        
-        let errorMessage = t('recording.errors.unknown');
-        let errorDetails = '';
-        
-        if (error.name === 'NotAllowedError') {
-          errorMessage = t('recording.errors.permissionDenied');
-          errorDetails = t('recording.errors.checkPermissions');
-        } else if (error.name === 'NotFoundError') {
-          errorMessage = t('recording.errors.noMicrophone');
-        } else if (error.name === 'NotReadableError') {
-          errorMessage = t('recording.errors.microphoneInUse');
+    const unsubscribe = recorder.onData((_frame, samples) => {
+      sampleRate = audioEngine.getContext().sampleRate;
+      for (let i = 0; i < samples.length; i++) {
+        const v = Math.abs(samples[i]);
+        if (v > current) current = v;
+        if (++currentCount === BAR_SAMPLES) {
+          peaks.push(current);
+          current = 0;
+          currentCount = 0;
         }
-        
-        const fullMessage = errorDetails ? `${errorMessage}\n\n${errorDetails}` : errorMessage;
-        alert(fullMessage);
-        stopRecordingStore(track.id);
-      });
-    }
+      }
+      recorded += samples.length;
+    });
+
+    const draw = () => {
+      raf = requestAnimationFrame(draw);
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const width = canvas.clientWidth;
+      const height = canvas.clientHeight;
+      if (canvas.width !== width * devicePixelRatio) {
+        canvas.width = width * devicePixelRatio;
+        canvas.height = height * devicePixelRatio;
+      }
+      const g = canvas.getContext('2d');
+      if (!g) return;
+      g.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+      g.clearRect(0, 0, width, height);
+
+      const recordedSeconds = recorded / sampleRate;
+      const total = Math.max(audioEngine.getDuration(), startOffset + recordedSeconds, 1);
+      const pxPerSecond = width / total;
+      const barSeconds = BAR_SAMPLES / sampleRate;
+      g.fillStyle = track.color;
+      for (let i = 0; i < peaks.length; i++) {
+        const x = (startOffset + i * barSeconds) * pxPerSecond;
+        const h = Math.max(1, peaks[i] * height);
+        g.fillRect(x, (height - h) / 2, Math.max(1, barSeconds * pxPerSecond), h);
+      }
+      if (Math.floor(recordedSeconds) !== shownSeconds) {
+        shownSeconds = Math.floor(recordedSeconds);
+        setRecordingTime(shownSeconds * 1000);
+      }
+    };
+    draw();
 
     return () => {
-      if (record.isRecording()) {
-        record.stopRecording();
-      }
-      wavesurfer.destroy();
+      unsubscribe();
+      cancelAnimationFrame(raf);
+      setRecordingTime(0);
     };
-  }, [track.isArmed, track.recordingState, playbackState.isPlaying]);
+  }, [isRecording, recorder, track.recordingStartOffset, track.color]);
 
-  // Stop recording when playback stops
-  useEffect(() => {
-    if (!playbackState.isPlaying && recordPluginRef.current?.isRecording()) {
-      recordPluginRef.current.stopRecording();
-    }
-  }, [playbackState.isPlaying]);
-
-  if (!track.isArmed) {
+  if (!track.isArmed && !isRecording) {
     return (
       <Box
         sx={{
@@ -185,14 +136,14 @@ const RecordableWaveform = ({ track }: RecordableWaveformProps) => {
     );
   }
 
-  // Track is armed - show ready message OR waveform
-  if (track.recordingState === 'armed' && !playbackState.isPlaying) {
-    // Not recording yet - show "Ready to record" message
+  if (!isRecording && !isPlaying) {
+    // Armed, not recording yet: "Ready to record" + input level
     return (
       <Box
         sx={{
           height: 60,
           display: 'flex',
+          flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
           color: 'error.main',
@@ -205,15 +156,16 @@ const RecordableWaveform = ({ track }: RecordableWaveformProps) => {
         <Typography variant="caption" fontWeight={600}>
           {t('recording.readyToRecord')}
         </Typography>
+        <LevelMeter recorder={recorder} />
       </Box>
     );
   }
 
-  // Recording in progress - show waveform
+  // Recording in progress
   return (
     <Box>
-      <div ref={containerRef} />
-      {track.recordingState === 'recording' && (
+      <canvas ref={canvasRef} style={{ width: '100%', height: 60, display: 'block' }} />
+      {isRecording && (
         <Typography variant="caption" color="error.main" sx={{ mt: 0.5, display: 'block' }}>
           {formatRecordingTime(recordingTime)}
         </Typography>

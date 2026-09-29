@@ -54,6 +54,7 @@ const AudioTrack = ({ track }: AudioTrackProps) => {
     toggleRecordArm,
     clearRecording,
   } = useAudioStore();
+  const playbackRate = useAudioStore((state) => state.playbackState.playbackRate);
 
   // DND Kit sortable
   const {
@@ -445,14 +446,17 @@ const AudioTrack = ({ track }: AudioTrackProps) => {
                 title={
                   track.file 
                     ? t('recording.clearRecordingFirst') // "Delete recording first to arm"
-                    : t('recording.armTrack')
+                    : playbackRate !== 1 && !track.isArmed
+                      ? t('recording.normalSpeedRequired')
+                      : t('recording.armTrack')
                 }
               >
                 <span> {/* Wrapper for disabled button tooltip */}
                   <IconButton
                     size="small"
                     onClick={() => toggleRecordArm(track.id)}
-                    disabled={!!track.file} // Disabled if recording exists
+                    // Disabled if recording exists, or not at 1x (the take could not be aligned)
+                    disabled={!!track.file || (playbackRate !== 1 && !track.isArmed)}
                     sx={{
                       bgcolor: track.isArmed ? 'error.main' : 'transparent',
                       color: track.isArmed ? 'white' : 'inherit',

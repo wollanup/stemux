@@ -4,7 +4,6 @@
  */
 
 import { create } from 'zustand';
-import type WaveSurfer from 'wavesurfer.js';
 import type { AudioStore } from '../types/audio';
 import {
   getAllPieces,
@@ -25,11 +24,10 @@ import {
   loadCurrentPieceId,
   loadTrackSettings,
   generatePieceName,
-  wavesurferInstances,
-  finishedInstances,
   COLORS,
-  getIsSynchronizing as getIsSynchronizingFromShared,
 } from './audioStore/shared';
+import { audioEngine } from '../audio/AudioEngine';
+import { setPlaybackTime } from './usePlaybackTime';
 import { createPlaybackActions } from './audioStore/playback';
 import { createTrackActions } from './audioStore/tracks';
 import { createLoopActions } from './audioStore/loops';
@@ -38,7 +36,6 @@ import { createPieceActions } from './audioStore/pieces';
 import { createSettingsActions } from './audioStore/settings';
 
 // Re-export for backwards compatibility with existing code
-export { wavesurferInstances } from './audioStore/shared';
 export { loadTrackSettings } from './audioStore/shared';
 
 
@@ -56,7 +53,6 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
     editMode: false,
   },
   masterVolume: loadMasterVolume(),
-  audioContext: null,
   showLoopPanel: false,
   zoomLevel: 0,
   waveformStyle: loadWaveformStyle() as 'modern' | 'classic',
@@ -70,10 +66,7 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
   isRecordingSupported: typeof navigator !== 'undefined' &&
     !!navigator.mediaDevices &&
     typeof navigator.mediaDevices.getUserMedia === 'function',
-  mediaStream: null,
-  recordingStartTime: null,
   loopBackup: null,
-  pendingSeekAfterReady: null,
 
   // Compose all action modules
   ...createPlaybackActions(set, get),
@@ -89,9 +82,7 @@ export const restoreTracks = async () => {
   try {
     const state = useAudioStore.getState();
 
-    if (!state.audioContext) {
-      state.initAudioContext();
-    }
+    state.initAudioContext();
 
     // Check if pieces exist
     const pieces = await getAllPieces();
@@ -164,41 +155,62 @@ export const restoreTracks = async () => {
   }
 };
 
-// Helper functions to manage WaveSurfer instances
-export const registerWavesurfer = (trackId: string, instance: WaveSurfer) => {
-  wavesurferInstances.set(trackId, instance);
-  finishedInstances.delete(trackId); // Reset finish state when registering
+// ─── Store → engine synchronisation ─────────────────────────────────────────
+
+/** Effective gain of every track (volume, mute, solo) and master volume */
+const syncEngineMix = (state: AudioStore) => {
+  const hasSoloedTracks = state.tracks.some((t) => t.isSolo);
+  state.tracks.forEach((t) => {
+    const muted = t.isMuted || (hasSoloedTracks && !t.isSolo);
+    audioEngine.setTrackGain(t.id, muted ? 0 : t.volume);
+  });
+  audioEngine.setMasterVolume(state.masterVolume);
 };
 
-export const unregisterWavesurfer = (trackId: string) => {
-  wavesurferInstances.delete(trackId);
-  finishedInstances.delete(trackId);
+/** Active loop region, handled sample-accurately by the engine */
+const syncEngineLoop = (state: AudioStore) => {
+  const { loopState } = state;
+  const activeLoop = loopState.activeLoopId
+    ? loopState.loops.find((l) => l.id === loopState.activeLoopId && l.enabled)
+    : undefined;
+  const start = activeLoop && loopState.markers.find((m) => m.id === activeLoop.startMarkerId);
+  const end = activeLoop && loopState.markers.find((m) => m.id === activeLoop.endMarkerId);
+  audioEngine.setLoop(start && end ? { start: Math.min(start.time, end.time), end: Math.max(start.time, end.time) } : null);
 };
 
-export const markTrackFinished = (trackId: string) => {
-  finishedInstances.add(trackId);
-
-  // Check if ALL tracks have finished
-  const allFinished = wavesurferInstances.size > 0 &&
-                      finishedInstances.size === wavesurferInstances.size;
-
-  if (allFinished) {
-    logger.debug('🏁 All tracks finished playing');
-    const { pause, seek } = useAudioStore.getState();
-    pause();
-    seek(0); // Reset to start
-    // Clear finished set for next playback
-    finishedInstances.clear();
+useAudioStore.subscribe((state, prev) => {
+  if (state.tracks !== prev.tracks || state.masterVolume !== prev.masterVolume) {
+    syncEngineMix(state);
   }
-};
+  if (state.loopState !== prev.loopState) {
+    syncEngineLoop(state);
+  }
+  if (state.playbackState.playbackRate !== prev.playbackState.playbackRate) {
+    void audioEngine.setPlaybackRate(state.playbackState.playbackRate);
+  }
+});
+syncEngineMix(useAudioStore.getState());
+syncEngineLoop(useAudioStore.getState());
+void audioEngine.setPlaybackRate(useAudioStore.getState().playbackState.playbackRate);
 
-export const getWavesurfer = (trackId: string) => {
-  return wavesurferInstances.get(trackId);
-};
+audioEngine.on('timeupdate', () => setPlaybackTime(audioEngine.getCurrentTime()));
 
-export const getAllWavesurfers = () => {
-  return Array.from(wavesurferInstances.values());
-};
+audioEngine.on('durationchange', () => {
+  const duration = audioEngine.getDuration();
+  if (useAudioStore.getState().playbackState.duration !== duration) {
+    useAudioStore.setState((state) => ({
+      playbackState: { ...state.playbackState, duration },
+    }));
+  }
+});
 
-// Export function to check if currently synchronizing
-export const getIsSynchronizing = getIsSynchronizingFromShared;
+// End of the piece: stop and go back to the start
+audioEngine.on('ended', () => {
+  const { tracks } = useAudioStore.getState();
+  // Recording may go on past the end of the existing tracks
+  if (tracks.some((t) => t.recordingState === 'recording')) return;
+  logger.debug('🏁 All tracks finished playing');
+  const { pause, seek } = useAudioStore.getState();
+  pause();
+  seek(0);
+});

@@ -2,26 +2,11 @@
  * Shared utilities and constants for audioStore
  */
 
-import type WaveSurfer from 'wavesurfer.js';
-
 // Track colors palette
 export const COLORS = [
   '#4ECDC4', '#FFA07A', '#BB8FCE', '#F7DC6F',
   '#85C1E2', '#FF6B6B', '#98D8C8', '#e680a5',
 ];
-
-// WaveSurfer instances registry (outside Zustand to avoid re-renders)
-export const wavesurferInstances = new Map<string, WaveSurfer>();
-
-// Track which instances have finished playing
-export const finishedInstances = new Set<string>();
-
-// Global flag to prevent feedback loops during sync
-let isSynchronizing = false;
-export const getIsSynchronizing = () => isSynchronizing;
-export const setIsSynchronizing = (value: boolean) => {
-  isSynchronizing = value;
-};
 
 // Generate piece name from date/time
 export const generatePieceName = () => {

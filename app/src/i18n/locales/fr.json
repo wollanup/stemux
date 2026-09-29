@@ -156,6 +156,17 @@
     "minimap": {
       "title": "Afficher la minimap",
       "description": "Afficher un aperçu miniature de la waveform complète"
+    },
+    "latency": {
+      "title": "Compensation de latence (enregistrement)",
+      "auto": "Auto",
+      "autoDescription": "Estimation du navigateur : {{ms}} ms (sortie seulement, souvent sous-estimée). Mesurez-la pour un calage précis.",
+      "manualDescription": "Décalage retiré de chaque prise : aller-retour sortie casque + entrée micro.",
+      "calibrationHelp": "Mesure : placez le micro devant le casque ou les enceintes (ou reliez une sortie de la carte son à une entrée), baissez un peu le volume, puis lancez. Quelques clics vont être joués.",
+      "calibrate": "Mesurer la latence",
+      "calibrating": "Mesure en cours…",
+      "calibrationDone": "Latence mesurée : {{ms}} ms",
+      "calibrationFailed": "Clics non détectés ou mesure instable. Rapprochez le micro, montez le volume ou utilisez un câble de bouclage, puis réessayez."
     }
   },
   "speed": {
@@ -217,7 +228,8 @@
       "maxTracksReached": "Limite de 8 pistes atteinte",
       "alreadyArmed": "Une autre piste est déjà armée",
       "unknown": "Échec de l'enregistrement"
-    }
+    },
+    "normalSpeedRequired": "Remettez la vitesse à 1x pour enregistrer"
   },
   "units": {
     "bytes": "o",
