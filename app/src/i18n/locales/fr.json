@@ -31,7 +31,7 @@
         "title": "Raccourcis clavier"
       },
       "loops": {
-        "activeDesc": "Activez ou désactivez une boucle avec sa puce dans la liste au-dessus de la timeline : la lecture revient au début de la boucle en atteignant la fin.",
+        "activeDesc": "Double-cliquez (ou double-tapez) sur une boucle dans la bande du haut pour l'activer et la lire depuis son début. Vous pouvez aussi l'activer ou la désactiver avec sa puce dans la liste au-dessus de la timeline.",
         "activeTitle": "Activer une boucle",
         "editDesc": "Graduation (en bas) : appuyez pour placer la lecture, glissez pour l'ajuster précisément ; double-clic (ou double-tap) : ajouter un repère. Bande des boucles (en haut) : glissez pour créer une boucle (activée tout de suite), glissez une poignée pour déplacer un repère. Plus besoin de mode édition.",
         "editTitle": "Sur la règle de temps",

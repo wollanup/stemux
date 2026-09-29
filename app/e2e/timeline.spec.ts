@@ -70,6 +70,32 @@ test.describe('timeline', () => {
     }
   });
 
+  test('double clicking a loop enables it and plays it from its start', async ({ page }) => {
+    await openWithTracks(page, stems);
+    let ruler = (await page.getByTestId('time-ruler').boundingBox())!;
+    await page.mouse.move(await rulerX(page, 20), ruler.y + RULER_STRIP_Y);
+    await page.mouse.down();
+    await page.mouse.move(await rulerX(page, 30), ruler.y + RULER_STRIP_Y, { steps: 5 });
+    await page.mouse.up();
+    await expect(page.locator('[data-marker]')).toHaveCount(2);
+
+    // Move away: seeking outside the loop disables it
+    ruler = (await page.getByTestId('time-ruler').boundingBox())!;
+    await page.mouse.click(await rulerX(page, 45.5), ruler.y + RULER_GRADUATION_Y);
+    await expect.poll(() => shownTime(page)).toBe(45);
+
+    // A single click on the loop does nothing
+    await page.mouse.click(await rulerX(page, 25), ruler.y + RULER_STRIP_Y);
+    await page.waitForTimeout(400);
+    expect(await shownTime(page)).toBe(45);
+
+    await page.mouse.dblclick(await rulerX(page, 25), ruler.y + RULER_STRIP_Y);
+    await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible();
+    // Plays inside the loop, from its start
+    await expect.poll(() => shownTime(page)).toBeGreaterThanOrEqual(20);
+    expect(await shownTime(page)).toBeLessThanOrEqual(22);
+  });
+
   test('a marker handle shows a horizontal arrow and can be dragged', async ({ page }) => {
     await openWithTracks(page, stems);
     const ruler = (await page.getByTestId('time-ruler').boundingBox())!;

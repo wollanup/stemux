@@ -86,6 +86,18 @@ export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: Ti
   const [drag, setDrag] = useState<Drag | null>(null);
   const [hoverCursor, setHoverCursor] = useState('pointer');
   const lastTap = useRef<{ time: number; x: number } | null>(null);
+  const lastLoopTap = useRef<{ time: number; loopId: string } | null>(null);
+
+  /** Double click on a loop: enable it and play from its start */
+  const playLoop = (loopId: string) => {
+    const store = useAudioStore.getState();
+    const loop = store.loopState.loops.find((l) => l.id === loopId);
+    if (!loop) return;
+    const times = [loop.startMarkerId, loop.endMarkerId].map((id) => store.loopState.markers.find((m) => m.id === id)?.time ?? 0);
+    store.setActiveLoop(loopId);
+    useAudioStore.getState().seek(Math.min(...times));
+    if (!useAudioStore.getState().playbackState.isPlaying) useAudioStore.getState().play();
+  };
 
   const contentX = (e: React.PointerEvent<HTMLDivElement>) => e.clientX - e.currentTarget.getBoundingClientRect().left;
 
@@ -126,6 +138,19 @@ export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: Ti
     const action = resolveGesture(drag.hit, drag.downX, x, pxPerSec, duration);
 
     switch (action.type) {
+      case 'none': {
+        // Simple click in the loop strip: nothing; double click on a loop: play it
+        const loopId = drag.hit.kind === 'strip' ? drag.hit.loopId : undefined;
+        const now = performance.now();
+        const previous = lastLoopTap.current;
+        if (loopId && previous?.loopId === loopId && now - previous.time < DOUBLE_TAP_MS) {
+          lastLoopTap.current = null;
+          playLoop(loopId);
+        } else {
+          lastLoopTap.current = loopId && Math.abs(x - drag.downX) < DRAG_THRESHOLD_PX ? { time: now, loopId } : null;
+        }
+        break;
+      }
       case 'seek': {
         // Double click / double tap on the graduation adds a marker (a scrub is not a tap)
         const now = performance.now();

@@ -2,7 +2,8 @@
  * Ruler gestures (no edit mode):
  * - graduation: press → the playhead jumps there, drag → it follows the
  *   pointer (precise placement), release → it stays there
- * - loop strip: drag → create a loop, click → nothing
+ * - loop strip: drag → create a loop, click → nothing, double click on a
+ *   loop → play it
  * - marker handle (loop strip): drag → move it, click → seek to it
  */
 
@@ -10,8 +11,8 @@ import type { LoopState } from '../types/audio';
 
 export type RulerHit =
   | { kind: 'marker'; markerId: string; time: number }
-  /** Loop strip, not on a handle */
-  | { kind: 'strip' }
+  /** Loop strip, not on a handle (with the innermost loop under the pointer) */
+  | { kind: 'strip'; loopId?: string }
   /** Graduation: moves the playhead */
   | { kind: 'time' };
 
@@ -59,7 +60,22 @@ export function hitTest(x: number, inLoopStrip: boolean, state: Markers, pps: nu
     if (!best || distance < best.distance) best = { id: marker.id, time: marker.time, distance };
   }
   if (best) return { kind: 'marker', markerId: best.id, time: best.time };
-  return { kind: 'strip' };
+  const loopId = loopAt(x / pps, state);
+  return loopId ? { kind: 'strip', loopId } : { kind: 'strip' };
+}
+
+/** Innermost (shortest) loop containing a time */
+export function loopAt(time: number, state: Markers): string | undefined {
+  let found: { id: string; length: number } | undefined;
+  for (const loop of state.loops) {
+    const a = state.markers.find((m) => m.id === loop.startMarkerId)?.time;
+    const b = state.markers.find((m) => m.id === loop.endMarkerId)?.time;
+    if (a === undefined || b === undefined) continue;
+    const lo = Math.min(a, b);
+    const hi = Math.max(a, b);
+    if (time >= lo && time <= hi && (!found || hi - lo < found.length)) found = { id: loop.id, length: hi - lo };
+  }
+  return found?.id;
 }
 
 /** Playhead position while pressing/dragging on the graduation */

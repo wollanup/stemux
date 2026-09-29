@@ -35,7 +35,13 @@ describe('hitTest', () => {
 
   it('grabs a loop end by its handle, drawn on the right of the line', () => {
     expect(hitTest(200 + HANDLE_WIDTH - 1, true, state, PPS)).toMatchObject({ markerId: 'b' });
-    expect(hitTest(200 - MARKER_GRAB_PX - 2, true, state, PPS)).toEqual({ kind: 'strip' });
+    expect(hitTest(200 - MARKER_GRAB_PX - 2, true, state, PPS)).toMatchObject({ kind: 'strip' });
+  });
+
+  it('knows the innermost loop under the pointer in the strip (double click plays it)', () => {
+    expect(hitTest(140, true, state, PPS)).toEqual({ kind: 'strip', loopId: 'small' });
+    expect(hitTest(185, true, state, PPS)).toEqual({ kind: 'strip', loopId: 'big' });
+    expect(hitTest(400, true, state, PPS)).toEqual({ kind: 'strip' });
   });
 
   it('grabs the closest marker when handles overlap', () => {
