@@ -1,5 +1,5 @@
 import { Box, IconButton, Typography, Chip, Menu, MenuItem, ListItemIcon, ListItemText, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button } from '@mui/material';
-import { Close, MoreVert, Repeat as LoopIcon, Delete, PlayArrow, Pause } from '@mui/icons-material';
+import { Close, MoreVert, Repeat as LoopIcon, Delete, PlayArrow, Pause, ArrowForward } from '@mui/icons-material';
 import { useAudioStore } from '../hooks/useAudioStore';
 import { useState } from 'react';
 import {logger} from '../utils/logger';
@@ -110,6 +110,15 @@ const MarkersPanel = () => {
     handleLoopMenuClose();
   };
 
+  // Disabling the loop without pausing lets playback run past its end
+  const handleContinueAfterLoop = () => {
+    setActiveLoop(null);
+    handleLoopMenuClose();
+  };
+
+  const isLoopPlaying = (loopId: string) =>
+    isPlaying && loopState.activeLoopId === loopId && loopState.loops.some((l) => l.id === loopId && l.enabled);
+
   const handleDeleteAll = () => {
     // Remove all loops first
     loopState.loops.forEach(loop => removeLoop(loop.id));
@@ -159,7 +168,7 @@ const MarkersPanel = () => {
               size="small"
               icon={<PlayArrow fontSize="small" />}
               variant={isLoopEndpoint ? 'outlined' : 'filled'}
-              color={isInActiveLoop ? 'primary' : 'default'}
+              color={isInActiveLoop ? 'warning' : 'default'}
               onClick={() => handleMarkerClick(marker.time)}
               onPointerDown={(e) => handlePointerDown(e, marker.id)}
               onPointerUp={handlePointerUp}
@@ -168,10 +177,10 @@ const MarkersPanel = () => {
               deleteIcon={<MoreVert fontSize="small" />}
               sx={{
                 cursor: 'pointer',
-                bgcolor: isLoopStartSelection ? 'primary.main' : undefined,
-                color: isLoopStartSelection ? 'primary.contrastText' : undefined,
+                bgcolor: isLoopStartSelection ? 'warning.main' : undefined,
+                color: isLoopStartSelection ? 'warning.contrastText' : undefined,
                 '&:hover': {
-                  bgcolor: !isLoopEndpoint && isInActiveLoop ? 'primary.dark' : 'action.hover',
+                  bgcolor: !isLoopEndpoint && isInActiveLoop ? 'warning.dark' : 'action.hover',
                 },
               }}
             />
@@ -199,7 +208,7 @@ const MarkersPanel = () => {
             const startNum = getMarkerNumber(loop.startMarkerId);
             const endNum = getMarkerNumber(loop.endMarkerId);
             const isActive = loop.enabled;
-            const isPlayingLoop = isActive && isPlaying && loopState.activeLoopId === loop.id;
+            const isPlayingLoop = isLoopPlaying(loop.id);
 
             return (
               <Chip
@@ -208,16 +217,20 @@ const MarkersPanel = () => {
                 size="small"
                 icon={
                   isPlayingLoop ? (
-                    // Playing: the loop symbol turns; hovering shows what a click does (pause)
+                    // Playing: equalizer bars bounce; hovering shows what a click does (pause)
                     <Box component="span" sx={{ display: 'inline-flex' }}>
-                      <LoopIcon fontSize="small" className="loop-playing" />
+                      <Box component="span" className="loop-playing" aria-hidden>
+                        <span />
+                        <span />
+                        <span />
+                      </Box>
                       <Pause fontSize="small" className="loop-pause" />
                     </Box>
                   ) : (
                     <LoopIcon fontSize="small" />
                   )
                 }
-                color={isActive ? 'primary' : 'default'}
+                color={isActive ? 'warning' : 'default'}
                 aria-label={isPlayingLoop ? t('markers.pauseLoop') : t('markers.playLoop')}
                 onClick={() => toggleLoopPlayback(loop.id)}
                 onDelete={(e) => handleLoopMenuClick(e as React.MouseEvent<HTMLElement>, loop.id)}
@@ -225,11 +238,35 @@ const MarkersPanel = () => {
                 sx={{
                   cursor: 'pointer',
                   '&:hover': {
-                    bgcolor: isActive ? 'primary.dark' : 'action.hover',
+                    bgcolor: isActive ? 'warning.dark' : 'action.hover',
                   },
                   '& .loop-playing': {
-                    animation: 'loop-spin 3s linear infinite',
-                    '@keyframes loop-spin': { from: { transform: 'rotate(0deg)' }, to: { transform: 'rotate(360deg)' } },
+                    width: 20,
+                    height: 20,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '2px',
+                    '& span': {
+                      width: 3,
+                      height: 12,
+                      borderRadius: '1.5px',
+                      bgcolor: 'currentColor',
+                      transformOrigin: 'bottom',
+                      animation: 'loop-eq 1s ease-in-out infinite',
+                    },
+                    '& span:nth-of-type(1)': { animationDelay: '-0.2s' },
+                    '& span:nth-of-type(2)': { animationDelay: '-0.6s', animationDuration: '0.9s' },
+                    '& span:nth-of-type(3)': { animationDelay: '-0.4s', animationDuration: '1.1s' },
+                    '@keyframes loop-eq': {
+                      '0%, 100%': { transform: 'scaleY(0.3)' },
+                      '50%': { transform: 'scaleY(1)' },
+                    },
+                    '@media (prefers-reduced-motion: reduce)': {
+                      '& span': { animation: 'none' },
+                      '& span:nth-of-type(1)': { transform: 'scaleY(0.6)' },
+                      '& span:nth-of-type(3)': { transform: 'scaleY(0.4)' },
+                    },
                   },
                   '& .loop-pause': { display: 'none' },
                   '@media (hover: hover)': {
@@ -272,6 +309,14 @@ const MarkersPanel = () => {
         open={Boolean(loopMenuAnchor)}
         onClose={handleLoopMenuClose}
       >
+        {loopMenuAnchor && isLoopPlaying(loopMenuAnchor.loopId) && (
+          <MenuItem onClick={handleContinueAfterLoop}>
+            <ListItemIcon>
+              <ArrowForward fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>{t('markers.continueAfterLoop')}</ListItemText>
+          </MenuItem>
+        )}
         <MenuItem onClick={() => loopMenuAnchor && handleDeleteLoop(loopMenuAnchor.loopId)}>
           <ListItemIcon>
             <Delete fontSize="small" />

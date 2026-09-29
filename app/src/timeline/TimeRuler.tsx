@@ -82,7 +82,6 @@ const withPreview = (loopState: LoopState, drag: Drag | null, pxPerSec: number) 
 export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: TimeRulerProps) {
   const theme = useTheme();
   const loopState = useAudioStore((s) => s.loopState);
-  const isPlaying = useAudioStore((s) => s.playbackState.isPlaying);
   const [drag, setDrag] = useState<Drag | null>(null);
   const [hoverCursor, setHoverCursor] = useState('pointer');
   const lastTap = useRef<{ time: number; x: number } | null>(null);
@@ -207,7 +206,7 @@ export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: Ti
         const b = markerTime(loop.endMarkerId);
         if (a === undefined || b === undefined) return null;
         const active = loop.id === loopState.activeLoopId && loop.enabled;
-        const color = active ? theme.palette.primary.main : theme.palette.text.secondary;
+        const color = active ? theme.palette.warning.main : theme.palette.text.secondary;
         return (
           <Box
             key={loop.id}
@@ -235,8 +234,8 @@ export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: Ti
             height: LOOP_STRIP_HEIGHT - 4,
             left: newLoop.left,
             width: newLoop.width,
-            bgcolor: alpha(theme.palette.primary.main, 0.35),
-            border: `1px dashed ${theme.palette.primary.main}`,
+            bgcolor: alpha(theme.palette.warning.main, 0.35),
+            border: `1px dashed ${theme.palette.warning.main}`,
             borderRadius: 0.5,
             pointerEvents: 'none',
           }}
@@ -249,10 +248,7 @@ export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: Ti
       {markers.map((marker, index) => {
         // Loop starts get their flag on the left, so each loop reads as ( ... )
         const opensLoop = loopStartIds.has(marker.id);
-        const inActiveLoop = loopState.loops.some(
-          (l) => l.id === loopState.activeLoopId && l.enabled && (l.startMarkerId === marker.id || l.endMarkerId === marker.id)
-        );
-        const color = inActiveLoop && isPlaying ? theme.palette.primary.main : theme.palette.warning.main;
+        const color = theme.palette.warning.main;
         return (
           <Box
             key={marker.id}

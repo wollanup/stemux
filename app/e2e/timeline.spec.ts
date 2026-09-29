@@ -113,6 +113,28 @@ test.describe('timeline', () => {
     await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeVisible();
   });
 
+  test('"continue past the loop" keeps playing beyond the loop end', async ({ page }) => {
+    await openWithTracks(page, stems);
+    const ruler = (await page.getByTestId('time-ruler').boundingBox())!;
+    await page.mouse.move(await rulerX(page, 20), ruler.y + RULER_STRIP_Y);
+    await page.mouse.down();
+    await page.mouse.move(await rulerX(page, 22), ruler.y + RULER_STRIP_Y, { steps: 5 });
+    await page.mouse.up();
+
+    // Only offered while the loop plays
+    const chip = page.getByRole('button', { name: 'Play the loop' });
+    await chip.locator('.MuiChip-deleteIcon').click();
+    await expect(page.getByRole('menuitem', { name: 'Continue past the loop' })).toHaveCount(0);
+    await page.keyboard.press('Escape');
+
+    await chip.click();
+    await page.getByRole('button', { name: 'Pause the loop' }).locator('.MuiChip-deleteIcon').click();
+    await page.getByRole('menuitem', { name: 'Continue past the loop' }).click();
+
+    await expect.poll(() => shownTime(page), { timeout: 8000 }).toBeGreaterThanOrEqual(23);
+    await expect(page.getByRole('button', { name: 'Pause', exact: true })).toBeVisible();
+  });
+
   test('a marker handle shows a horizontal arrow and can be dragged', async ({ page }) => {
     await openWithTracks(page, stems);
     const ruler = (await page.getByTestId('time-ruler').boundingBox())!;
