@@ -273,9 +273,9 @@ export default function Timeline() {
                   bottom: 0,
                   left: Math.min(loopStart, loopEnd) * pps,
                   width: Math.abs(loopEnd - loopStart) * pps,
-                  bgcolor: alpha(theme.palette.primary.main, 0.08),
-                  borderLeft: `1px solid ${alpha(theme.palette.primary.main, 0.6)}`,
-                  borderRight: `1px solid ${alpha(theme.palette.primary.main, 0.6)}`,
+                  bgcolor: alpha(theme.palette.warning.main, 0.08),
+                  borderLeft: `1px solid ${alpha(theme.palette.warning.main, 0.6)}`,
+                  borderRight: `1px solid ${alpha(theme.palette.warning.main, 0.6)}`,
                 }}
               />
             )}
