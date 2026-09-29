@@ -6,7 +6,7 @@
  * The ruler is sticky on top, so nothing needs to be kept in sync.
  */
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { alpha, Box, useMediaQuery, useTheme } from '@mui/material';
 import { closestCenter, DndContext, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
@@ -18,7 +18,9 @@ import TrackRow from './TrackRow';
 import { clampScroll, contentWidth as computeContentWidth, followScroll, pxPerSecond, scrollForAnchor } from './timelineMath';
 import { getView, setView, setZoomAnchor, takeZoomAnchor } from './viewStore';
 import { zoomBy } from './zoomActions';
-import { HEADER_WIDTH, RULER_HEIGHT } from './layout';
+import { clampHeaderWidth, HEADER_WIDTH_DEFAULT, loadHeaderWidth, RULER_HEIGHT, saveHeaderWidth } from './layout';
+import ResizeHandle from './ResizeHandle';
+import { useTranslation } from 'react-i18next';
 import { MAX_ZOOM } from './zoom';
 
 /** No automatic follow for a while after the user scrolled by hand */
@@ -26,8 +28,37 @@ const MANUAL_SCROLL_GRACE_MS = 3000;
 
 export default function Timeline() {
   const theme = useTheme();
+  const { t } = useTranslation();
   const wide = useMediaQuery(theme.breakpoints.up('md'));
-  const headerWidth = wide ? HEADER_WIDTH : 0;
+
+  // Header column width: resizable, remembered in this browser
+  const [savedHeaderWidth, setSavedHeaderWidth] = useState(loadHeaderWidth);
+  const [dragHeaderWidth, setDragHeaderWidth] = useState<number | null>(null);
+  const dragHeaderWidthRef = useRef<number | null>(null);
+  const columnWidth = dragHeaderWidth ?? savedHeaderWidth;
+  const headerWidth = wide ? columnWidth : 0;
+  const headerResize = useMemo(
+    () => ({
+      onResize: (delta: number) => {
+        dragHeaderWidthRef.current = clampHeaderWidth(savedHeaderWidth + delta);
+        setDragHeaderWidth(dragHeaderWidthRef.current);
+      },
+      onEnd: () => {
+        const width = dragHeaderWidthRef.current;
+        dragHeaderWidthRef.current = null;
+        setDragHeaderWidth(null);
+        if (width !== null) {
+          setSavedHeaderWidth(width);
+          saveHeaderWidth(width);
+        }
+      },
+      onReset: () => {
+        setSavedHeaderWidth(HEADER_WIDTH_DEFAULT);
+        saveHeaderWidth(null);
+      },
+    }),
+    [savedHeaderWidth]
+  );
 
   const tracks = useAudioStore((s) => s.tracks);
   const duration = useAudioStore((s) => s.playbackState.duration);
@@ -215,13 +246,15 @@ export default function Timeline() {
                 position: 'sticky',
                 left: 0,
                 zIndex: 6,
-                width: HEADER_WIDTH,
+                width: headerWidth,
                 flexShrink: 0,
                 bgcolor: 'background.paper',
                 borderRight: `1px solid ${theme.palette.divider}`,
                 borderBottom: `1px solid ${theme.palette.divider}`,
               }}
-            />
+            >
+              <ResizeHandle axis="x" label={t('track.resizeHeaders')} {...headerResize} />
+            </Box>
           )}
           <TimeRuler width={width} pxPerSec={pps} duration={duration} playheadRef={rulerPlayheadRef} />
         </Box>
@@ -258,6 +291,8 @@ export default function Timeline() {
                   key={track.id}
                   track={track}
                   wide={wide}
+                  headerWidth={headerWidth}
+                  headerResize={headerResize}
                   contentWidth={width}
                   viewportWidth={containerWidth}
                   pxPerSec={pps}

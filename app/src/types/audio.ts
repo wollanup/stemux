@@ -8,6 +8,7 @@ export interface AudioTrack {
   color: string;
   isLoading?: boolean; // True during file import/loading
   isCollapsed?: boolean; // Track expanded/collapsed state
+  height?: number; // Lane height (px) set by the user, default when undefined
   
   // Recording properties
   isRecordable?: boolean; // true if recording track
@@ -57,6 +58,7 @@ export interface PieceSettings {
     isSolo: boolean;
     color: string;
     isCollapsed?: boolean;
+    height?: number;
     isRecordable?: boolean; // Track is a recording track
     clipOffset?: number; // Position of the clip on the timeline (seconds)
   }>;

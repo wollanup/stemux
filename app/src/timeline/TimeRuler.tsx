@@ -10,7 +10,7 @@ import { useAudioStore } from '../hooks/useAudioStore';
 import type { LoopState } from '../types/audio';
 import { formatTimeLabel, tickSpacing, ticks } from './timelineMath';
 import { getView, subscribeView } from './viewStore';
-import { hitTest, resolveGesture, type RulerHit } from './rulerGestures';
+import { cursorFor, HANDLE_WIDTH, hitTest, loopStartMarkerIds, resolveGesture, type RulerHit } from './rulerGestures';
 import { LOOP_STRIP_HEIGHT, RULER_HEIGHT } from './layout';
 
 interface TimeRulerProps {
@@ -84,21 +84,32 @@ export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: Ti
   const loopState = useAudioStore((s) => s.loopState);
   const isPlaying = useAudioStore((s) => s.playbackState.isPlaying);
   const [drag, setDrag] = useState<Drag | null>(null);
+  const [hoverCursor, setHoverCursor] = useState('pointer');
   const lastTap = useRef<{ time: number; x: number } | null>(null);
 
   const contentX = (e: React.PointerEvent<HTMLDivElement>) => e.clientX - e.currentTarget.getBoundingClientRect().left;
 
+  const hitAt = (e: React.PointerEvent<HTMLDivElement>) => {
+    const y = e.clientY - e.currentTarget.getBoundingClientRect().top;
+    return hitTest(contentX(e), y < LOOP_STRIP_HEIGHT, loopState, pxPerSec);
+  };
+
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.button !== 0) return;
     const x = contentX(e);
-    const y = e.clientY - e.currentTarget.getBoundingClientRect().top;
-    const hit = hitTest(x, y < LOOP_STRIP_HEIGHT, loopState, pxPerSec);
+    const hit = hitAt(e);
     e.currentTarget.setPointerCapture(e.pointerId);
     setDrag({ pointerId: e.pointerId, hit, downX: x, x });
   };
 
   const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!drag || drag.pointerId !== e.pointerId) return;
+    if (!drag) {
+      // Hover: horizontal arrow on handles, hand where a click seeks
+      const cursor = cursorFor(hitAt(e));
+      if (cursor !== hoverCursor) setHoverCursor(cursor);
+      return;
+    }
+    if (drag.pointerId !== e.pointerId) return;
     setDrag({ ...drag, x: contentX(e) });
   };
 
@@ -135,24 +146,19 @@ export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: Ti
       case 'moveMarker':
         store.updateMarkerTime(action.markerId, action.time);
         break;
-      case 'toggleLoop':
-        store.toggleLoopById(action.loopId);
-        break;
     }
   };
 
   const markers = withPreview(loopState, drag, pxPerSec);
   const markerTime = (id: string) => markers.find((m) => m.id === id)?.time;
-  // Earliest marker of each loop (a marker may have been dragged past the other one)
-  const loopStartIds = new Set(
-    loopState.loops.map((l) => ((markerTime(l.startMarkerId) ?? 0) <= (markerTime(l.endMarkerId) ?? 0) ? l.startMarkerId : l.endMarkerId))
-  );
+  // Earliest marker of each loop, with the one being dragged at its new place
+  const loopStartIds = loopStartMarkerIds(loopState, markerTime);
   const newLoop =
     drag && drag.hit.kind !== 'marker' && Math.abs(drag.x - drag.downX) >= 4
       ? { left: Math.min(drag.x, drag.downX), width: Math.abs(drag.x - drag.downX) }
       : null;
 
-  const hoverCursor = drag ? (drag.hit.kind === 'marker' ? 'ew-resize' : 'col-resize') : 'pointer';
+  const cursor = drag ? (drag.hit.kind === 'marker' ? 'ew-resize' : 'crosshair') : hoverCursor;
 
   return (
     <Box
@@ -165,7 +171,7 @@ export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: Ti
         width,
         height: RULER_HEIGHT,
         flexShrink: 0,
-        cursor: hoverCursor,
+        cursor,
         touchAction: 'none',
         userSelect: 'none',
         bgcolor: 'background.paper',
@@ -232,20 +238,23 @@ export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: Ti
             data-marker={marker.id}
             sx={{ position: 'absolute', top: 0, bottom: 0, left: marker.time * pxPerSec - 1, width: 2, bgcolor: color, pointerEvents: 'none' }}
           >
+            {/* Handle: almost the ruler height, easy to grab */}
             <Box
               sx={{
                 position: 'absolute',
-                // Same band as the loops, so flags and loop line up
                 top: 2,
+                bottom: 4,
                 ...(opensLoop ? { right: 2 } : { left: 2 }),
-                px: 0.5,
-                height: LOOP_STRIP_HEIGHT - 4,
-                lineHeight: `${LOOP_STRIP_HEIGHT - 4}px`,
-                fontSize: 10,
+                width: HANDLE_WIDTH - 2,
+                pt: '2px',
+                boxSizing: 'border-box',
+                textAlign: 'center',
+                fontSize: 11,
+                lineHeight: 1,
                 fontWeight: 700,
                 color: theme.palette.getContrastText(color),
                 bgcolor: color,
-                borderRadius: opensLoop ? '3px 0 0 3px' : '0 3px 3px 0',
+                borderRadius: opensLoop ? '4px 0 0 4px' : '0 4px 4px 0',
               }}
             >
               {index + 1}

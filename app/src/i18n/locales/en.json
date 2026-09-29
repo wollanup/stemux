@@ -181,7 +181,9 @@
     "addRecordableTrack": "Add Recording Track",
     "count": "{{current}}/{{max}} tracks",
     "solo": "Solo (long press: exclusive solo)",
-    "mute": "Mute (long press: unmute all)"
+    "mute": "Mute (long press: unmute all)",
+    "resizeHeight": "Drag to change the height (double click: default size)",
+    "resizeHeaders": "Drag to change the width (double click: default size)"
   },
   "recordingGuide": {
     "title": "Recording Guide",

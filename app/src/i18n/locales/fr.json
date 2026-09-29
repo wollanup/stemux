@@ -181,7 +181,9 @@
     "addRecordableTrack": "Ajouter piste d'enregistrement",
     "count": "{{current}}/{{max}} pistes",
     "solo": "Solo (appui long : solo exclusif)",
-    "mute": "Muet (appui long : tout réactiver)"
+    "mute": "Muet (appui long : tout réactiver)",
+    "resizeHeight": "Glisser pour changer la hauteur (double-clic : taille par défaut)",
+    "resizeHeaders": "Glisser pour changer la largeur (double-clic : taille par défaut)"
   },
   "recordingGuide": {
     "title": "Guide d'enregistrement",
