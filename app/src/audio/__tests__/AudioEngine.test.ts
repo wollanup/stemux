@@ -129,7 +129,7 @@ describe('AudioEngine transport', () => {
   });
 
   it('plays a clip placed later on the timeline at the right time', () => {
-    engine.addTrack('clip', fakeBuffer(5), 2);
+    engine.addTrack('clip', fakeBuffer(5), { offset: 2 });
     expect(engine.getDuration()).toBe(7);
 
     const start = engine.play();
@@ -139,6 +139,57 @@ describe('AudioEngine transport', () => {
     engine.seek(3);
     const resumed = engine.play();
     expect(ctx.startedSources()[1].startArgs).toEqual({ when: resumed.ctxTime, offset: 1 });
+  });
+
+  it('plays only the kept part of a trimmed clip', () => {
+    // 10s file, 2s cut at the start, 5s kept, placed at 1s on the timeline
+    engine.addTrack('t', fakeBuffer(10), { offset: 1, trimStart: 2, duration: 5 });
+    expect(engine.getTrackDuration('t')).toBe(6);
+    expect(engine.getDuration()).toBe(6);
+
+    engine.seek(3);
+    const start = engine.play();
+    // 2s into the clip → 4s into the file, 3s left to play
+    expect(ctx.startedSources()[0].startArgs).toEqual({ when: start.ctxTime, offset: 4 });
+    expect(ctx.startedSources()[0].duration).toBe(3);
+  });
+
+  it('does not play a trimmed clip once its kept part is over', () => {
+    engine.addTrack('long', fakeBuffer(20));
+    engine.addTrack('t', fakeBuffer(10), { offset: 0, trimStart: 0, duration: 4 });
+    engine.seek(5);
+    engine.play();
+    expect(ctx.startedSources()).toHaveLength(1);
+    expect(ctx.startedSources()[0].buffer!.duration).toBe(20);
+  });
+
+  it('keeps the clip window within the file', () => {
+    engine.addTrack('t', fakeBuffer(10), { offset: -3, trimStart: 8, duration: 5 });
+    // Offset clamped to 0, only 2s left after the cut
+    expect(engine.getTrackDuration('t')).toBe(2);
+  });
+
+  it('moves a clip while playing without touching the other tracks', () => {
+    engine.addTrack('a', fakeBuffer(10));
+    engine.addTrack('b', fakeBuffer(10));
+    const start = engine.play();
+    ctx.currentTime = start.ctxTime + 2;
+
+    engine.setClip('b', { offset: 1, trimStart: 0 });
+
+    const [a, oldB, newB] = ctx.startedSources();
+    expect(a.stopTime).toBeNull();
+    const when = newB.startArgs!.when;
+    expect(oldB.stopTime).toBe(when);
+    // Position 2.05s on the timeline = 1.05s into the moved clip
+    expect(newB.startArgs!.offset).toBeCloseTo(when - start.ctxTime - 1, 9);
+  });
+
+  it('ignores a setClip that changes nothing', () => {
+    engine.addTrack('a', fakeBuffer(10), { offset: 2 });
+    engine.play();
+    engine.setClip('a', { offset: 2, trimStart: 0 });
+    expect(ctx.startedSources()).toHaveLength(1);
   });
 
   it('applies gains set before the track is loaded', () => {
@@ -243,6 +294,20 @@ describe('AudioEngine playback rate', () => {
     engine.addTrack('a', fakeBuffer(1, 48000, 2));
     await engine.setPlaybackRate(1.5);
     expect(stretchNodes[0].buffers[0]).toHaveLength(2);
+  });
+
+  it('gives the stretch node only the kept part of a trimmed clip', async () => {
+    engine.addTrack('a', fakeBuffer(10, 1000), { trimStart: 2, duration: 3 });
+    await engine.setPlaybackRate(0.5);
+    expect(stretchNodes[0].buffers[0][0]).toHaveLength(3000);
+  });
+
+  it('rebuilds the stretch node when the clip is trimmed', async () => {
+    engine.addTrack('a', fakeBuffer(10, 1000));
+    await engine.setPlaybackRate(0.5);
+    engine.setClip('a', { trimStart: 1, duration: 4 });
+    await vi.waitFor(() => expect(stretchNodes).toHaveLength(2));
+    await vi.waitFor(() => expect(stretchNodes[1].buffers[0]?.[0]).toHaveLength(4000));
   });
 
   it('goes back to plain buffer playback at 1x', async () => {

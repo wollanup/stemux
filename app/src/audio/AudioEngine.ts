@@ -25,11 +25,28 @@ const STRETCH_LEAD = 0.2;
 const LOOP_LOOKAHEAD = 0.15;
 const TICK_MS = 20;
 
+/**
+ * Part of the audio file played, and where: the file is never modified,
+ * a clip is a window on it placed on the timeline.
+ */
+export interface ClipWindow {
+  /** Position of the clip on the timeline (seconds) */
+  offset: number;
+  /** Seconds skipped at the start of the file */
+  trimStart: number;
+  /** Seconds played (undefined: until the end of the file) */
+  duration?: number;
+}
+
 interface EngineTrack {
   id: string;
   buffer: AudioBuffer;
   /** Position of the clip on the timeline (seconds) */
   offset: number;
+  /** Seconds skipped at the start of the file */
+  trimStart: number;
+  /** Seconds played */
+  length: number;
   gain: GainNode;
   sources: Set<AudioBufferSourceNode>;
   stretch: StretchNode | null;
@@ -110,15 +127,27 @@ export class AudioEngine {
     return promise;
   }
 
-  async loadTrack(id: string, blob: Blob, offset = 0): Promise<AudioBuffer> {
+  async loadTrack(id: string, blob: Blob, clip: Partial<ClipWindow> = {}): Promise<AudioBuffer> {
     const buffer = await this.decode(blob);
-    this.addTrack(id, buffer, offset);
+    this.addTrack(id, buffer, clip);
     return buffer;
   }
 
-  addTrack(id: string, buffer: AudioBuffer, offset = 0) {
+  /** Clip window clamped to the file */
+  private static window(buffer: AudioBuffer, clip: Partial<ClipWindow>) {
+    const trimStart = Math.max(0, Math.min(clip.trimStart ?? 0, buffer.duration));
+    const available = buffer.duration - trimStart;
+    const length = Math.max(0, Math.min(clip.duration ?? available, available));
+    return { offset: Math.max(0, clip.offset ?? 0), trimStart, length };
+  }
+
+  addTrack(id: string, buffer: AudioBuffer, clip: Partial<ClipWindow> = {}) {
+    const window = AudioEngine.window(buffer, clip);
     const existing = this.tracks.get(id);
-    if (existing?.buffer === buffer && existing.offset === offset) return;
+    if (existing?.buffer === buffer) {
+      this.setClip(id, clip);
+      return;
+    }
     if (existing) this.removeTrack(id);
 
     const ctx = this.getContext();
@@ -129,7 +158,7 @@ export class AudioEngine {
     const track: EngineTrack = {
       id,
       buffer,
-      offset,
+      ...window,
       gain,
       sources: new Set(),
       stretch: null,
@@ -157,19 +186,50 @@ export class AudioEngine {
     this.emit('durationchange');
   }
 
+  /**
+   * Move / trim a clip. While playing, the track restarts at the new place
+   * on the shared clock (other tracks are not touched).
+   */
+  setClip(id: string, clip: Partial<ClipWindow>) {
+    const track = this.tracks.get(id);
+    if (!track) return;
+    const window = AudioEngine.window(track.buffer, clip);
+    const sliceChanged = window.trimStart !== track.trimStart || window.length !== track.length;
+    if (!sliceChanged && window.offset === track.offset) return;
+
+    const when = this.ctx ? this.ctx.currentTime + this.lead() : 0;
+    if (this.playing) this.stopVoice(track, when);
+    // The stretch node holds the played slice of the file: rebuild it
+    if (sliceChanged) this.destroyStretch(track);
+    Object.assign(track, window);
+    if (this.playing) this.startVoice(track, when);
+    else if (this.rate !== 1) void this.ensureStretch(track);
+    this.emit('durationchange');
+  }
+
+  /** Start and end of every clip on the timeline, except one */
+  getClipEdges(exceptId?: string): number[] {
+    const edges: number[] = [];
+    this.tracks.forEach((t) => {
+      if (t.id !== exceptId) edges.push(t.offset, t.offset + t.length);
+    });
+    return edges;
+  }
+
   hasTrack(id: string) {
     return this.tracks.has(id);
   }
 
+  /** End of the clip on the timeline */
   getTrackDuration(id: string): number {
     const track = this.tracks.get(id);
-    return track ? track.offset + track.buffer.duration : 0;
+    return track ? track.offset + track.length : 0;
   }
 
   getDuration(): number {
     let max = 0;
     this.tracks.forEach((t) => {
-      max = Math.max(max, t.offset + t.buffer.duration);
+      max = Math.max(max, t.offset + t.length);
     });
     return max;
   }
@@ -320,7 +380,7 @@ export class AudioEngine {
     if (this.rate === 1) {
       // Position inside the clip; a clip placed later on the timeline starts delayed
       const clipPos = pos - track.offset;
-      if (clipPos >= track.buffer.duration) return;
+      if (clipPos >= track.length) return;
       const source = ctx.createBufferSource();
       source.buffer = track.buffer;
       source.connect(track.gain);
@@ -329,7 +389,8 @@ export class AudioEngine {
         track.sources.delete(source);
       };
       const startAt = Math.max(when, ctx.currentTime) + Math.max(0, -clipPos) / this.rate;
-      source.start(startAt, Math.max(0, clipPos));
+      const from = Math.max(0, clipPos);
+      source.start(startAt, track.trimStart + from, track.length - from);
       track.sources.add(source);
       return;
     }
@@ -367,15 +428,21 @@ export class AudioEngine {
     if (!track.stretchPromise) {
       const ctx = this.getContext();
       // Default options (1 unconnected input, stereo output): buffer playback mode
-      track.stretchPromise = SignalsmithStretch(ctx).then(async (node) => {
+      const promise: Promise<StretchNode> = SignalsmithStretch(ctx).then(async (node) => {
+        // Only the played slice: input positions are relative to the clip start
+        const sr = track.buffer.sampleRate;
+        const from = Math.round(track.trimStart * sr);
+        const to = Math.round((track.trimStart + track.length) * sr);
         const channels: Float32Array[] = [];
         for (let c = 0; c < track.buffer.numberOfChannels; c++) {
-          channels.push(track.buffer.getChannelData(c));
+          channels.push(track.buffer.getChannelData(c).slice(from, to));
         }
         await node.addBuffers(channels);
-        track.stretch = node;
+        // Discarded meanwhile (clip trimmed, back to 1x...): do not attach it
+        if (track.stretchPromise === promise) track.stretch = node;
         return node;
       });
+      track.stretchPromise = promise;
     }
     return track.stretchPromise;
   }

@@ -20,15 +20,27 @@
         "uploadDesc": "Drag and drop audio files (MP3, WAV, OGG, etc.) or click the upload area. Your tracks are stored locally in your browser.",
         "uploadTitle": "1. Upload Your Tracks"
       },
+      "clips": {
+        "moveDesc": "With the mouse, drag the body of a clip to place it elsewhere on the timeline (a simple click only moves the playhead).",
+        "moveTitle": "Move",
+        "snapDesc": "With the magnet in the top bar, clip edges stick to markers, loops, the playhead and other clips. Hold Alt while dragging to place freely.",
+        "snapTitle": "Snapping",
+        "title": "Clips",
+        "trimDesc": "Hover the start or end of a clip (thick border, ↔ arrow) and drag. The file is never modified: what was cut can always be restored.",
+        "trimTitle": "Shorten / lengthen"
+      },
       "keyboard": {
+        "altSnap": "While dragging a clip: ignore snapping",
         "altWheel": "Shift + Wheel - Horizontal scroll (when zoomed)",
         "arrowLeft": "← - Rewind 5 seconds (hold for continuous)",
         "arrowRight": "→ - Forward 5 seconds (hold for continuous)",
         "ctrlLeft": "Ctrl + ← - Jump to beginning",
         "ctrlWheel": "Ctrl + Wheel - Zoom in/out around the mouse (pinch on mobile)",
         "more": "More shortcuts coming soon!",
+        "redo": "Redo",
         "space": "SPACE - Play/Pause",
-        "title": "Keyboard Shortcuts"
+        "title": "Keyboard Shortcuts",
+        "undo": "Undo the last clip edit"
       },
       "loops": {
         "activeDesc": "Double click (or double tap) a loop in the top strip to enable it and play it from its start. You can also enable or disable it with its chip in the list above the timeline.",
@@ -193,6 +205,11 @@
     "presets": "Quick Presets",
     "slower": "Slower",
     "title": "Playback Speed"
+  },
+  "timeline": {
+    "snap": "Snapping",
+    "snapOff": "Snapping off",
+    "snapOn": "Snapping on: clips stick to markers, loops, the playhead and other clips (hold Alt to ignore it)"
   },
   "track": {
     "addRecordableTrack": "Add Recording Track",

@@ -20,15 +20,27 @@
         "uploadDesc": "Glissez-déposez des fichiers audio (MP3, WAV, OGG, etc.) ou cliquez sur la zone de téléchargement. Vos pistes sont stockées localement dans votre navigateur.",
         "uploadTitle": "1. Charger vos pistes"
       },
+      "clips": {
+        "moveDesc": "À la souris, glissez le corps d'un clip pour le placer ailleurs sur la timeline (un simple clic déplace seulement la lecture).",
+        "moveTitle": "Déplacer",
+        "snapDesc": "Avec l'aimant de la barre du haut, les bords des clips se collent aux repères, boucles, à la tête de lecture et aux autres clips. Maintenez Alt pendant le glisser pour placer librement.",
+        "snapTitle": "Magnétisme",
+        "title": "Clips",
+        "trimDesc": "Survolez le début ou la fin d'un clip (bordure épaisse, flèche ↔) et glissez. Le fichier n'est jamais modifié : on peut toujours retrouver ce qui a été coupé.",
+        "trimTitle": "Raccourcir / rallonger"
+      },
       "keyboard": {
+        "altSnap": "Pendant un glisser de clip : ignorer le magnétisme",
         "altWheel": "Maj + Molette - Défilement horizontal (si zoomé)",
         "arrowLeft": "← - Reculer de 5 secondes (maintenir pour continu)",
         "arrowRight": "→ - Avancer de 5 secondes (maintenir pour continu)",
         "ctrlLeft": "Ctrl + ← - Retour au début",
         "ctrlWheel": "Ctrl + Molette - Zoom avant/arrière autour de la souris (pincer sur mobile)",
         "more": "D'autres raccourcis arrivent bientôt !",
+        "redo": "Rétablir",
         "space": "ESPACE - Lecture/Pause",
-        "title": "Raccourcis clavier"
+        "title": "Raccourcis clavier",
+        "undo": "Annuler la dernière modification de clip"
       },
       "loops": {
         "activeDesc": "Double-cliquez (ou double-tapez) sur une boucle dans la bande du haut pour l'activer et la lire depuis son début. Vous pouvez aussi l'activer ou la désactiver avec sa puce dans la liste au-dessus de la timeline.",
@@ -195,6 +207,11 @@
     "presets": "Préréglages rapides",
     "slower": "Plus lent",
     "title": "Vitesse de lecture"
+  },
+  "timeline": {
+    "snap": "Magnétisme",
+    "snapOff": "Magnétisme désactivé",
+    "snapOn": "Magnétisme activé : les clips se collent aux repères, boucles, tête de lecture et autres clips (maintenir Alt pour l'ignorer)"
   },
   "track": {
     "addRecordableTrack": "Ajouter piste d'enregistrement",

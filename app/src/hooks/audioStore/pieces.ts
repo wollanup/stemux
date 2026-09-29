@@ -112,6 +112,9 @@ export const createPieceActions = (set: (partial: Partial<AudioStore> | ((state:
       masterVolume: settings.masterVolume,
       currentPieceId: id,
       currentPieceName: piece.name,
+      // Undo history belongs to the piece being edited
+      clipUndo: [],
+      clipRedo: [],
     });
 
     saveCurrentPieceId(id);
