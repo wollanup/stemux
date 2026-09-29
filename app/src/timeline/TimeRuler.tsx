@@ -162,6 +162,7 @@ export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: Ti
 
   return (
     <Box
+      data-testid="time-ruler"
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
@@ -238,19 +239,18 @@ export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: Ti
             data-marker={marker.id}
             sx={{ position: 'absolute', top: 0, bottom: 0, left: marker.time * pxPerSec - 1, width: 2, bgcolor: color, pointerEvents: 'none' }}
           >
-            {/* Handle: almost the ruler height, easy to grab */}
+            {/* Handle: fills the loop strip (not the graduation), easy to grab */}
             <Box
               sx={{
                 position: 'absolute',
                 top: 2,
-                bottom: 4,
+                height: LOOP_STRIP_HEIGHT - 4,
                 ...(opensLoop ? { right: 2 } : { left: 2 }),
                 width: HANDLE_WIDTH - 2,
-                pt: '2px',
                 boxSizing: 'border-box',
                 textAlign: 'center',
                 fontSize: 11,
-                lineHeight: 1,
+                lineHeight: `${LOOP_STRIP_HEIGHT - 4}px`,
                 fontWeight: 700,
                 color: theme.palette.getContrastText(color),
                 bgcolor: color,

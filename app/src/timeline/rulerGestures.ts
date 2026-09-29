@@ -42,7 +42,8 @@ export function loopStartMarkerIds(state: Markers, timeOf?: (id: string) => numb
 
 /**
  * What is under the pointer. `x` is in content pixels; `inLoopStrip` is true
- * in the strip where loops are drawn. Handles span the ruler height.
+ * in the strip where loops and handles are drawn. Below it (graduation) only
+ * the marker line itself can be grabbed.
  */
 export function hitTest(x: number, inLoopStrip: boolean, state: Markers, pps: number): RulerHit {
   const leftHanded = loopStartMarkerIds(state);
@@ -50,8 +51,9 @@ export function hitTest(x: number, inLoopStrip: boolean, state: Markers, pps: nu
   for (const marker of state.markers) {
     const lineX = marker.time * pps;
     const onLeft = leftHanded.has(marker.id);
-    const from = onLeft ? lineX - HANDLE_WIDTH : lineX - MARKER_GRAB_PX;
-    const to = onLeft ? lineX + MARKER_GRAB_PX : lineX + HANDLE_WIDTH;
+    const handle = inLoopStrip ? HANDLE_WIDTH : MARKER_GRAB_PX;
+    const from = onLeft ? lineX - handle : lineX - MARKER_GRAB_PX;
+    const to = onLeft ? lineX + MARKER_GRAB_PX : lineX + handle;
     if (x < from || x > to) continue;
     const distance = Math.abs(lineX - x);
     if (!best || distance < best.distance) best = { id: marker.id, time: marker.time, distance };

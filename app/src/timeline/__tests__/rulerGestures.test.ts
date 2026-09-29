@@ -17,20 +17,26 @@ const state = {
 };
 
 describe('hitTest', () => {
-  it('grabs a marker on its line', () => {
+  it('grabs a marker on its line, in the strip and on the graduation', () => {
     expect(hitTest(100 - MARKER_GRAB_PX + 1, false, state, PPS)).toMatchObject({ kind: 'marker', markerId: 'a' });
+    expect(hitTest(100 + MARKER_GRAB_PX - 1, true, state, PPS)).toMatchObject({ kind: 'marker', markerId: 'a' });
+  });
+
+  it('handles are only in the loop strip, not on the graduation', () => {
+    expect(hitTest(200 + HANDLE_WIDTH - 1, true, state, PPS)).toMatchObject({ markerId: 'b' });
+    expect(hitTest(200 + HANDLE_WIDTH - 1, false, state, PPS)).toEqual({ kind: 'empty' });
   });
 
   it('grabs a loop start by its handle, drawn on the left of the line', () => {
     expect(loopStartMarkerIds(state)).toEqual(new Set(['a', 'c']));
-    expect(hitTest(100 - HANDLE_WIDTH + 1, false, state, PPS)).toMatchObject({ markerId: 'a' });
+    expect(hitTest(100 - HANDLE_WIDTH + 1, true, state, PPS)).toMatchObject({ markerId: 'a' });
     // Right of the line: not this marker (here it is the handle of 'c', at 12s)
-    expect(hitTest(100 + MARKER_GRAB_PX + 2, false, state, PPS)).not.toMatchObject({ markerId: 'a' });
+    expect(hitTest(100 + MARKER_GRAB_PX + 2, true, state, PPS)).not.toMatchObject({ markerId: 'a' });
   });
 
   it('grabs a loop end by its handle, drawn on the right of the line', () => {
-    expect(hitTest(200 + HANDLE_WIDTH - 1, false, state, PPS)).toMatchObject({ markerId: 'b' });
-    expect(hitTest(200 - MARKER_GRAB_PX - 2, false, state, PPS)).toEqual({ kind: 'empty' });
+    expect(hitTest(200 + HANDLE_WIDTH - 1, true, state, PPS)).toMatchObject({ markerId: 'b' });
+    expect(hitTest(200 - MARKER_GRAB_PX - 2, true, state, PPS)).toEqual({ kind: 'strip' });
   });
 
   it('grabs the closest marker when handles overlap', () => {

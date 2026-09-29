@@ -5,9 +5,9 @@ export const HEADER_WIDTH_DEFAULT = 300;
 export const HEADER_WIDTH_MIN = 260;
 export const HEADER_WIDTH_MAX = 520;
 
-/** Ruler: loop strip on top, graduation below */
-export const LOOP_STRIP_HEIGHT = 16;
-export const RULER_HEIGHT = 40;
+/** Ruler: loop strip on top (loops and marker handles), graduation below */
+export const LOOP_STRIP_HEIGHT = 24;
+export const RULER_HEIGHT = 48;
 
 /** Track heights (resizable per track, saved with the piece) */
 export const LANE_HEIGHT = 80;
