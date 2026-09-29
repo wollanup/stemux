@@ -36,6 +36,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Only what ships to users; dev-tool advisories are handled by Dependabot
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
       - name: Lint
         run: npm run lint
 
@@ -47,3 +51,31 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  # Blocks a PR that adds a dependency with a known high/critical advisory
+  dependency-review:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      # The action errors out when the repo's Dependency graph is off
+      # (Settings → Code security); warn instead until it is enabled
+      - name: Check dependency graph availability
+        id: graph
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh api "repos/${{ github.repository }}/dependency-graph/sbom" --silent; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::Dependency graph is disabled, skipping dependency review. Enable it in Settings → Code security."
+          fi
+
+      - name: Checkout
+        if: steps.graph.outputs.enabled == 'true'
+        uses: actions/checkout@v4
+
+      - name: Review dependency changes
+        if: steps.graph.outputs.enabled == 'true'
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
