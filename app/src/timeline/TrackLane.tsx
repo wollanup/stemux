@@ -61,12 +61,11 @@ function Clip({ left, width, color }: { left: number; width: number; color: stri
         position: 'absolute',
         left,
         width,
-        top: 3,
-        bottom: 3,
+        top: 0,
+        bottom: 0,
         bgcolor: alpha(color, 0.12),
         border: '1px solid transparent',
         '--clip-border': alpha(color, 0.6),
-        borderRadius: 1,
         pointerEvents: 'none',
         transition: 'border-color 0.15s',
       }}
@@ -105,10 +104,11 @@ export default function TrackLane({ track, audio, width, height, pxPerSec, dimme
   const waveColor = track.isMuted ? theme.palette.action.disabled : track.color;
   const offset = track.clipOffset ?? 0;
   const recordStart = track.recordingStartOffset ?? 0;
-  const drawHeight = height - 8;
+  // Lane height minus its bottom separator; bars keep a margin of their own
+  const drawHeight = height - 1;
 
   const renderWave = (source: PeakSource | null, sourceOffset: number, animate = false) => (
-    <Box sx={{ position: 'absolute', left: 0, right: 0, top: 4, height: drawHeight, opacity: dimmed ? 0.35 : 1 }}>
+    <Box sx={{ position: 'absolute', left: 0, right: 0, top: 0, height: drawHeight, opacity: dimmed ? 0.35 : 1 }}>
       <WaveformCanvas
         source={source}
         offset={sourceOffset}
@@ -156,12 +156,11 @@ export default function TrackLane({ track, audio, width, height, pxPerSec, dimme
             sx={{
               position: 'absolute',
               left: recordStart * pxPerSec,
-              top: 3,
-              bottom: 3,
+              top: 0,
+              bottom: 0,
               width: 2,
               bgcolor: alpha(theme.palette.error.main, 0.14),
               border: `1px solid ${alpha(theme.palette.error.main, 0.6)}`,
-              borderRadius: 1,
               pointerEvents: 'none',
             }}
           />
