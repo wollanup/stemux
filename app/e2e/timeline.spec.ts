@@ -90,10 +90,27 @@ test.describe('timeline', () => {
     expect(await shownTime(page)).toBe(45);
 
     await page.mouse.dblclick(await rulerX(page, 25), ruler.y + RULER_STRIP_Y);
-    await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Pause', exact: true })).toBeVisible();
     // Plays inside the loop, from its start
     await expect.poll(() => shownTime(page)).toBeGreaterThanOrEqual(20);
     expect(await shownTime(page)).toBeLessThanOrEqual(22);
+  });
+
+  test('a loop chip plays the loop, and pauses it on a second click', async ({ page }) => {
+    await openWithTracks(page, stems);
+    const ruler = (await page.getByTestId('time-ruler').boundingBox())!;
+    await page.mouse.move(await rulerX(page, 20), ruler.y + RULER_STRIP_Y);
+    await page.mouse.down();
+    await page.mouse.move(await rulerX(page, 30), ruler.y + RULER_STRIP_Y, { steps: 5 });
+    await page.mouse.up();
+
+    await page.getByRole('button', { name: 'Play the loop' }).click();
+    await expect(page.getByRole('button', { name: 'Pause the loop' })).toBeVisible();
+    await expect.poll(() => shownTime(page)).toBeGreaterThanOrEqual(20);
+
+    await page.getByRole('button', { name: 'Pause the loop' }).click();
+    await expect(page.getByRole('button', { name: 'Play the loop' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeVisible();
   });
 
   test('a marker handle shows a horizontal arrow and can be dragged', async ({ page }) => {

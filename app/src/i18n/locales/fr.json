@@ -84,7 +84,9 @@
     "loops": "Boucles:",
     "markers": "Repères:",
     "setLoopEnd": "Définir comme fin de boucle",
-    "setLoopStart": "Définir comme début de boucle"
+    "setLoopStart": "Définir comme début de boucle",
+    "playLoop": "Lire la boucle",
+    "pauseLoop": "Mettre la boucle en pause"
   },
   "menu": {
     "darkMode": "Mode sombre",

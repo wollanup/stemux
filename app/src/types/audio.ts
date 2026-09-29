@@ -135,6 +135,8 @@ export interface AudioStore {
   removeLoop: (id: string) => void;
   toggleLoopById: (id: string) => void;
   setActiveLoop: (id: string | null) => void;
+  playLoop: (id: string) => void;
+  toggleLoopPlayback: (id: string) => void;
 
   setWaveformStyle: (style: 'modern' | 'classic') => void;
   setWaveformNormalize: (normalize: boolean) => void;

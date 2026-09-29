@@ -1,5 +1,5 @@
 import { Box, IconButton, Typography, Chip, Menu, MenuItem, ListItemIcon, ListItemText, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button } from '@mui/material';
-import { Close, MoreVert, Loop as LoopIcon, Delete, PlayArrow } from '@mui/icons-material';
+import { Close, MoreVert, Repeat as LoopIcon, Delete, PlayArrow, Pause } from '@mui/icons-material';
 import { useAudioStore } from '../hooks/useAudioStore';
 import { useState } from 'react';
 import {logger} from '../utils/logger';
@@ -7,7 +7,8 @@ import { useTranslation } from 'react-i18next';
 
 const MarkersPanel = () => {
   const { t } = useTranslation();
-  const { loopState, removeMarker, removeLoop, seek, createLoop, setActiveLoop, play } = useAudioStore();
+  const { loopState, removeMarker, removeLoop, seek, createLoop, setActiveLoop, play, toggleLoopPlayback } = useAudioStore();
+  const isPlaying = useAudioStore((s) => s.playbackState.isPlaying);
   const [menuAnchor, setMenuAnchor] = useState<{ element: HTMLElement; markerId: string } | null>(null);
   const [loopMenuAnchor, setLoopMenuAnchor] = useState<{ element: HTMLElement; loopId: string } | null>(null);
   const [loopStartMarker, setLoopStartMarker] = useState<string | null>(null);
@@ -93,18 +94,6 @@ const MarkersPanel = () => {
       clearTimeout(longPressTimer);
       setLongPressTimer(null);
     }
-  };
-
-  const handleLoopClick = (loopId: string) => {
-    const loop = loopState.loops.find(l => l.id === loopId);
-    if (!loop) return;
-    
-    const startMarker = loopState.markers.find(m => m.id === loop.startMarkerId);
-    if (!startMarker) return;
-    
-    setActiveLoop(loopId);
-    seek(startMarker.time);
-    play();
   };
 
   const handleLoopMenuClick = (e: React.MouseEvent<HTMLElement>, loopId: string) => {
@@ -210,21 +199,42 @@ const MarkersPanel = () => {
             const startNum = getMarkerNumber(loop.startMarkerId);
             const endNum = getMarkerNumber(loop.endMarkerId);
             const isActive = loop.enabled;
+            const isPlayingLoop = isActive && isPlaying && loopState.activeLoopId === loop.id;
 
             return (
               <Chip
                 key={loop.id}
                 label={`${startNum} → ${endNum}`}
                 size="small"
-                icon={<LoopIcon fontSize="small" />}
+                icon={
+                  isPlayingLoop ? (
+                    // Playing: the loop symbol turns; hovering shows what a click does (pause)
+                    <Box component="span" sx={{ display: 'inline-flex' }}>
+                      <LoopIcon fontSize="small" className="loop-playing" />
+                      <Pause fontSize="small" className="loop-pause" />
+                    </Box>
+                  ) : (
+                    <LoopIcon fontSize="small" />
+                  )
+                }
                 color={isActive ? 'primary' : 'default'}
-                onClick={() => handleLoopClick(loop.id)}
+                aria-label={isPlayingLoop ? t('markers.pauseLoop') : t('markers.playLoop')}
+                onClick={() => toggleLoopPlayback(loop.id)}
                 onDelete={(e) => handleLoopMenuClick(e as React.MouseEvent<HTMLElement>, loop.id)}
                 deleteIcon={<MoreVert fontSize="small" />}
                 sx={{
                   cursor: 'pointer',
                   '&:hover': {
                     bgcolor: isActive ? 'primary.dark' : 'action.hover',
+                  },
+                  '& .loop-playing': {
+                    animation: 'loop-spin 3s linear infinite',
+                    '@keyframes loop-spin': { from: { transform: 'rotate(0deg)' }, to: { transform: 'rotate(360deg)' } },
+                  },
+                  '& .loop-pause': { display: 'none' },
+                  '@media (hover: hover)': {
+                    '&:hover .loop-playing': { display: 'none' },
+                    '&:hover .loop-pause': { display: 'inline-block' },
                   },
                 }}
               />

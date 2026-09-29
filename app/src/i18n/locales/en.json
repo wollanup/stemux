@@ -84,7 +84,9 @@
     "loops": "Loops:",
     "markers": "Markers:",
     "setLoopEnd": "Set as loop end",
-    "setLoopStart": "Set as loop start"
+    "setLoopStart": "Set as loop start",
+    "playLoop": "Play the loop",
+    "pauseLoop": "Pause the loop"
   },
   "menu": {
     "darkMode": "Dark mode",

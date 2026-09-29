@@ -88,17 +88,6 @@ export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: Ti
   const lastTap = useRef<{ time: number; x: number } | null>(null);
   const lastLoopTap = useRef<{ time: number; loopId: string } | null>(null);
 
-  /** Double click on a loop: enable it and play from its start */
-  const playLoop = (loopId: string) => {
-    const store = useAudioStore.getState();
-    const loop = store.loopState.loops.find((l) => l.id === loopId);
-    if (!loop) return;
-    const times = [loop.startMarkerId, loop.endMarkerId].map((id) => store.loopState.markers.find((m) => m.id === id)?.time ?? 0);
-    store.setActiveLoop(loopId);
-    useAudioStore.getState().seek(Math.min(...times));
-    if (!useAudioStore.getState().playbackState.isPlaying) useAudioStore.getState().play();
-  };
-
   const contentX = (e: React.PointerEvent<HTMLDivElement>) => e.clientX - e.currentTarget.getBoundingClientRect().left;
 
   const hitAt = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -145,7 +134,7 @@ export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: Ti
         const previous = lastLoopTap.current;
         if (loopId && previous?.loopId === loopId && now - previous.time < DOUBLE_TAP_MS) {
           lastLoopTap.current = null;
-          playLoop(loopId);
+          useAudioStore.getState().playLoop(loopId);
         } else {
           lastLoopTap.current = loopId && Math.abs(x - drag.downX) < DRAG_THRESHOLD_PX ? { time: now, loopId } : null;
         }
