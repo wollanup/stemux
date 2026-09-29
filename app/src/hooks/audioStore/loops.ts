@@ -1,6 +1,6 @@
 /**
  * Loop and marker management actions for audioStore
- * Handles loop panel, edit mode, markers (add/remove/update), and loops (create/remove/toggle)
+ * Handles markers (add/remove/update) and loops (create/remove/toggle)
  */
 
 import type { AudioStore } from '../../types/audio';
@@ -8,23 +8,6 @@ import { logger } from '../../utils/logger';
 import { saveTrackSettingsToPiece } from './storage';
 
 export const createLoopActions = (set: (partial: Partial<AudioStore> | ((state: AudioStore) => Partial<AudioStore>)) => void, get: () => AudioStore) => ({
-  toggleLoopPanel: () => {
-    set((state: AudioStore) => ({ showLoopPanel: !state.showLoopPanel }));
-  },
-
-  toggleLoopEditMode: () => {
-    set((state: AudioStore) => {
-      const newEditMode = !state.loopState.editMode;
-      logger.debug('🎯 Loop edit mode:', newEditMode ? 'ON' : 'OFF');
-      return {
-        loopState: {
-          ...state.loopState,
-          editMode: newEditMode,
-        },
-      };
-    });
-  },
-
   addMarker: (time: number, label?: string) => {
     const { loopState, playbackState, currentPieceId, tracks, masterVolume } = get();
 

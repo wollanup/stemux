@@ -1,12 +1,8 @@
-import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import {
-    Alert,
-    AlertTitle,
     Box,
     Button,
     CircularProgress,
-    Collapse,
-    Container,
     createTheme,
     CssBaseline,
     Dialog,
@@ -15,6 +11,7 @@ import {
     DialogContentText,
     DialogTitle,
     ThemeProvider,
+    Toolbar,
     Typography,
     useMediaQuery,
     Radio,
@@ -22,25 +19,12 @@ import {
     FormControlLabel,
     FormControl,
 } from '@mui/material';
-import {
-    DndContext,
-    closestCenter,
-    KeyboardSensor,
-    PointerSensor,
-    useSensor,
-    useSensors,
-    type DragEndEvent,
-} from '@dnd-kit/core';
-import {
-    SortableContext,
-    sortableKeyboardCoordinates,
-    verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
 import {restoreTracks, useAudioStore} from './hooks/useAudioStore';
-import {useSyncWaveformScroll} from './hooks/useSyncWaveformScroll';
 import TrackAdder from './components/TrackAdder';
 import FullScreenDropZone from './components/FullScreenDropZone';
-import AudioTrack from './components/AudioTrack';
+import Timeline from './timeline/Timeline';
+import {zoomBy} from './timeline/zoomActions';
+import {sliderFromZoom, zoomFromSlider} from './timeline/zoom';
 import BottomControlBar from './components/BottomControlBar';
 import MarkersPanel from './components/MarkersPanel';
 import {PWAUpdatePrompt} from './components/PWAUpdatePrompt';
@@ -58,109 +42,20 @@ declare const __APP_VERSION__: string;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 declare const __BUILD_DATE__: string;
 
-// Zoom presets with logarithmic slider positions
-const ZOOM_PRESETS = [
-    {zoom: 0, slider: 0},
-    {zoom: 1, slider: 5},
-    {zoom: 5, slider: 20},
-    {zoom: 10, slider: 40},
-    {zoom: 50, slider: 60},
-    {zoom: 250, slider: 80},
-    {zoom: 500, slider: 100}
-];
-
 function App() {
     const {t} = useTranslation();
     const {
         tracks,
         initAudioContext,
-        loopState,
-        toggleLoopEditMode,
         zoomLevel,
         removeAllTracks,
-        reorderTracks,
         playbackState,
     } = useAudioStore();
 
-    // DND Kit sensors
-    const sensors = useSensors(
-        useSensor(PointerSensor),
-        useSensor(KeyboardSensor, {
-            coordinateGetter: sortableKeyboardCoordinates,
-        })
-    );
-
-    // Handle drag end
-    const handleDragEnd = (event: DragEndEvent) => {
-        const {active, over} = event;
-
-        if (over && active.id !== over.id) {
-            const oldIndex = tracks.findIndex(t => t.id === active.id);
-            const newIndex = tracks.findIndex(t => t.id === over.id);
-            reorderTracks(oldIndex, newIndex);
-        }
-    };
-
-    // Drag and drop state for track reordering - REMOVED, using dnd-kit now
-    // const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
-    // const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
-
-    // Handle window-wide drag and drop for audio files
-    useSyncWaveformScroll(zoomLevel > 0);
-
-    // Slider value derivation: derive from zoomLevel UNLESS user is actively dragging
-    const [isDraggingSlider, setIsDraggingSlider] = useState(false);
-    const [dragSliderValue, setDragSliderValue] = useState(0);
-
-    // Helper to calculate slider position from zoom level
-    const calculateSliderFromZoom = useCallback((zoom: number) => {
-        const preset = ZOOM_PRESETS.find(p => p.zoom === zoom);
-        if (preset) return preset.slider;
-        if (zoom === 0) return 0;
-        const sliderPos = Math.round(Math.log(zoom) / Math.log(2.74) * 20);
-        return Math.min(Math.max(sliderPos, 0), 100);
-    }, []);
-
-    // Derive slider value: use drag value when dragging, otherwise sync with zoomLevel
-    const sliderValue = isDraggingSlider ? dragSliderValue : calculateSliderFromZoom(zoomLevel);
-
-    // Zoom change handler - logarithmic scale
-    const handleZoomChange = (newSliderValue: number) => {
-        // Find the closest preset for this slider value
-        const preset = ZOOM_PRESETS.find(p => p.slider === newSliderValue);
-        if (preset) {
-            useAudioStore.setState({zoomLevel: preset.zoom});
-        } else {
-            // Fallback for manual slider adjustments between presets
-            if (newSliderValue === 0) {
-                useAudioStore.setState({zoomLevel: 0});
-            } else {
-                const zoom = Math.round(Math.pow(2.74, newSliderValue / 20));
-                useAudioStore.setState({zoomLevel: Math.min(zoom, 500)});
-            }
-        }
-    };
-
-    const zoomIn = useCallback(() => {
-        const currentIndex = ZOOM_PRESETS.findIndex(preset => preset.zoom > zoomLevel);
-        if (currentIndex !== -1 && currentIndex < ZOOM_PRESETS.length) {
-            const nextSlider = ZOOM_PRESETS[currentIndex].slider;
-            handleZoomChange(nextSlider);
-        } else if (zoomLevel < 500) {
-            // Si on est entre deux presets ou au-delà du dernier, aller au max
-            handleZoomChange(100);
-        }
-    }, [zoomLevel]);
-
-    const zoomOut = useCallback(() => {
-        // Find current or next higher preset
-        let currentIndex = ZOOM_PRESETS.findIndex(preset => preset.zoom >= zoomLevel);
-        if (currentIndex === -1) currentIndex = ZOOM_PRESETS.length - 1;
-        if (currentIndex > 0) {
-            const prevSlider = ZOOM_PRESETS[currentIndex - 1].slider;
-            handleZoomChange(prevSlider);
-        }
-    }, [zoomLevel]);
+    // Slider value: follows zoomLevel unless the user is dragging it
+    const [dragSliderValue, setDragSliderValue] = useState<number | null>(null);
+    const sliderValue = dragSliderValue ?? sliderFromZoom(zoomLevel);
+    const handleZoomChange = (value: number) => useAudioStore.setState({zoomLevel: zoomFromSlider(value)});
 
     const [isLoadingStorage, setIsLoadingStorage] = useState(true);
     const [helpModalOpen, setHelpModalOpen] = useState(false);
@@ -169,10 +64,6 @@ function App() {
     const [deleteAllDialogOpen, setDeleteAllDialogOpen] = useState(false);
     const [piecesManagerOpen, setPiecesManagerOpen] = useState(false);
     const [recordingGuideOpen, setRecordingGuideOpen] = useState(false);
-    const [showEditModeAlert, setShowEditModeAlert] = useState(() => {
-        return localStorage.getItem('hideEditModeAlert') !== 'true';
-    });
-    const containerRef = useRef<HTMLDivElement>(null);
 
     const hasLoadedTracks = tracks.length > 0;
 
@@ -364,89 +255,26 @@ function App() {
         };
     }, [tracks.length]);
 
-    // Handle Ctrl+Wheel for zooming and Alt+Wheel for horizontal scroll
-    useEffect(() => {
-        const handleWheel = (e: WheelEvent) => {
-            // Only handle if there are tracks loaded
-            if (tracks.length === 0) {
-                return;
-            }
-
-            // Ctrl+Wheel = Zoom
-            if (e.ctrlKey) {
-                e.preventDefault();
-
-                // deltaY < 0 = scroll up = zoom in
-                // deltaY > 0 = scroll down = zoom out
-                if (e.deltaY < 0) {
-                    zoomIn();
-                } else {
-                    zoomOut();
-                }
-            }
-            // Alt+Wheel = Horizontal scroll when zoomed
-            else if (e.altKey && zoomLevel > 0) {
-                e.preventDefault();
-
-                // Get all waveform containers and scroll them
-                const waveformWrappers = document.querySelectorAll('[data-wavesurfer]');
-
-                waveformWrappers.forEach((wrapper) => {
-                    // WaveSurfer uses Shadow DOM - find the first child with shadowRoot
-                    const firstChild = wrapper.firstElementChild;
-
-                    if (firstChild && firstChild.shadowRoot) {
-                        // Find the .scroll element inside Shadow DOM
-                        const scrollElement = firstChild.shadowRoot.querySelector('.scroll') as HTMLElement;
-
-                        if (scrollElement) {
-                            const currentScroll = scrollElement.scrollLeft;
-                            scrollElement.scrollLeft = currentScroll + e.deltaY;
-                        } else {
-                            logger.debug('❌ No .scroll element found in Shadow DOM');
-                        }
-                    } else {
-                        logger.debug('⚠️ No Shadow DOM found on first child');
-                    }
-                });
-            } else {
-                logger.debug('⚠️ Conditions not met for scroll - zoomLevel:', zoomLevel);
-            }
-        };
-
-        // Add listener with passive: false to allow preventDefault
-        window.addEventListener('wheel', handleWheel, {passive: false});
-
-        return () => {
-            window.removeEventListener('wheel', handleWheel);
-        };
-    }, [tracks.length, zoomLevel, zoomIn, zoomOut]);
-
     return (
         <ThemeProvider theme={theme}>
             <CssBaseline/>
             <PWAUpdatePrompt/>
-            <Box sx={{display: 'flex', flexDirection: 'column', minHeight: '100vh'}}>
+            <Box sx={{display: 'flex', flexDirection: 'column', height: '100dvh'}}>
                 {/* Top App Bar */}
                 <TopBar
                     hasLoadedTracks={hasLoadedTracks}
                     zoomLevel={zoomLevel}
                     sliderValue={sliderValue}
-                    loopEditMode={loopState.editMode}
                     prefersDarkMode={prefersDarkMode}
                     isMobile={isMobile}
                     tracksCount={tracks.length}
                     isPlaying={playbackState.isPlaying}
                     duration={playbackState.duration}
-                    onZoomOut={zoomOut}
-                    onZoomIn={zoomIn}
+                    onZoomOut={() => zoomBy(-1)}
+                    onZoomIn={() => zoomBy(1)}
                     onZoomChange={handleZoomChange}
-                    onSliderDragStart={(value: number) => {
-                        setIsDraggingSlider(true);
-                        setDragSliderValue(value);
-                    }}
-                    onSliderDragEnd={() => setIsDraggingSlider(false)}
-                    onToggleLoopEditMode={toggleLoopEditMode}
+                    onSliderDragStart={(value: number) => setDragSliderValue(value)}
+                    onSliderDragEnd={() => setDragSliderValue(null)}
                     onOpenHelp={() => setHelpModalOpen(true)}
                     onOpenThemeDialog={() => setThemeDialogOpen(true)}
                     onOpenSettings={() => setSettingsModalOpen(true)}
@@ -539,104 +367,44 @@ function App() {
                     </DialogActions>
                 </Dialog>
 
-                {/* Main content */}
-                <Container
-                    ref={containerRef}
-                    maxWidth="xl"
-                    sx={{
-                        pt: 10,
-                        pb: 10,
-                        flex: 1,
-                        overflowX: zoomLevel > 0 ? 'auto' : 'visible',
-                        overflowY: 'visible'
-                    }}
-                >
-                    {/* Track list or empty state */}
-                    {isLoadingStorage ? (
-                        <Box
-                            sx={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                minHeight: '50vh',
-                                gap: 2
-                            }}
-                        >
-                            <CircularProgress size={48}/>
+                {/* Main content, between the top and bottom bars */}
+                <Toolbar/>
+                {isLoadingStorage ? (
+                    <Box
+                        sx={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flex: 1,
+                            gap: 2
+                        }}
+                    >
+                        <CircularProgress size={48}/>
+                        <Typography variant="body2" color="text.secondary">
+                            {t('loading.tracks')}
+                        </Typography>
+                    </Box>
+                ) : tracks.length === 0 ? (
+                    <Box sx={{flex: 1, overflowY: 'auto', pt: 4}}>
+                        <Box sx={{textAlign: 'center', py: 4, mb: 4}}>
+                            <Typography variant="h5" color="text.secondary" gutterBottom>
+                                {t('app.noTracksTitle')}
+                            </Typography>
                             <Typography variant="body2" color="text.secondary">
-                                {t('loading.tracks')}
+                                {t('app.noTracksMessage')}
                             </Typography>
                         </Box>
-                    ) : tracks.length === 0 ? (
-                        <Box>
-                            <Box
-                                sx={{
-                                    textAlign: 'center',
-                                    py: 4,
-                                    mb: 4
-                                }}
-                            >
-                                <Typography variant="h5" color="text.secondary" gutterBottom>
-                                    {t('app.noTracksTitle')}
-                                </Typography>
-                                <Typography variant="body2" color="text.secondary">
-                                    {t('app.noTracksMessage')}
-                                </Typography>
-                            </Box>
-                            <TrackAdder />
-                        </Box>
-                    ) : (
-                        <Box>
-                            {/* Markers Panel - shown when markers exist */}
-                            <MarkersPanel/>
-
-                            {/* Edit Mode Alert */}
-                            <Collapse in={loopState.editMode && showEditModeAlert}>
-                                <Alert
-                                    severity="warning"
-                                    onClose={() => {
-                                        setShowEditModeAlert(false);
-                                        localStorage.setItem('hideEditModeAlert', 'true');
-                                    }}
-                                    sx={{mx: 2, mt: 2}}
-                                >
-                                    <AlertTitle>Mode Édition</AlertTitle>
-                                    Cliquez sur la forme d'onde pour créer des repères et boucles. <a href="#"
-                                                                                                      onClick={(e) => {
-                                                                                                          e.preventDefault();
-                                                                                                          setHelpModalOpen(true);
-                                                                                                      }}
-                                                                                                      style={{color: 'inherit'}}>Plus
-                                    d'infos</a>
-                                </Alert>
-                            </Collapse>
-
-                            <DndContext
-                                sensors={sensors}
-                                collisionDetection={closestCenter}
-                                onDragEnd={handleDragEnd}
-                            >
-                                <SortableContext
-                                    items={tracks.map(t => t.id)}
-                                    strategy={verticalListSortingStrategy}
-                                >
-                                    {tracks.map((track) => (
-                                        <AudioTrack
-                                            key={track.id}
-                                            track={track}
-                                        />
-                                    ))}
-                                </SortableContext>
-                            </DndContext>
-                            
-                            {/* Track adder */}
-                            <Box sx={{ mt: 2 }}>
-                                <TrackAdder />
-                            </Box>
-                        </Box>
-                    )}
-                </Container>
+                        <TrackAdder/>
+                    </Box>
+                ) : (
+                    <>
+                        {/* Markers and loops list */}
+                        <MarkersPanel/>
+                        <Timeline/>
+                    </>
+                )}
+                <Toolbar/>
 
                 {/* Full-screen dropzone when dragging files */}
                 <FullScreenDropZone 

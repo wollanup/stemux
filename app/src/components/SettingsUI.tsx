@@ -11,7 +11,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { Close, GraphicEq, Timeline, PhotoSizeSelectSmall, Equalizer } from '@mui/icons-material';
+import { Close, GraphicEq, Equalizer } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useAudioStore } from '../hooks/useAudioStore';
 import RecordingLatencySetting from './RecordingLatencySetting';
@@ -30,10 +30,6 @@ export default function SettingsUI({ open, onClose }: SettingsUIProps) {
   const setWaveformStyle = useAudioStore(state => state.setWaveformStyle);
   const waveformNormalize = useAudioStore(state => state.waveformNormalize);
   const setWaveformNormalize = useAudioStore(state => state.setWaveformNormalize);
-  const waveformTimeline = useAudioStore(state => state.waveformTimeline);
-  const setWaveformTimeline = useAudioStore(state => state.setWaveformTimeline);
-  const waveformMinimap = useAudioStore(state => state.waveformMinimap);
-  const setWaveformMinimap = useAudioStore(state => state.setWaveformMinimap);
   const isRecordingSupported = useAudioStore(state => state.isRecordingSupported);
 
   return (
@@ -116,66 +112,6 @@ export default function SettingsUI({ open, onClose }: SettingsUIProps) {
               edge="end"
               checked={waveformNormalize}
               onChange={(e) => setWaveformNormalize(e.target.checked)}
-            />
-          </ListItem>
-
-          {/* Timeline */}
-          <ListItem
-            sx={{
-              py: 2,
-              px: 3,
-              '&:hover': {
-                bgcolor: 'action.hover'
-              }
-            }}
-          >
-            <Timeline sx={{ mr: 2, color: 'text.secondary' }} />
-            <ListItemText
-              primary={
-                <Typography variant="body1" fontWeight={500}>
-                  {t('settings.timeline.title')}
-                </Typography>
-              }
-              secondary={
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                  {t('settings.timeline.description')}
-                </Typography>
-              }
-            />
-            <Switch
-              edge="end"
-              checked={waveformTimeline}
-              onChange={(e) => setWaveformTimeline(e.target.checked)}
-            />
-          </ListItem>
-
-          {/* Minimap */}
-          <ListItem
-            sx={{
-              py: 2,
-              px: 3,
-              '&:hover': {
-                bgcolor: 'action.hover'
-              }
-            }}
-          >
-            <PhotoSizeSelectSmall sx={{ mr: 2, color: 'text.secondary' }} />
-            <ListItemText
-              primary={
-                <Typography variant="body1" fontWeight={500}>
-                  {t('settings.minimap.title')}
-                </Typography>
-              }
-              secondary={
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                  {t('settings.minimap.description')}
-                </Typography>
-              }
-            />
-            <Switch
-              edge="end"
-              checked={waveformMinimap}
-              onChange={(e) => setWaveformMinimap(e.target.checked)}
             />
           </ListItem>
 

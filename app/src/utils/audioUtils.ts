@@ -39,31 +39,29 @@ function normalizeSamples(samples: Float32Array) {
 }
 
 /**
- * Place a take on the timeline of the piece and encode it as a stereo WAV.
+ * Encode a take as a stereo WAV clip placed on the timeline of the piece.
  *
- * `timelineOffset` is the position (seconds) in the piece of samples[0]:
- * - positive: silence is added before the take
- * - negative: the beginning of the take is trimmed (latency compensation near 0)
+ * `timelineOffset` is the position (seconds) in the piece of samples[0]. The
+ * clip keeps only the recorded audio (no silence added before it); when the
+ * latency compensation moves it before 0, its beginning is trimmed.
  */
-export function buildTakeWav(
+export function buildTake(
   samples: Float32Array,
   sampleRate: number,
   timelineOffset: number
-): Blob {
-  const offsetSamples = Math.round(timelineOffset * sampleRate);
-  const trimmed = offsetSamples < 0 ? samples.subarray(-offsetSamples) : samples;
-  const padding = Math.max(0, offsetSamples);
+): { blob: Blob; clipOffset: number } {
+  const trimSamples = timelineOffset < 0 ? Math.round(-timelineOffset * sampleRate) : 0;
+  const clipOffset = Math.max(0, timelineOffset);
 
-  const mono = new Float32Array(padding + trimmed.length);
-  mono.set(trimmed, padding);
+  const mono = samples.slice(Math.min(trimSamples, samples.length));
   normalizeSamples(mono);
 
-  logger.log(`🎙️ Take: ${samples.length} samples @${sampleRate}Hz, offset ${timelineOffset.toFixed(4)}s (${offsetSamples} samples)`);
+  logger.log(`🎙️ Take: ${samples.length} samples @${sampleRate}Hz, clip at ${clipOffset.toFixed(4)}s (${trimSamples} samples trimmed)`);
 
   // Mono mic → both channels
-  const finalBlob = encodeWav([mono, mono], sampleRate);
-  logger.log(`💾 Final output: ${finalBlob.type}, ${(finalBlob.size / 1024).toFixed(2)} KB`);
-  return finalBlob;
+  const blob = encodeWav([mono, mono], sampleRate);
+  logger.log(`💾 Final output: ${blob.type}, ${(blob.size / 1024).toFixed(2)} KB`);
+  return { blob, clipOffset };
 }
 
 /**
@@ -128,28 +126,3 @@ export function formatRecordingTime(milliseconds: number): string {
   return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 }
 
-/**
- * Downsample an AudioBuffer for waveform display (keeps the largest sample of
- * each block, sign included). Returns new arrays: never hand the real channel
- * data to WaveSurfer, which may normalize it in place.
- */
-export function computeDisplayPeaks(buffer: AudioBuffer, pointsPerSecond = 8000): Float32Array[] {
-  const channels = Math.min(2, buffer.numberOfChannels);
-  const blockSize = Math.max(1, Math.floor(buffer.sampleRate / pointsPerSecond));
-  const length = Math.ceil(buffer.length / blockSize);
-  const peaks: Float32Array[] = [];
-  for (let c = 0; c < channels; c++) {
-    const data = buffer.getChannelData(c);
-    const out = new Float32Array(length);
-    for (let i = 0; i < length; i++) {
-      let max = 0;
-      const end = Math.min(data.length, (i + 1) * blockSize);
-      for (let j = i * blockSize; j < end; j++) {
-        if (Math.abs(data[j]) > Math.abs(max)) max = data[j];
-      }
-      out[i] = max;
-    }
-    peaks.push(out);
-  }
-  return peaks;
-}

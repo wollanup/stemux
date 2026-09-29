@@ -102,7 +102,6 @@ export const createPieceActions = (set: (partial: Partial<AudioStore> | ((state:
       tracks: tracksData,
       loopState: {
         ...settings.loopState,
-        editMode: false,
       },
       playbackState: {
         isPlaying: false,
@@ -142,8 +141,7 @@ export const createPieceActions = (set: (partial: Partial<AudioStore> | ((state:
           markers: [],
           loops: [],
           activeLoopId: null,
-          editMode: false,
-        },
+          },
         playbackState: {
           isPlaying: false,
           currentTime: 0,
@@ -258,7 +256,6 @@ export const createPieceActions = (set: (partial: Partial<AudioStore> | ((state:
         markers: [],
         loops: [],
         activeLoopId: null,
-        editMode: false,
       },
       playbackState: {
         isPlaying: false,
