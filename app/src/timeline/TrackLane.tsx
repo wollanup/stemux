@@ -49,30 +49,28 @@ function useLiveTake(recording: boolean) {
   return take;
 }
 
-function Clip({ left, width, color, name }: { left: number; width: number; color: string; name: string }) {
+/**
+ * Extent of a clip: a light tint, no name (it is in the track header) and no
+ * border, except while hovering the lane, to see exactly where it starts/ends.
+ */
+function Clip({ left, width, color }: { left: number; width: number; color: string }) {
   return (
     <Box
+      data-clip
       sx={{
         position: 'absolute',
         left,
         width,
         top: 3,
         bottom: 3,
-        bgcolor: alpha(color, 0.14),
-        border: `1px solid ${alpha(color, 0.55)}`,
+        bgcolor: alpha(color, 0.12),
+        border: '1px solid transparent',
+        '--clip-border': alpha(color, 0.6),
         borderRadius: 1,
-        overflow: 'hidden',
         pointerEvents: 'none',
+        transition: 'border-color 0.15s',
       }}
-    >
-      <Typography
-        variant="caption"
-        noWrap
-        sx={{ position: 'absolute', top: 1, left: 6, right: 6, fontSize: 10, lineHeight: 1.4, color: alpha(color, 0.9) }}
-      >
-        {name}
-      </Typography>
-    </Box>
+    />
   );
 }
 
@@ -107,10 +105,10 @@ export default function TrackLane({ track, audio, width, height, pxPerSec, dimme
   const waveColor = track.isMuted ? theme.palette.action.disabled : track.color;
   const offset = track.clipOffset ?? 0;
   const recordStart = track.recordingStartOffset ?? 0;
-  const drawHeight = height - 14;
+  const drawHeight = height - 8;
 
   const renderWave = (source: PeakSource | null, sourceOffset: number, animate = false) => (
-    <Box sx={{ position: 'absolute', left: 0, right: 0, top: 11, height: drawHeight, opacity: dimmed ? 0.35 : 1 }}>
+    <Box sx={{ position: 'absolute', left: 0, right: 0, top: 4, height: drawHeight, opacity: dimmed ? 0.35 : 1 }}>
       <WaveformCanvas
         source={source}
         offset={sourceOffset}
@@ -133,6 +131,9 @@ export default function TrackLane({ track, audio, width, height, pxPerSec, dimme
       onClick={handleClick}
       sx={{
         position: 'relative',
+        '@media (hover: hover)': {
+          '&:hover [data-clip]': { borderColor: 'var(--clip-border)' },
+        },
         width,
         height,
         flexShrink: 0,
@@ -144,7 +145,7 @@ export default function TrackLane({ track, audio, width, height, pxPerSec, dimme
       }}
     >
       {audio && (
-        <Clip left={offset * pxPerSec} width={audio.duration * pxPerSec} color={track.color} name={track.name} />
+        <Clip left={offset * pxPerSec} width={audio.duration * pxPerSec} color={track.color} />
       )}
       {audio && renderWave(audio.pyramid, offset)}
 
@@ -161,14 +162,9 @@ export default function TrackLane({ track, audio, width, height, pxPerSec, dimme
               bgcolor: alpha(theme.palette.error.main, 0.14),
               border: `1px solid ${alpha(theme.palette.error.main, 0.6)}`,
               borderRadius: 1,
-              overflow: 'hidden',
               pointerEvents: 'none',
             }}
-          >
-            <Typography variant="caption" noWrap sx={{ px: 0.75, fontSize: 10, color: 'error.main' }}>
-              {t('recording.recording')}
-            </Typography>
-          </Box>
+          />
           {renderWave(liveTake, recordStart, true)}
         </>
       )}
