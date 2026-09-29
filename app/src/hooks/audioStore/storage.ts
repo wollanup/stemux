@@ -34,6 +34,7 @@ export const saveTrackSettingsToPiece = async (
       color: t.color,
       isCollapsed: t.isCollapsed,
       isRecordable: t.isRecordable,
+      clipOffset: t.clipOffset,
     })),
     loopState: {
       markers: loopState.markers,

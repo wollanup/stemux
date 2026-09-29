@@ -75,6 +75,12 @@ describe('PeakPyramid', () => {
     expect(Number.isNaN(max[0])).toBe(false);
   });
 
+  it('marks columns before the clip as empty (clip placed later)', () => {
+    const { max } = pyramid.columns(-10, 10, 20);
+    expect(Array.from(max.subarray(0, 10)).every(Number.isNaN)).toBe(true);
+    expect(Array.from(max.subarray(10)).some(Number.isNaN)).toBe(false);
+  });
+
   it('shows one sample per column when zoomed in beyond the sample rate', () => {
     const { max } = pyramid.columns(1, 1.002, 20);
     expect(max[0]).toBe(Math.max(left[1000], right[1000]));

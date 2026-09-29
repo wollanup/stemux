@@ -21,23 +21,23 @@
         "uploadTitle": "1. Upload Your Tracks"
       },
       "keyboard": {
-        "altWheel": "Alt + Wheel - Horizontal scroll (when zoomed)",
+        "altWheel": "Shift + Wheel - Horizontal scroll (when zoomed)",
         "arrowLeft": "← - Rewind 5 seconds (hold for continuous)",
         "arrowRight": "→ - Forward 5 seconds (hold for continuous)",
         "ctrlLeft": "Ctrl + ← - Jump to beginning",
-        "ctrlWheel": "Ctrl + Wheel - Zoom in/out",
+        "ctrlWheel": "Ctrl + Wheel - Zoom in/out around the mouse (pinch on mobile)",
         "more": "More shortcuts coming soon!",
         "space": "SPACE - Play/Pause",
         "title": "Keyboard Shortcuts"
       },
       "loops": {
-        "activeDesc": "Click on a loop chip to activate it: playback will automatically jump back to the start when reaching the end. Click again to deactivate.",
+        "activeDesc": "Click a loop in the top strip of the ruler (or its chip) to activate it: playback jumps back to its start when reaching the end. Click again to deactivate.",
         "activeTitle": "Activating a loop",
-        "editDesc": "Click the 'Edit' icon in the top bar to enter edit mode. In edit mode, click on the waveform to place markers. Click-and-drag to create loops directly. Markers can be repositioned by dragging them.",
-        "editTitle": "Edit mode",
+        "editDesc": "Click: jump there. Drag: create a loop (enabled right away). Drag a marker or a loop edge: move it. Double click (or double tap): add a marker. No edit mode needed anymore.",
+        "editTitle": "On the time ruler",
         "manageDesc": "Markers and loops appear as clickable chips. Click a marker: jump to that position. Click a loop: activate it. Menu (⋮): set as loop start/end or delete. Long-press a marker: create a loop.",
         "manageTitle": "Managing markers and loops",
-        "openDesc": "Markers (numbered) and loops (colored zones) are displayed directly on the waveform.",
+        "openDesc": "Markers (numbered) and loops are shown on the time ruler at the top. The active loop is also highlighted across all tracks.",
         "openTitle": "Visualization",
         "title": "Markers and loops"
       },
@@ -81,12 +81,10 @@
     "deleteAllDialogConfirm": "Delete all",
     "deleteLoop": "Delete loop",
     "deleteMarker": "Delete marker",
-    "editMode": "Markers edit mode",
     "loops": "Loops:",
     "markers": "Markers:",
     "setLoopEnd": "Set as loop end",
-    "setLoopStart": "Set as loop start",
-    "title": "Markers"
+    "setLoopStart": "Set as loop start"
   },
   "menu": {
     "darkMode": "Dark mode",
@@ -149,14 +147,6 @@
       "title": "Normalize Waveforms",
       "description": "Auto-adjust volume levels for consistent visual display"
     },
-    "timeline": {
-      "title": "Show Timeline",
-      "description": "Display time markers on each waveform"
-    },
-    "minimap": {
-      "title": "Show Minimap",
-      "description": "Display small overview of the complete waveform"
-    },
     "latency": {
       "title": "Latency compensation (recording)",
       "auto": "Auto",
@@ -189,7 +179,9 @@
     "addAudioTrack": "Add Audio Track",
     "importAudioTrack": "Import Audio Track",
     "addRecordableTrack": "Add Recording Track",
-    "count": "{{current}}/{{max}} tracks"
+    "count": "{{current}}/{{max}} tracks",
+    "solo": "Solo (long press: exclusive solo)",
+    "mute": "Mute (long press: unmute all)"
   },
   "recordingGuide": {
     "title": "Recording Guide",

@@ -16,7 +16,7 @@ import { saveTrackSettingsToPiece } from './storage';
 import { audioEngine } from '../../audio/AudioEngine';
 import { openMic, closeMic, getMic, trackStop } from '../../audio/micSession';
 import { getRecordingLatency } from '../../audio/latency';
-import { buildTakeWav } from '../../utils/audioUtils';
+import { buildTake } from '../../utils/audioUtils';
 import i18n from '../../i18n/config';
 
 const getMicErrorMessage = (error: Error) => {
@@ -207,12 +207,12 @@ export const createRecordingActions = (set: (partial: Partial<AudioStore> | ((st
     logger.log(`  - Latency compensation: ${(latency * 1000).toFixed(1)}ms`);
     logger.log(`  - Take placed at: ${timelineOffset.toFixed(6)}s`);
 
-    const blob = buildTakeWav(take.samples, take.sampleRate, timelineOffset);
-    await get().saveRecording(trackId, blob);
+    const { blob, clipOffset } = buildTake(take.samples, take.sampleRate, timelineOffset);
+    await get().saveRecording(trackId, blob, clipOffset);
   },
 
   // Called when the take has been assembled
-  saveRecording: async (trackId: string, blob: Blob) => {
+  saveRecording: async (trackId: string, blob: Blob, clipOffset = 0) => {
     const { currentPieceId, loopState, playbackState, masterVolume, tracks } = get();
 
     const track = tracks.find(t => t.id === trackId);
@@ -241,7 +241,7 @@ export const createRecordingActions = (set: (partial: Partial<AudioStore> | ((st
         // Save piece settings with updated track
         const updatedTracks = get().tracks.map((t) =>
           t.id === trackId
-            ? { ...t, recordedBlob: blob, file, recordingState: 'stopped' as const }
+            ? { ...t, recordedBlob: blob, file, clipOffset, recordingState: 'stopped' as const }
             : t
         );
 
@@ -256,11 +256,11 @@ export const createRecordingActions = (set: (partial: Partial<AudioStore> | ((st
 
       logger.debug('🎙️ Recording saved to IndexedDB:', blob.size, 'bytes');
 
-      // Update state - this will trigger RecordableWaveform → WaveformDisplay switch
+      // The track now has a clip placed at clipOffset on the timeline
       set((state: AudioStore) => ({
         tracks: state.tracks.map((t) =>
           t.id === trackId
-            ? { ...t, recordedBlob: blob, file, recordingState: 'stopped' as const }
+            ? { ...t, recordedBlob: blob, file, clipOffset, recordingState: 'stopped' as const }
             : t
         ),
       }));
@@ -295,7 +295,7 @@ export const createRecordingActions = (set: (partial: Partial<AudioStore> | ((st
         // Save piece settings (track remains but without file)
         const updatedTracks = tracks.map((t) =>
           t.id === trackId
-            ? { ...t, recordedBlob: undefined, file: undefined, recordingState: 'idle' as const }
+            ? { ...t, recordedBlob: undefined, file: undefined, clipOffset: undefined, recordingState: 'idle' as const }
             : t
         );
 
@@ -314,7 +314,7 @@ export const createRecordingActions = (set: (partial: Partial<AudioStore> | ((st
       set((state: AudioStore) => ({
         tracks: state.tracks.map((t) =>
           t.id === trackId
-            ? { ...t, recordedBlob: undefined, file: undefined, recordingState: 'idle' as const }
+            ? { ...t, recordedBlob: undefined, file: undefined, clipOffset: undefined, recordingState: 'idle' as const }
             : t
         ),
       }));

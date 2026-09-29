@@ -25,7 +25,7 @@ A modern, browser-based multi-track audio player designed for musicians who want
 - **Intelligent Mute**
   - Short press: Toggle mute for one track
   - Long press: Unmute all tracks at once
-- **Waveform Visualization** - See your audio with interactive waveforms powered by WaveSurfer.js
+- **Single Timeline** - One time ruler, one playhead and every clip at its place (like an audio editor)
 
 ### 🎵 **Multi-Piece Management**
 - **Create Multiple Projects** - Organize your work into separate pieces/songs
@@ -37,7 +37,7 @@ A modern, browser-based multi-track audio player designed for musicians who want
 
 ### 🔁 **Loop System**
 - **Visual Timeline** - See your playback position in real-time
-- **Easy Loop Creation** - Mark start and end points while playing
+- **Easy Loop Creation** - Drag on the time ruler to create a loop, drag its edges to adjust it
 - **Auto-Repeat** - Automatically loops back for focused practice on difficult sections
 - **Smart Skip** - Return to loop start (or track start if no loop active)
 
@@ -195,7 +195,7 @@ Perfect for practicing difficult sections:
 - **[TypeScript](https://www.typescriptlang.org/)** - Type safety
 - **[Material-UI v7](https://mui.com/)** - Component library
 - **[Web Audio API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API)** - Audio processing
-- **[WaveSurfer.js](https://wavesurfer-js.org/)** - Waveform visualization
+- **[Signalsmith Stretch](https://signalsmith-audio.co.uk/code/stretch/)** - Pitch-preserving speed change
 - **[Zustand](https://zustand-demo.pmnd.rs/)** - State management
 - **[Vite](https://vitejs.dev/)** - Build tool
 - **[Vite PWA Plugin](https://vite-pwa-org.netlify.app/)** - Progressive Web App support
@@ -246,7 +246,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- **WaveSurfer.js** - For amazing waveform visualization
+- **WaveSurfer.js** - Powered the waveforms of the first versions
 - **Material-UI** - For the beautiful component library
 - **Web Audio API** - For making this possible in the browser
 

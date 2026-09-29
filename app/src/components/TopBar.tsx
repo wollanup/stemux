@@ -18,7 +18,6 @@ import {
   Album,
   DarkMode,
   DeleteSweep,
-  Edit,
   GraphicEq,
   HelpOutline,
   LightMode,
@@ -39,7 +38,6 @@ interface TopBarProps {
   hasLoadedTracks: boolean;
   zoomLevel: number;
   sliderValue: number;
-  loopEditMode: boolean;
   prefersDarkMode: boolean;
   isMobile: boolean;
   tracksCount: number;
@@ -50,7 +48,6 @@ interface TopBarProps {
   onZoomChange: (value: number) => void;
   onSliderDragStart: (value: number) => void;
   onSliderDragEnd: () => void;
-  onToggleLoopEditMode: () => void;
   onOpenHelp: () => void;
   onOpenThemeDialog: () => void;
   onOpenSettings: () => void;
@@ -62,7 +59,6 @@ const TopBar = ({
   hasLoadedTracks,
   zoomLevel,
   sliderValue,
-  loopEditMode,
   prefersDarkMode,
   isMobile,
   tracksCount,
@@ -73,7 +69,6 @@ const TopBar = ({
   onZoomChange,
   onSliderDragStart,
   onSliderDragEnd,
-  onToggleLoopEditMode,
   onOpenHelp,
   onOpenThemeDialog,
   onOpenSettings,
@@ -271,30 +266,6 @@ const TopBar = ({
         </IconButton>
 
         <Stack gap={2} direction="row" alignItems="center">
-          {/* Loop v2 Edit Mode button */}
-          {isMobile ? (
-            <IconButton
-              color={loopEditMode ? 'warning' : 'secondary'}
-              onClick={onToggleLoopEditMode}
-              disabled={!hasLoadedTracks}
-              aria-label={t('markers.editMode')}
-            >
-              <Edit />
-            </IconButton>
-          ) : (
-            <Button
-              variant={loopEditMode ? 'contained' : 'outlined'}
-              color="secondary"
-              onClick={onToggleLoopEditMode}
-              disabled={!hasLoadedTracks}
-              aria-label={t('markers.editMode')}
-              startIcon={<Edit />}
-              size="small"
-            >
-              {t('markers.title')}
-            </Button>
-          )}
-
           {/* Menu button */}
           <IconButton
             color="inherit"

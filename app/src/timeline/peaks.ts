@@ -73,8 +73,12 @@ const fillColumns = (
   }
 
   for (let c = 0; c < count; c++) {
-    const s0 = Math.max(0, Math.floor(t0 * source.sampleRate + c * samplesPerColumn));
-    const s1 = Math.min(source.length, Math.floor(t0 * source.sampleRate + (c + 1) * samplesPerColumn));
+    const start = Math.floor(t0 * source.sampleRate + c * samplesPerColumn);
+    const end = Math.floor(t0 * source.sampleRate + (c + 1) * samplesPerColumn);
+    // Column entirely before the clip (clip placed later on the timeline)
+    if (end < 0 || (end === 0 && start < 0)) continue;
+    const s0 = Math.max(0, start);
+    const s1 = Math.min(source.length, end);
     if (s1 <= s0) {
       // Zoomed in beyond one sample per column: show the sample under the column
       if (s0 < source.length && raw) {
