@@ -11,7 +11,7 @@ import {
   getPiece,
   savePiece,
 } from '../../utils/indexedDB';
-import { COLORS, generatePieceName } from './shared';
+import { COLORS, generatePieceName, enqueueTrackAddition } from './shared';
 import { saveTrackSettingsToPiece } from './storage';
 import { audioEngine } from '../../audio/AudioEngine';
 import { openMic, closeMic, getMic, trackStop } from '../../audio/micSession';
@@ -29,10 +29,10 @@ const getMicErrorMessage = (error: Error) => {
 };
 
 export const createRecordingActions = (set: (partial: Partial<AudioStore> | ((state: AudioStore) => Partial<AudioStore>)) => void, get: () => AudioStore) => ({
-  addRecordableTrack: async () => {
-    const { tracks, pause, currentPieceId, createPiece } = get();
+  addRecordableTrack: () => enqueueTrackAddition(async () => {
+    const { pause, currentPieceId, createPiece } = get();
 
-    if (tracks.length >= 8) {
+    if (get().tracks.length >= 8) {
       alert('Maximum 8 tracks allowed');
       return;
     }
@@ -50,27 +50,26 @@ export const createRecordingActions = (set: (partial: Partial<AudioStore> | ((st
     // Generate name with date/time
     const name = generatePieceName();
     const id = `track-${Date.now()}-${Math.random()}`;
-    const color = COLORS[tracks.length % COLORS.length];
 
-    const newTrack: AudioTrack = {
-      id,
-      name,
-      volume: 0.8, // Default volume for recordings
-      isMuted: false,
-      isSolo: false,
-      color,
-      isRecordable: true,
-      isArmed: false,
-      recordingState: 'idle',
-    };
-
-    const newTracks = [...tracks, newTrack];
-    set({ tracks: newTracks });
+    set((state: AudioStore) => {
+      const newTrack: AudioTrack = {
+        id,
+        name,
+        volume: 0.8, // Default volume for recordings
+        isMuted: false,
+        isSolo: false,
+        color: COLORS[state.tracks.length % COLORS.length],
+        isRecordable: true,
+        isArmed: false,
+        recordingState: 'idle',
+      };
+      return { tracks: [...state.tracks, newTrack] };
+    });
 
     // Save settings to piece
     const state = get();
     await saveTrackSettingsToPiece(
-      pieceId!,
+      pieceId,
       state.tracks,
       state.loopState,
       state.playbackState.playbackRate,
@@ -78,14 +77,14 @@ export const createRecordingActions = (set: (partial: Partial<AudioStore> | ((st
     );
 
     // Update piece
-    const piece = await getPiece(pieceId!);
+    const piece = await getPiece(pieceId);
     if (piece) {
       piece.updatedAt = Date.now();
       await savePiece(piece);
     }
 
     logger.debug('🎙️ Added recordable track:', name);
-  },
+  }),
 
   toggleRecordArm: (trackId: string) => {
     const { tracks, loopState, playbackState } = get();

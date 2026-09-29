@@ -101,7 +101,7 @@ export interface AudioStore {
   isRecordingSupported: boolean;
   loopBackup: { activeLoopId: string | null } | null;
   
-  addTrack: (file: File) => void;
+  addTrack: (file: File) => Promise<void>;
   removeTrack: (id: string) => void;
   removeAllTracks: () => void;
   updateTrack: (id: string, updates: Partial<AudioTrack>) => void;
