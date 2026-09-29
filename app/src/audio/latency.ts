@@ -64,6 +64,44 @@ function median(values: number[]) {
 }
 
 /**
+ * Finds the recorded clicks after their expected positions and returns the
+ * round-trip delay in ms. Throws if the clicks are missing or inconsistent.
+ */
+export function detectRoundTripMs(x: Float32Array, sr: number, expectedFrames: number[]): number {
+  const delays: number[] = [];
+  for (const expected of expectedFrames) {
+    // Noise floor just before the click
+    const noiseFrom = Math.max(0, expected - Math.round(0.15 * sr));
+    let noise = 0;
+    for (let i = noiseFrom; i < expected && i < x.length; i++) noise = Math.max(noise, Math.abs(x[i]));
+
+    const windowEnd = Math.min(x.length, expected + Math.round(SEARCH_WINDOW * sr));
+    let peak = 0;
+    for (let i = expected; i < windowEnd; i++) peak = Math.max(peak, Math.abs(x[i]));
+    if (peak < 0.01 || peak < noise * 3) continue; // click not heard
+
+    const threshold = Math.max(noise * 2, peak * 0.3);
+    for (let i = expected; i < windowEnd; i++) {
+      if (Math.abs(x[i]) >= threshold) {
+        delays.push((i - expected) / sr);
+        break;
+      }
+    }
+  }
+
+  logger.log(`⏱️ Calibration delays (ms): ${delays.map((d) => (d * 1000).toFixed(1)).join(', ')}`);
+  if (delays.length < 3) {
+    throw new Error('clicks-not-detected');
+  }
+  const m = median(delays);
+  const consistent = delays.filter((d) => Math.abs(d - m) < 0.003);
+  if (consistent.length < 3) {
+    throw new Error('inconsistent');
+  }
+  return Math.round(median(consistent) * 10000) / 10;
+}
+
+/**
  * Plays a few clicks and records them back (mic in front of the headphones or
  * speakers, or a cable from an output to an input of the sound card).
  * Returns the measured round-trip latency in ms.
@@ -94,40 +132,8 @@ export async function calibrateRoundTripLatency(): Promise<number> {
     const end = firstClick + CLICK_COUNT * CLICK_INTERVAL + SEARCH_WINDOW;
     await new Promise((r) => window.setTimeout(r, (end - ctx.currentTime) * 1000 + 50));
     const take = await recorder.stop(ctx.currentTime);
-    const x = take.samples;
-
-    const delays: number[] = [];
-    for (const when of clickTimes) {
-      const expected = Math.round((when - start) * sr);
-      // Noise floor just before the click
-      const noiseFrom = Math.max(0, expected - Math.round(0.15 * sr));
-      let noise = 0;
-      for (let i = noiseFrom; i < expected && i < x.length; i++) noise = Math.max(noise, Math.abs(x[i]));
-
-      const windowEnd = Math.min(x.length, expected + Math.round(SEARCH_WINDOW * sr));
-      let peak = 0;
-      for (let i = expected; i < windowEnd; i++) peak = Math.max(peak, Math.abs(x[i]));
-      if (peak < 0.01 || peak < noise * 3) continue; // click not heard
-
-      const threshold = Math.max(noise * 2, peak * 0.3);
-      for (let i = expected; i < windowEnd; i++) {
-        if (Math.abs(x[i]) >= threshold) {
-          delays.push((i - expected) / sr);
-          break;
-        }
-      }
-    }
-
-    logger.log(`⏱️ Calibration delays (ms): ${delays.map((d) => (d * 1000).toFixed(1)).join(', ')}`);
-    if (delays.length < 3) {
-      throw new Error('clicks-not-detected');
-    }
-    const m = median(delays);
-    const consistent = delays.filter((d) => Math.abs(d - m) < 0.003);
-    if (consistent.length < 3) {
-      throw new Error('inconsistent');
-    }
-    return Math.round(median(consistent) * 10000) / 10;
+    const expectedFrames = clickTimes.map((when) => Math.round((when - start) * sr));
+    return detectRoundTripMs(take.samples, sr, expectedFrames);
   } finally {
     recorder.close();
   }

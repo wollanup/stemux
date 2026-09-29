@@ -8,6 +8,9 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "typecheck": "tsc -b",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "preview": "vite preview",
     "i18n:extract": "i18next-parser --config i18next-parser.config.cjs",
     "i18n:check": "i18next-parser --config i18next-parser.config.cjs --fail-on-warnings"
@@ -47,6 +50,7 @@
     "typescript-eslint": "^8.46.4",
     "vite": "^7.2.4",
     "vite-plugin-pwa": "^1.2.0",
+    "vitest": "^5.0.2",
     "workbox-window": "^7.4.0"
   }
 }

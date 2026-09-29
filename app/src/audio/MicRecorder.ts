@@ -11,7 +11,8 @@ import { logger } from '../utils/logger';
 
 const PROCESSOR_NAME = 'stemux-capture';
 
-const WORKLET_SOURCE = `
+/** Exported for tests */
+export const WORKLET_SOURCE = `
 class StemuxCaptureProcessor extends AudioWorkletProcessor {
   constructor() {
     super();
@@ -117,6 +118,7 @@ export class MicRecorder {
   private node: AudioWorkletNode | null = null;
   private chunks: Array<{ frame: number; samples: Float32Array }> = [];
   private startFrame = 0;
+  private stopFrame = Infinity;
   private stopResolver: ((take: Take) => void) | null = null;
   private levelListeners = new Set<(peak: number) => void>();
   private dataListeners = new Set<(frame: number, samples: Float32Array) => void>();
@@ -180,6 +182,7 @@ export class MicRecorder {
     if (!this.node) throw new Error('Microphone not opened');
     this.chunks = [];
     this.startFrame = Math.round(ctxTime * this.ctx.sampleRate);
+    this.stopFrame = Infinity;
     this.recording = true;
     this.node.port.postMessage({ type: 'start', frame: this.startFrame });
   }
@@ -190,6 +193,7 @@ export class MicRecorder {
       return Promise.resolve({ startFrame: this.startFrame, sampleRate: this.ctx.sampleRate, samples: new Float32Array(0) });
     }
     const stopFrame = Math.max(this.startFrame, Math.round(ctxTime * this.ctx.sampleRate));
+    this.stopFrame = stopFrame;
     return new Promise((resolve) => {
       this.stopResolver = resolve;
       this.node!.port.postMessage({ type: 'stop', frame: stopFrame });
@@ -231,12 +235,16 @@ export class MicRecorder {
     }
     // If the context started late, the first captured frame may be after startFrame:
     // place every chunk at its own frame so the timing stays exact.
+    // The audio thread runs ahead of ctx.currentTime, so frames past the stop
+    // frame may already have been captured: cut them.
     const last = this.chunks[this.chunks.length - 1];
-    const length = last.frame + last.samples.length - this.startFrame;
-    const samples = new Float32Array(Math.max(0, length));
+    const end = Math.min(last.frame + last.samples.length, this.stopFrame);
+    const samples = new Float32Array(Math.max(0, end - this.startFrame));
     for (const chunk of this.chunks) {
       const offset = chunk.frame - this.startFrame;
-      if (offset >= 0) samples.set(chunk.samples, offset);
+      if (offset >= 0 && offset < samples.length) {
+        samples.set(chunk.samples.subarray(0, samples.length - offset), offset);
+      }
     }
     this.chunks = [];
     if (first.frame !== this.startFrame) {

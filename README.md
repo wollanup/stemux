@@ -93,6 +93,17 @@ npm run build
 npm run preview
 ```
 
+### 🧪 **Checks & Tests**
+
+```bash
+cd app
+npm run lint
+npm run typecheck
+npm test          # unit tests (Vitest), `npm run test:watch` while developing
+```
+
+The same checks run on GitHub Actions for every push and pull request (`.github/workflows/ci.yml`).
+
 ### 🐳 **Docker Deployment**
 
 ```bash

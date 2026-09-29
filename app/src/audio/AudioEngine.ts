@@ -45,7 +45,7 @@ interface Anchor {
 type EngineEvent = 'play' | 'pause' | 'seek' | 'timeupdate' | 'ended' | 'durationchange';
 type Listener = () => void;
 
-class AudioEngine {
+export class AudioEngine {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
   private tracks = new Map<string, EngineTrack>();
