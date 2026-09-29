@@ -147,7 +147,6 @@ export const createTrackActions = (set: (partial: Partial<AudioStore> | ((state:
     set({
       tracks: [],
       loopState: {
-        editMode: false,
         markers: [],
         loops: [],
         activeLoopId: null,

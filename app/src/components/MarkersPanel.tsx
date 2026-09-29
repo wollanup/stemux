@@ -129,56 +129,6 @@ const MarkersPanel = () => {
     setDeleteAllDialogOpen(false);
   };
 
-  // TODO: Implement hover sync with CSS classes instead of inline styles
-  // Highlight elements in shadow DOM on hover
-  // const handleMarkerHover = (markerId: string | null) => {
-  //   setHoveredMarkerId(markerId);
-  //   
-  //   // Find all waveform containers with shadow roots
-  //   const containers = document.querySelectorAll('[data-wavesurfer="true"]');
-  //   containers.forEach(container => {
-  //     const wsElement = Array.from(container.children).find(
-  //       child => (child as HTMLElement).shadowRoot
-  //     ) as HTMLElement;
-  //     
-  //     if (wsElement?.shadowRoot) {
-  //       const elements = wsElement.shadowRoot.querySelectorAll(`[data-loop-marker="${markerId}"]`);
-  //       elements.forEach(el => {
-  //         if (markerId) {
-  //           (el as HTMLElement).style.filter = 'brightness(1.5) drop-shadow(0 0 8px currentColor)';
-  //         } else {
-  //           (el as HTMLElement).style.filter = '';
-  //         }
-  //       });
-  //     }
-  //   });
-  // };
-
-  // const handleLoopHover = (loopId: string | null) => {
-  //   setHoveredLoopId(loopId);
-  //   
-  //   // Find all waveform containers with shadow roots
-  //   const containers = document.querySelectorAll('[data-wavesurfer="true"]');
-  //   containers.forEach(container => {
-  //     const wsElement = Array.from(container.children).find(
-  //       child => (child as HTMLElement).shadowRoot
-  //     ) as HTMLElement;
-  //     
-  //     if (wsElement?.shadowRoot) {
-  //       const elements = wsElement.shadowRoot.querySelectorAll(`[data-loop-zone="${loopId}"]`);
-  //       elements.forEach(el => {
-  //         if (loopId) {
-  //           (el as HTMLElement).style.filter = 'brightness(1.3)';
-  //           (el as HTMLElement).style.transform = 'scaleY(1.05)';
-  //         } else {
-  //           (el as HTMLElement).style.filter = '';
-  //           (el as HTMLElement).style.transform = '';
-  //         }
-  //       });
-  //     }
-  //   });
-  // };
-
   const getMarkerNumber = (markerId: string) => {
     const index = loopState.markers.findIndex(m => m.id === markerId);
     return index !== -1 ? index + 1 : '?';

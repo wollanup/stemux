@@ -15,6 +15,7 @@ export interface AudioTrack {
   recordedBlob?: Blob; // Recorded audio data
   recordingState?: 'idle' | 'armed' | 'recording' | 'stopped';
   recordingStartOffset?: number; // Piece position (seconds) of the first recorded sample
+  clipOffset?: number; // Position of the clip on the timeline (seconds), 0 = start of the piece
 }
 
 export interface PlaybackState {
@@ -44,7 +45,6 @@ export interface LoopState {
   markers: Marker[];
   loops: Loop[];
   activeLoopId: string | null;
-  editMode: boolean;
 }
 
 // Piece (morceau) types
@@ -58,6 +58,7 @@ export interface PieceSettings {
     color: string;
     isCollapsed?: boolean;
     isRecordable?: boolean; // Track is a recording track
+    clipOffset?: number; // Position of the clip on the timeline (seconds)
   }>;
   loopState: {
     markers: Marker[];
@@ -87,12 +88,9 @@ export interface AudioStore {
   playbackState: PlaybackState;
   loopState: LoopState; // Loop v2
   masterVolume: number; // 0-1
-  showLoopPanel: boolean;
   zoomLevel: number;
   waveformStyle: 'modern' | 'classic';
   waveformNormalize: boolean;
-  waveformTimeline: boolean;
-  waveformMinimap: boolean;
   _preserveLoopOnNextSeek?: boolean; // Internal flag for loop activation
   currentPieceId: string | null;
   currentPieceName: string;
@@ -117,7 +115,7 @@ export interface AudioStore {
   toggleRecordArm: (trackId: string) => void;
   startRecording: (trackId: string, ctxTime: number) => Promise<void>;
   stopRecording: (trackId: string) => Promise<void>;
-  saveRecording: (trackId: string, blob: Blob) => Promise<void>;
+  saveRecording: (trackId: string, blob: Blob, clipOffset?: number) => Promise<void>;
   clearRecording: (trackId: string) => Promise<void>;
   
   play: () => void;
@@ -126,10 +124,8 @@ export interface AudioStore {
   setPlaybackRate: (rate: number) => void;
   setMasterVolume: (volume: number) => void;
   
-  toggleLoopPanel: () => void;
 
   // Loop v2 actions
-  toggleLoopEditMode: () => void;
   addMarker: (time: number, label?: string) => string;
   removeMarker: (id: string) => void;
   updateMarkerTime: (id: string, time: number) => void;
@@ -138,12 +134,8 @@ export interface AudioStore {
   toggleLoopById: (id: string) => void;
   setActiveLoop: (id: string | null) => void;
 
-  zoomIn: () => void;
-  zoomOut: () => void;
   setWaveformStyle: (style: 'modern' | 'classic') => void;
   setWaveformNormalize: (normalize: boolean) => void;
-  setWaveformTimeline: (timeline: boolean) => void;
-  setWaveformMinimap: (minimap: boolean) => void;
   
   initAudioContext: () => void;
 

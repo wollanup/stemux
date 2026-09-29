@@ -91,21 +91,3 @@ export const loadWaveformNormalize = () => {
 export const saveWaveformNormalize = (normalize: boolean) => {
   localStorage.setItem('waveform-normalize', normalize.toString());
 };
-
-export const loadWaveformTimeline = () => {
-  const stored = localStorage.getItem('waveform-timeline');
-  return stored ? stored === 'true' : false;
-};
-
-export const saveWaveformTimeline = (timeline: boolean) => {
-  localStorage.setItem('waveform-timeline', timeline.toString());
-};
-
-export const loadWaveformMinimap = () => {
-  const stored = localStorage.getItem('waveform-minimap');
-  return stored ? stored === 'true' : false;
-};
-
-export const saveWaveformMinimap = (minimap: boolean) => {
-  localStorage.setItem('waveform-minimap', minimap.toString());
-};

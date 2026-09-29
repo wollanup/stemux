@@ -21,23 +21,23 @@
         "uploadTitle": "1. Charger vos pistes"
       },
       "keyboard": {
-        "altWheel": "Alt + Molette - Défilement horizontal (si zoomé)",
+        "altWheel": "Maj + Molette - Défilement horizontal (si zoomé)",
         "arrowLeft": "← - Reculer de 5 secondes (maintenir pour continu)",
         "arrowRight": "→ - Avancer de 5 secondes (maintenir pour continu)",
         "ctrlLeft": "Ctrl + ← - Retour au début",
-        "ctrlWheel": "Ctrl + Molette - Zoom avant/arrière",
+        "ctrlWheel": "Ctrl + Molette - Zoom avant/arrière autour de la souris (pincer sur mobile)",
         "more": "D'autres raccourcis arrivent bientôt !",
         "space": "ESPACE - Lecture/Pause",
         "title": "Raccourcis clavier"
       },
       "loops": {
-        "activeDesc": "Cliquez sur une boucle pour l'activer : la lecture reprend automatiquement au début en atteignant la fin. Cliquez à nouveau pour désactiver.",
+        "activeDesc": "Cliquez sur une boucle dans la bande du haut de la règle (ou sur sa puce) pour l'activer : la lecture revient au début en atteignant la fin. Cliquez à nouveau pour la désactiver.",
         "activeTitle": "Activer une boucle",
-        "editDesc": "Cliquez sur l'icône 'Modifier' dans la barre supérieure pour entrer en mode édition. En mode édition, cliquez sur la forme d'onde pour placer des repères. Cliquez-glissez pour créer des boucles directement. Les repères peuvent être déplacés en les glissant.",
-        "editTitle": "Mode édition",
+        "editDesc": "Clic : aller à ce point. Glisser : créer une boucle (activée tout de suite). Glisser un repère ou un bord de boucle : le déplacer. Double-clic (ou double-tap) : ajouter un repère. Plus besoin de mode édition.",
+        "editTitle": "Sur la règle de temps",
         "manageDesc": "Les repères et boucles apparaissent sous forme de chips cliquables. Clic sur un repère : aller à cette position. Clic sur une boucle : l'activer. Menu 3 points (⋮) : définir comme début/fin de boucle ou supprimer. Appui long sur un repère : créer une boucle.",
         "manageTitle": "Gérer les repères et boucles",
-        "openDesc": "Les repères (numérotés) et boucles (plages colorées) s'affichent directement sur la forme d'onde.",
+        "openDesc": "Les repères (numérotés) et les boucles s'affichent sur la règle de temps, en haut. La boucle active est aussi surlignée sur toutes les pistes.",
         "openTitle": "Visualisation",
         "title": "Repères et boucles"
       },
@@ -81,12 +81,10 @@
     "deleteAllDialogConfirm": "Supprimer tout",
     "deleteLoop": "Supprimer la boucle",
     "deleteMarker": "Supprimer le repère",
-    "editMode": "Mode édition repères",
     "loops": "Boucles:",
     "markers": "Repères:",
     "setLoopEnd": "Définir comme fin de boucle",
-    "setLoopStart": "Définir comme début de boucle",
-    "title": "édition"
+    "setLoopStart": "Définir comme début de boucle"
   },
   "menu": {
     "darkMode": "Mode sombre",
@@ -149,14 +147,6 @@
       "title": "Normaliser les waveforms",
       "description": "Ajuster automatiquement les niveaux pour un affichage visuel cohérent"
     },
-    "timeline": {
-      "title": "Afficher la timeline",
-      "description": "Afficher les marqueurs de temps sur chaque waveform"
-    },
-    "minimap": {
-      "title": "Afficher la minimap",
-      "description": "Afficher un aperçu miniature de la waveform complète"
-    },
     "latency": {
       "title": "Compensation de latence (enregistrement)",
       "auto": "Auto",
@@ -189,7 +179,9 @@
     "addAudioTrack": "Ajouter piste audio",
     "importAudioTrack": "Importer piste audio",
     "addRecordableTrack": "Ajouter piste d'enregistrement",
-    "count": "{{current}}/{{max}} pistes"
+    "count": "{{current}}/{{max}} pistes",
+    "solo": "Solo (appui long : solo exclusif)",
+    "mute": "Muet (appui long : tout réactiver)"
   },
   "recordingGuide": {
     "title": "Guide d'enregistrement",
