@@ -81,21 +81,30 @@ const PiecesManager = ({ open, onClose }: PiecesManagerProps) => {
     return `${year}-${month}-${day}_${hours}-${minutes}`;
   };
 
+  // Show the spinner as soon as the modal opens or the current piece changes
+  // (adjusted during render, so the effect below only has async state updates)
+  const loadKey = open ? currentPieceId : null;
+  const [lastLoadKey, setLastLoadKey] = useState(loadKey);
+  if (loadKey !== lastLoadKey) {
+    setLastLoadKey(loadKey);
+    if (open) setLoading(true);
+  }
+
+  const fetchData = () =>
+    Promise.all([listPieces(), getCurrentPiece(), getTotalStorageSize()]);
+
+  const applyData = ([allPieces, current, total]: Awaited<ReturnType<typeof fetchData>>) => {
+    // Filter out current piece from the list using the actual current piece ID
+    const currentId = current?.id;
+    setPieces(allPieces.filter(p => p.id !== currentId));
+    setCurrentPiece(current);
+    setTotalSize(total);
+  };
+
   const loadData = async () => {
     setLoading(true);
     try {
-      const [allPieces, current, total] = await Promise.all([
-        listPieces(),
-        getCurrentPiece(),
-        getTotalStorageSize(),
-      ]);
-      
-      // Filter out current piece from the list using the actual current piece ID
-      const currentId = current?.id;
-      const otherPieces = allPieces.filter(p => p.id !== currentId);
-      setPieces(otherPieces);
-      setCurrentPiece(current);
-      setTotalSize(total);
+      applyData(await fetchData());
     } catch (error) {
       console.error('Failed to load pieces:', error);
     } finally {
@@ -104,10 +113,21 @@ const PiecesManager = ({ open, onClose }: PiecesManagerProps) => {
   };
 
   useEffect(() => {
-    if (open) {
-      loadData();
-    }
-    // loadData is stable and doesn't need to be in deps
+    if (!open) return;
+    // Ignore results that arrive after the modal closed or the piece changed
+    let cancelled = false;
+    fetchData()
+      .then((data) => {
+        if (!cancelled) applyData(data);
+      })
+      .catch((error) => console.error('Failed to load pieces:', error))
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // fetchData/applyData are stable and don't need to be in deps
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, currentPieceId]);
 
