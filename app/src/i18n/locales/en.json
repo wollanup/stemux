@@ -31,9 +31,9 @@
         "title": "Keyboard Shortcuts"
       },
       "loops": {
-        "activeDesc": "Click a loop in the top strip of the ruler (or its chip) to activate it: playback jumps back to its start when reaching the end. Click again to deactivate.",
+        "activeDesc": "Double click (or double tap) a loop in the top strip to enable it and play it from its start. You can also enable or disable it with its chip in the list above the timeline.",
         "activeTitle": "Activating a loop",
-        "editDesc": "Click: jump there. Drag: create a loop (enabled right away). Drag a marker or a loop edge: move it. Double click (or double tap): add a marker. No edit mode needed anymore.",
+        "editDesc": "Graduation (bottom): press to place the playhead, drag to adjust it precisely; double click (or double tap): add a marker. Loop strip (top): drag to create a loop (enabled right away), drag a handle to move a marker. No edit mode needed anymore.",
         "editTitle": "On the time ruler",
         "manageDesc": "Markers and loops appear as clickable chips. Click a marker: jump to that position. Click a loop: activate it. Menu (⋮): set as loop start/end or delete. Long-press a marker: create a loop.",
         "manageTitle": "Managing markers and loops",
@@ -75,7 +75,7 @@
   },
   "markers": {
     "cancelLoopStart": "Cancel loop start",
-    "deleteAllConfirmMessage": "This action will permanently delete all markers ({markerCount}) and all loops ({loopCount}). This action cannot be undone.",
+    "deleteAllConfirmMessage": "This action will permanently delete all markers ({{markerCount}}) and all loops ({{loopCount}}). This action cannot be undone.",
     "deleteAllConfirmTitle": "Delete all markers and loops?",
     "deleteAllDialogCancel": "Cancel",
     "deleteAllDialogConfirm": "Delete all",
@@ -84,7 +84,9 @@
     "loops": "Loops:",
     "markers": "Markers:",
     "setLoopEnd": "Set as loop end",
-    "setLoopStart": "Set as loop start"
+    "setLoopStart": "Set as loop start",
+    "playLoop": "Play the loop",
+    "pauseLoop": "Pause the loop"
   },
   "menu": {
     "darkMode": "Dark mode",
@@ -181,7 +183,9 @@
     "addRecordableTrack": "Add Recording Track",
     "count": "{{current}}/{{max}} tracks",
     "solo": "Solo (long press: exclusive solo)",
-    "mute": "Mute (long press: unmute all)"
+    "mute": "Mute (long press: unmute all)",
+    "resizeHeight": "Drag to change the height (double click: default size)",
+    "resizeHeaders": "Drag to change the width (double click: default size)"
   },
   "recordingGuide": {
     "title": "Recording Guide",

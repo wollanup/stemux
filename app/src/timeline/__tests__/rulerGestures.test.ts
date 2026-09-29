@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { hitTest, MARKER_GRAB_PX, resolveGesture } from '../rulerGestures';
+import { cursorFor, HANDLE_WIDTH, hitTest, loopStartMarkerIds, MARKER_GRAB_PX, resolveGesture, scrubTime } from '../rulerGestures';
 import { zoomInFrom, zoomOutFrom, sliderFromZoom, zoomFromSlider } from '../zoom';
 
 const PPS = 10;
@@ -17,55 +17,82 @@ const state = {
 };
 
 describe('hitTest', () => {
-  it('grabs a marker within a few pixels', () => {
-    expect(hitTest(100 + MARKER_GRAB_PX - 1, false, state, PPS)).toMatchObject({ kind: 'marker', markerId: 'a' });
-    expect(hitTest(100 + MARKER_GRAB_PX + 2, false, state, PPS)).toEqual({ kind: 'empty' });
+  it('the graduation only moves the playhead, even over a marker', () => {
+    expect(hitTest(100, false, state, PPS)).toEqual({ kind: 'time' });
+    expect(hitTest(200 + HANDLE_WIDTH - 1, false, state, PPS)).toEqual({ kind: 'time' });
   });
 
-  it('grabs the closest marker', () => {
+  it('grabs a marker on its line in the loop strip', () => {
+    expect(hitTest(100 + MARKER_GRAB_PX - 1, true, state, PPS)).toMatchObject({ kind: 'marker', markerId: 'a' });
+  });
+
+  it('grabs a loop start by its handle, drawn on the left of the line', () => {
+    expect(loopStartMarkerIds(state)).toEqual(new Set(['a', 'c']));
+    expect(hitTest(100 - HANDLE_WIDTH + 1, true, state, PPS)).toMatchObject({ markerId: 'a' });
+    // Right of the line: not this marker (here it is the handle of 'c', at 12s)
+    expect(hitTest(100 + MARKER_GRAB_PX + 2, true, state, PPS)).not.toMatchObject({ markerId: 'a' });
+  });
+
+  it('grabs a loop end by its handle, drawn on the right of the line', () => {
+    expect(hitTest(200 + HANDLE_WIDTH - 1, true, state, PPS)).toMatchObject({ markerId: 'b' });
+    expect(hitTest(200 - MARKER_GRAB_PX - 2, true, state, PPS)).toMatchObject({ kind: 'strip' });
+  });
+
+  it('knows the innermost loop under the pointer in the strip (double click plays it)', () => {
+    expect(hitTest(140, true, state, PPS)).toEqual({ kind: 'strip', loopId: 'small' });
+    expect(hitTest(185, true, state, PPS)).toEqual({ kind: 'strip', loopId: 'big' });
+    expect(hitTest(400, true, state, PPS)).toEqual({ kind: 'strip' });
+  });
+
+  it('grabs the closest marker when handles overlap', () => {
     const close = { markers: [{ id: 'x', time: 1, createdAt: 0 }, { id: 'y', time: 1.5, createdAt: 0 }], loops: [] };
-    expect(hitTest(14, false, close, PPS)).toMatchObject({ markerId: 'y' });
+    expect(hitTest(14, true, close, PPS)).toMatchObject({ markerId: 'y' });
   });
 
-  it('finds the innermost loop in the loop strip', () => {
-    expect(hitTest(140, true, state, PPS)).toEqual({ kind: 'loop', loopId: 'small' });
-    expect(hitTest(180, true, state, PPS)).toEqual({ kind: 'loop', loopId: 'big' });
-  });
-
-  it('ignores loops outside the loop strip', () => {
-    expect(hitTest(140, false, state, PPS)).toEqual({ kind: 'empty' });
+  it('puts the handle of the earliest marker of a loop on the left', () => {
+    const swapped = { markers: state.markers, loops: [{ id: 'l', startMarkerId: 'b', endMarkerId: 'a', enabled: false, createdAt: 0 }] };
+    expect(loopStartMarkerIds(swapped)).toEqual(new Set(['a']));
   });
 });
 
 describe('resolveGesture', () => {
-  it('seeks on a click', () => {
-    expect(resolveGesture({ kind: 'empty' }, 250, 251, PPS, 60)).toEqual({ type: 'seek', time: 25 });
+  it('graduation: the playhead ends where the pointer is released', () => {
+    expect(resolveGesture({ kind: 'time' }, 250, 251, PPS, 60)).toEqual({ type: 'seek', time: 25.1 });
+    // A drag is a precise placement, not a loop
+    expect(resolveGesture({ kind: 'time' }, 250, 320, PPS, 60)).toEqual({ type: 'seek', time: 32 });
   });
 
-  it('seeks to a marker when it is clicked', () => {
+  it('graduation: scrubbing stays within the piece', () => {
+    expect(scrubTime(-50, PPS, 60)).toBe(0);
+    expect(scrubTime(900, PPS, 60)).toBe(60);
+    expect(scrubTime(123, PPS, 60)).toBe(12.3);
+  });
+
+  it('loop strip: a click does nothing (no playhead move)', () => {
+    expect(resolveGesture({ kind: 'strip' }, 140, 141, PPS, 60)).toEqual({ type: 'none' });
+  });
+
+  it('loop strip: a drag creates a loop, in either direction, within the piece', () => {
+    expect(resolveGesture({ kind: 'strip' }, 300, 450, PPS, 60)).toEqual({ type: 'createLoop', start: 30, end: 45 });
+    expect(resolveGesture({ kind: 'strip' }, 450, 300, PPS, 60)).toEqual({ type: 'createLoop', start: 30, end: 45 });
+    expect(resolveGesture({ kind: 'strip' }, 550, 900, PPS, 60)).toEqual({ type: 'createLoop', start: 55, end: 60 });
+  });
+
+  it('loop strip: ignores a drag too short for a loop', () => {
+    expect(resolveGesture({ kind: 'strip' }, 1000, 1050, 1000, 60)).toEqual({ type: 'none' });
+  });
+
+  it('marker handle: a click seeks to it, a drag moves it', () => {
     expect(resolveGesture({ kind: 'marker', markerId: 'a', time: 10 }, 103, 103, PPS, 60)).toEqual({ type: 'seek', time: 10 });
-  });
-
-  it('creates a loop when dragging, in either direction', () => {
-    expect(resolveGesture({ kind: 'empty' }, 300, 450, PPS, 60)).toEqual({ type: 'createLoop', start: 30, end: 45 });
-    expect(resolveGesture({ kind: 'empty' }, 450, 300, PPS, 60)).toEqual({ type: 'createLoop', start: 30, end: 45 });
-  });
-
-  it('clamps loops to the piece', () => {
-    expect(resolveGesture({ kind: 'empty' }, 550, 900, PPS, 60)).toEqual({ type: 'createLoop', start: 55, end: 60 });
-  });
-
-  it('moves a dragged marker', () => {
     expect(resolveGesture({ kind: 'marker', markerId: 'b', time: 20 }, 200, 230, PPS, 60)).toEqual({ type: 'moveMarker', markerId: 'b', time: 23 });
   });
+});
 
-  it('toggles a clicked loop', () => {
-    expect(resolveGesture({ kind: 'loop', loopId: 'small' }, 140, 141, PPS, 60)).toEqual({ type: 'toggleLoop', loopId: 'small' });
-  });
-
-  it('ignores a drag too short for a loop', () => {
-    const pps = 1000;
-    expect(resolveGesture({ kind: 'empty' }, 1000, 1050, pps, 60)).toEqual({ type: 'none' });
+describe('cursorFor', () => {
+  it('shows a horizontal arrow on handles and a hand on the graduation', () => {
+    expect(cursorFor({ kind: 'marker', markerId: 'a', time: 10 })).toBe('ew-resize');
+    expect(cursorFor({ kind: 'time' })).toBe('pointer');
+    expect(cursorFor({ kind: 'strip' })).toBe('default');
   });
 });
 

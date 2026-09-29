@@ -100,6 +100,7 @@ cd app
 npm run lint
 npm run typecheck
 npm test          # unit tests (Vitest), `npm run test:watch` while developing
+npm run test:e2e  # UI tests (Playwright, Chromium with a fake microphone)
 ```
 
 The same checks run on GitHub Actions for every push and pull request (`.github/workflows/ci.yml`).

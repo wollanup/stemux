@@ -33,6 +33,7 @@ export const saveTrackSettingsToPiece = async (
       isSolo: t.isSolo,
       color: t.color,
       isCollapsed: t.isCollapsed,
+      height: t.height,
       isRecordable: t.isRecordable,
       clipOffset: t.clipOffset,
     })),

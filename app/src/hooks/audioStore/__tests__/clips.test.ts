@@ -63,6 +63,13 @@ describe('recorded clips', () => {
     expect(seek).toHaveBeenCalledWith(30);
   });
 
+  it('saves the track height with the piece', async () => {
+    const { store } = makeStore();
+    store.setState({ tracks: [{ ...recordable, height: 180 }] });
+    await store.getState().saveRecording('rec', new Blob(['wav']), 0);
+    expect((db.settings.get('p') as PieceSettings).trackSettings[0].height).toBe(180);
+  });
+
   it('forgets the clip position when the recording is cleared', async () => {
     const { store } = makeStore();
     await store.getState().saveRecording('rec', new Blob(['wav']), 12);

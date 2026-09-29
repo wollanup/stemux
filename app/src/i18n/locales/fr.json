@@ -31,9 +31,9 @@
         "title": "Raccourcis clavier"
       },
       "loops": {
-        "activeDesc": "Cliquez sur une boucle dans la bande du haut de la règle (ou sur sa puce) pour l'activer : la lecture revient au début en atteignant la fin. Cliquez à nouveau pour la désactiver.",
+        "activeDesc": "Double-cliquez (ou double-tapez) sur une boucle dans la bande du haut pour l'activer et la lire depuis son début. Vous pouvez aussi l'activer ou la désactiver avec sa puce dans la liste au-dessus de la timeline.",
         "activeTitle": "Activer une boucle",
-        "editDesc": "Clic : aller à ce point. Glisser : créer une boucle (activée tout de suite). Glisser un repère ou un bord de boucle : le déplacer. Double-clic (ou double-tap) : ajouter un repère. Plus besoin de mode édition.",
+        "editDesc": "Graduation (en bas) : appuyez pour placer la lecture, glissez pour l'ajuster précisément ; double-clic (ou double-tap) : ajouter un repère. Bande des boucles (en haut) : glissez pour créer une boucle (activée tout de suite), glissez une poignée pour déplacer un repère. Plus besoin de mode édition.",
         "editTitle": "Sur la règle de temps",
         "manageDesc": "Les repères et boucles apparaissent sous forme de chips cliquables. Clic sur un repère : aller à cette position. Clic sur une boucle : l'activer. Menu 3 points (⋮) : définir comme début/fin de boucle ou supprimer. Appui long sur un repère : créer une boucle.",
         "manageTitle": "Gérer les repères et boucles",
@@ -75,7 +75,7 @@
   },
   "markers": {
     "cancelLoopStart": "Annuler début de boucle",
-    "deleteAllConfirmMessage": "Cette action supprimera définitivement tous les repères ({markerCount}) et toutes les boucles ({loopCount}). Cette action est irréversible.",
+    "deleteAllConfirmMessage": "Cette action supprimera définitivement tous les repères ({{markerCount}}) et toutes les boucles ({{loopCount}}). Cette action est irréversible.",
     "deleteAllConfirmTitle": "Supprimer tous les repères et boucles ?",
     "deleteAllDialogCancel": "Annuler",
     "deleteAllDialogConfirm": "Supprimer tout",
@@ -84,7 +84,9 @@
     "loops": "Boucles:",
     "markers": "Repères:",
     "setLoopEnd": "Définir comme fin de boucle",
-    "setLoopStart": "Définir comme début de boucle"
+    "setLoopStart": "Définir comme début de boucle",
+    "playLoop": "Lire la boucle",
+    "pauseLoop": "Mettre la boucle en pause"
   },
   "menu": {
     "darkMode": "Mode sombre",
@@ -181,7 +183,9 @@
     "addRecordableTrack": "Ajouter piste d'enregistrement",
     "count": "{{current}}/{{max}} pistes",
     "solo": "Solo (appui long : solo exclusif)",
-    "mute": "Muet (appui long : tout réactiver)"
+    "mute": "Muet (appui long : tout réactiver)",
+    "resizeHeight": "Glisser pour changer la hauteur (double-clic : taille par défaut)",
+    "resizeHeaders": "Glisser pour changer la largeur (double-clic : taille par défaut)"
   },
   "recordingGuide": {
     "title": "Guide d'enregistrement",

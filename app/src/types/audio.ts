@@ -8,6 +8,7 @@ export interface AudioTrack {
   color: string;
   isLoading?: boolean; // True during file import/loading
   isCollapsed?: boolean; // Track expanded/collapsed state
+  height?: number; // Lane height (px) set by the user, default when undefined
   
   // Recording properties
   isRecordable?: boolean; // true if recording track
@@ -57,6 +58,7 @@ export interface PieceSettings {
     isSolo: boolean;
     color: string;
     isCollapsed?: boolean;
+    height?: number;
     isRecordable?: boolean; // Track is a recording track
     clipOffset?: number; // Position of the clip on the timeline (seconds)
   }>;
@@ -133,6 +135,8 @@ export interface AudioStore {
   removeLoop: (id: string) => void;
   toggleLoopById: (id: string) => void;
   setActiveLoop: (id: string | null) => void;
+  playLoop: (id: string) => void;
+  toggleLoopPlayback: (id: string) => void;
 
   setWaveformStyle: (style: 'modern' | 'classic') => void;
   setWaveformNormalize: (normalize: boolean) => void;

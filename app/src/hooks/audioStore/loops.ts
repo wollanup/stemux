@@ -293,4 +293,31 @@ export const createLoopActions = (set: (partial: Partial<AudioStore> | ((state: 
       ).catch(err => console.error('Failed to save active loop:', err));
     }
   },
+
+  /** Enable a loop and play it from its start */
+  playLoop: (id: string) => {
+    const { loopState } = get();
+    const loop = loopState.loops.find(l => l.id === id);
+    if (!loop) return;
+    const times = [loop.startMarkerId, loop.endMarkerId]
+      .map(markerId => loopState.markers.find(m => m.id === markerId)?.time)
+      .filter((time): time is number => time !== undefined);
+    if (times.length !== 2) return;
+
+    get().setActiveLoop(id);
+    get().seek(Math.min(...times));
+    if (!get().playbackState.isPlaying) get().play();
+  },
+
+  /** Loop chip: play the loop, or pause if it is the one playing */
+  toggleLoopPlayback: (id: string) => {
+    const { loopState, playbackState } = get();
+    const isThisLoopPlaying = playbackState.isPlaying && loopState.activeLoopId === id
+      && loopState.loops.some(l => l.id === id && l.enabled);
+    if (isThisLoopPlaying) {
+      get().pause();
+    } else {
+      get().playLoop(id);
+    }
+  },
 });
