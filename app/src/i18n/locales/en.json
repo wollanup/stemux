@@ -31,9 +31,9 @@
         "title": "Keyboard Shortcuts"
       },
       "loops": {
-        "activeDesc": "Click a loop in the top strip of the ruler (or its chip) to activate it: playback jumps back to its start when reaching the end. Click again to deactivate.",
+        "activeDesc": "Enable or disable a loop with its chip in the list above the timeline: playback jumps back to the loop start when reaching its end.",
         "activeTitle": "Activating a loop",
-        "editDesc": "Click: jump there. Drag: create a loop (enabled right away). Drag a marker or a loop edge: move it. Double click (or double tap): add a marker. No edit mode needed anymore.",
+        "editDesc": "Graduation (bottom): press to place the playhead, drag to adjust it precisely; double click (or double tap): add a marker. Loop strip (top): drag to create a loop (enabled right away), drag a handle to move a marker. No edit mode needed anymore.",
         "editTitle": "On the time ruler",
         "manageDesc": "Markers and loops appear as clickable chips. Click a marker: jump to that position. Click a loop: activate it. Menu (⋮): set as loop start/end or delete. Long-press a marker: create a loop.",
         "manageTitle": "Managing markers and loops",

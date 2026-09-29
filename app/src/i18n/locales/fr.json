@@ -31,9 +31,9 @@
         "title": "Raccourcis clavier"
       },
       "loops": {
-        "activeDesc": "Cliquez sur une boucle dans la bande du haut de la règle (ou sur sa puce) pour l'activer : la lecture revient au début en atteignant la fin. Cliquez à nouveau pour la désactiver.",
+        "activeDesc": "Activez ou désactivez une boucle avec sa puce dans la liste au-dessus de la timeline : la lecture revient au début de la boucle en atteignant la fin.",
         "activeTitle": "Activer une boucle",
-        "editDesc": "Clic : aller à ce point. Glisser : créer une boucle (activée tout de suite). Glisser un repère ou un bord de boucle : le déplacer. Double-clic (ou double-tap) : ajouter un repère. Plus besoin de mode édition.",
+        "editDesc": "Graduation (en bas) : appuyez pour placer la lecture, glissez pour l'ajuster précisément ; double-clic (ou double-tap) : ajouter un repère. Bande des boucles (en haut) : glissez pour créer une boucle (activée tout de suite), glissez une poignée pour déplacer un repère. Plus besoin de mode édition.",
         "editTitle": "Sur la règle de temps",
         "manageDesc": "Les repères et boucles apparaissent sous forme de chips cliquables. Clic sur un repère : aller à cette position. Clic sur une boucle : l'activer. Menu 3 points (⋮) : définir comme début/fin de boucle ou supprimer. Appui long sur un repère : créer une boucle.",
         "manageTitle": "Gérer les repères et boucles",

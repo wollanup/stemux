@@ -1,9 +1,9 @@
 /**
  * Ruler gestures (no edit mode):
- * - click on the graduation → seek
- * - click in the loop strip → nothing (it is for editing loops)
- * - drag (anywhere but a handle) → create a loop
- * - drag a marker handle → move it
+ * - graduation: press → the playhead jumps there, drag → it follows the
+ *   pointer (precise placement), release → it stays there
+ * - loop strip: drag → create a loop, click → nothing
+ * - marker handle (loop strip): drag → move it, click → seek to it
  */
 
 import type { LoopState } from '../types/audio';
@@ -12,8 +12,8 @@ export type RulerHit =
   | { kind: 'marker'; markerId: string; time: number }
   /** Loop strip, not on a handle */
   | { kind: 'strip' }
-  /** Graduation, not on a handle */
-  | { kind: 'empty' };
+  /** Graduation: moves the playhead */
+  | { kind: 'time' };
 
 export type RulerAction =
   | { type: 'seek'; time: number }
@@ -42,24 +42,29 @@ export function loopStartMarkerIds(state: Markers, timeOf?: (id: string) => numb
 
 /**
  * What is under the pointer. `x` is in content pixels; `inLoopStrip` is true
- * in the strip where loops and handles are drawn. Below it (graduation) only
- * the marker line itself can be grabbed.
+ * in the strip where loops and handles are drawn. The graduation below only
+ * moves the playhead.
  */
 export function hitTest(x: number, inLoopStrip: boolean, state: Markers, pps: number): RulerHit {
+  if (!inLoopStrip) return { kind: 'time' };
   const leftHanded = loopStartMarkerIds(state);
   let best: { id: string; time: number; distance: number } | null = null;
   for (const marker of state.markers) {
     const lineX = marker.time * pps;
     const onLeft = leftHanded.has(marker.id);
-    const handle = inLoopStrip ? HANDLE_WIDTH : MARKER_GRAB_PX;
-    const from = onLeft ? lineX - handle : lineX - MARKER_GRAB_PX;
-    const to = onLeft ? lineX + MARKER_GRAB_PX : lineX + handle;
+    const from = onLeft ? lineX - HANDLE_WIDTH : lineX - MARKER_GRAB_PX;
+    const to = onLeft ? lineX + MARKER_GRAB_PX : lineX + HANDLE_WIDTH;
     if (x < from || x > to) continue;
     const distance = Math.abs(lineX - x);
     if (!best || distance < best.distance) best = { id: marker.id, time: marker.time, distance };
   }
   if (best) return { kind: 'marker', markerId: best.id, time: best.time };
-  return inLoopStrip ? { kind: 'strip' } : { kind: 'empty' };
+  return { kind: 'strip' };
+}
+
+/** Playhead position while pressing/dragging on the graduation */
+export function scrubTime(x: number, pps: number, duration: number): number {
+  return Math.max(0, Math.min(duration, x / pps));
 }
 
 /** Action to perform when the pointer is released */
@@ -67,16 +72,19 @@ export function resolveGesture(hit: RulerHit, downX: number, upX: number, pps: n
   const moved = Math.abs(upX - downX) >= DRAG_THRESHOLD_PX;
   const clampTime = (x: number) => Math.max(0, Math.min(duration, x / pps));
 
+  if (hit.kind === 'time') {
+    // The playhead followed the pointer: it ends where the pointer is released
+    return { type: 'seek', time: scrubTime(upX, pps, duration) };
+  }
+
   if (hit.kind === 'marker') {
     return moved
       ? { type: 'moveMarker', markerId: hit.markerId, time: clampTime(upX) }
       : { type: 'seek', time: hit.time };
   }
 
-  if (!moved) {
-    // The loop strip is for editing loops: a click there does not move the playhead
-    return hit.kind === 'strip' ? { type: 'none' } : { type: 'seek', time: clampTime(downX) };
-  }
+  // Loop strip: a click does nothing (no playhead move), a drag creates a loop
+  if (!moved) return { type: 'none' };
 
   const a = clampTime(downX);
   const b = clampTime(upX);

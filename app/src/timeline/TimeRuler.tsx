@@ -10,7 +10,7 @@ import { useAudioStore } from '../hooks/useAudioStore';
 import type { LoopState } from '../types/audio';
 import { formatTimeLabel, tickSpacing, ticks } from './timelineMath';
 import { getView, subscribeView } from './viewStore';
-import { cursorFor, HANDLE_WIDTH, hitTest, loopStartMarkerIds, resolveGesture, type RulerHit } from './rulerGestures';
+import { cursorFor, DRAG_THRESHOLD_PX, HANDLE_WIDTH, hitTest, loopStartMarkerIds, resolveGesture, scrubTime, type RulerHit } from './rulerGestures';
 import { LOOP_STRIP_HEIGHT, RULER_HEIGHT } from './layout';
 
 interface TimeRulerProps {
@@ -100,6 +100,8 @@ export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: Ti
     const hit = hitAt(e);
     e.currentTarget.setPointerCapture(e.pointerId);
     setDrag({ pointerId: e.pointerId, hit, downX: x, x });
+    // Graduation: the playhead jumps under the pointer right away
+    if (hit.kind === 'time') useAudioStore.getState().seek(scrubTime(x, pxPerSec, duration));
   };
 
   const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -110,7 +112,10 @@ export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: Ti
       return;
     }
     if (drag.pointerId !== e.pointerId) return;
-    setDrag({ ...drag, x: contentX(e) });
+    const x = contentX(e);
+    setDrag({ ...drag, x });
+    // ...and follows it for precise placement until the button is released
+    if (drag.hit.kind === 'time') useAudioStore.getState().seek(scrubTime(x, pxPerSec, duration));
   };
 
   const onPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -122,14 +127,15 @@ export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: Ti
 
     switch (action.type) {
       case 'seek': {
-        // Double click / double tap on the ruler adds a marker
+        // Double click / double tap on the graduation adds a marker (a scrub is not a tap)
         const now = performance.now();
         const previous = lastTap.current;
-        if (drag.hit.kind === 'empty' && previous && now - previous.time < DOUBLE_TAP_MS && Math.abs(previous.x - x) < 10) {
+        const isTap = drag.hit.kind === 'time' && Math.abs(x - drag.downX) < DRAG_THRESHOLD_PX;
+        if (isTap && previous && now - previous.time < DOUBLE_TAP_MS && Math.abs(previous.x - x) < 10) {
           store.addMarker(action.time);
           lastTap.current = null;
         } else {
-          lastTap.current = { time: now, x };
+          lastTap.current = isTap ? { time: now, x } : null;
           store.seek(action.time);
         }
         break;
@@ -154,11 +160,11 @@ export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: Ti
   // Earliest marker of each loop, with the one being dragged at its new place
   const loopStartIds = loopStartMarkerIds(loopState, markerTime);
   const newLoop =
-    drag && drag.hit.kind !== 'marker' && Math.abs(drag.x - drag.downX) >= 4
+    drag && drag.hit.kind === 'strip' && Math.abs(drag.x - drag.downX) >= 4
       ? { left: Math.min(drag.x, drag.downX), width: Math.abs(drag.x - drag.downX) }
       : null;
 
-  const cursor = drag ? (drag.hit.kind === 'marker' ? 'ew-resize' : 'crosshair') : hoverCursor;
+  const cursor = drag ? (drag.hit.kind === 'strip' ? 'crosshair' : cursorFor(drag.hit)) : hoverCursor;
 
   return (
     <Box

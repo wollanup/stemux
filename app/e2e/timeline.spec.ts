@@ -30,13 +30,29 @@ test.describe('timeline', () => {
     expect(await shownTime(page)).toBe(20);
   });
 
-  test('dragging on the ruler creates an active loop, with handles inside the loop strip', async ({ page }) => {
+  test('pressing on the graduation places the playhead, dragging moves it precisely', async ({ page }) => {
     await openWithTracks(page, stems);
     const ruler = (await page.getByTestId('time-ruler').boundingBox())!;
 
-    await page.mouse.move(await rulerX(page, 10), ruler.y + RULER_GRADUATION_Y);
+    await page.mouse.move(await rulerX(page, 10.5), ruler.y + RULER_GRADUATION_Y);
     await page.mouse.down();
-    await page.mouse.move(await rulerX(page, 20), ruler.y + RULER_GRADUATION_Y, { steps: 5 });
+    await expect.poll(() => shownTime(page)).toBe(10);
+    await page.mouse.move(await rulerX(page, 25.5), ruler.y + RULER_GRADUATION_Y, { steps: 8 });
+    await expect.poll(() => shownTime(page)).toBe(25);
+    await page.mouse.up();
+
+    // Only the playhead moved: no loop created
+    await expect.poll(() => shownTime(page)).toBe(25);
+    await expect(page.locator('[data-marker]')).toHaveCount(0);
+  });
+
+  test('dragging in the loop strip creates an active loop, with handles inside the strip', async ({ page }) => {
+    await openWithTracks(page, stems);
+    const ruler = (await page.getByTestId('time-ruler').boundingBox())!;
+
+    await page.mouse.move(await rulerX(page, 10), ruler.y + RULER_STRIP_Y);
+    await page.mouse.down();
+    await page.mouse.move(await rulerX(page, 20), ruler.y + RULER_STRIP_Y, { steps: 5 });
     await page.mouse.up();
 
     // Two markers and an active loop in the list above the timeline
