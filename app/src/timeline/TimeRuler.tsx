@@ -143,6 +143,10 @@ export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: Ti
 
   const markers = withPreview(loopState, drag, pxPerSec);
   const markerTime = (id: string) => markers.find((m) => m.id === id)?.time;
+  // Earliest marker of each loop (a marker may have been dragged past the other one)
+  const loopStartIds = new Set(
+    loopState.loops.map((l) => ((markerTime(l.startMarkerId) ?? 0) <= (markerTime(l.endMarkerId) ?? 0) ? l.startMarkerId : l.endMarkerId))
+  );
   const newLoop =
     drag && drag.hit.kind !== 'marker' && Math.abs(drag.x - drag.downX) >= 4
       ? { left: Math.min(drag.x, drag.downX), width: Math.abs(drag.x - drag.downX) }
@@ -216,6 +220,8 @@ export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: Ti
 
       {/* Marker flags (numbered in time order, like the markers panel) */}
       {markers.map((marker, index) => {
+        // Loop starts get their flag on the left, so each loop reads as ( ... )
+        const opensLoop = loopStartIds.has(marker.id);
         const inActiveLoop = loopState.loops.some(
           (l) => l.id === loopState.activeLoopId && l.enabled && (l.startMarkerId === marker.id || l.endMarkerId === marker.id)
         );
@@ -229,16 +235,17 @@ export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: Ti
             <Box
               sx={{
                 position: 'absolute',
-                top: 0,
-                left: 2,
+                // Same band as the loops, so flags and loop line up
+                top: 2,
+                ...(opensLoop ? { right: 2 } : { left: 2 }),
                 px: 0.5,
-                height: LOOP_STRIP_HEIGHT - 2,
-                lineHeight: `${LOOP_STRIP_HEIGHT - 2}px`,
+                height: LOOP_STRIP_HEIGHT - 4,
+                lineHeight: `${LOOP_STRIP_HEIGHT - 4}px`,
                 fontSize: 10,
                 fontWeight: 700,
                 color: theme.palette.getContrastText(color),
                 bgcolor: color,
-                borderRadius: '0 3px 3px 0',
+                borderRadius: opensLoop ? '3px 0 0 3px' : '0 3px 3px 0',
               }}
             >
               {index + 1}
