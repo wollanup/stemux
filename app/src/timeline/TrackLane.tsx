@@ -53,10 +53,12 @@ function useLiveTake(recording: boolean) {
  * Extent of a clip: a light tint, no name (it is in the track header) and no
  * border, except while hovering the lane, to see exactly where it starts/ends.
  */
-function Clip({ left, width, color }: { left: number; width: number; color: string }) {
+function Clip({ left, width, color, start, duration }: { left: number; width: number; color: string; start: number; duration: number }) {
   return (
     <Box
       data-clip
+      data-clip-start={start}
+      data-clip-duration={duration}
       sx={{
         position: 'absolute',
         left,
@@ -145,7 +147,7 @@ export default function TrackLane({ track, audio, width, height, pxPerSec, dimme
       }}
     >
       {audio && (
-        <Clip left={offset * pxPerSec} width={audio.duration * pxPerSec} color={track.color} />
+        <Clip left={offset * pxPerSec} width={audio.duration * pxPerSec} color={track.color} start={offset} duration={audio.duration} />
       )}
       {audio && renderWave(audio.pyramid, offset)}
 

@@ -51,6 +51,8 @@ function TrackRow({ track, wide, headerWidth, headerResize, contentWidth, viewpo
   return (
     <Box
       ref={setNodeRef}
+      data-track-row={track.name}
+      data-track-height={laneHeight}
       style={{ transform: CSS.Translate.toString(transform), transition }}
       sx={{
         display: 'flex',

@@ -276,6 +276,8 @@ export default function TrackHeader({ track, variant, height, dimmed, dragHandle
             <span>
               <IconButton
                 size="small"
+                aria-label={t('recording.armTrack')}
+                aria-pressed={!!track.isArmed}
                 onClick={() => toggleRecordArm(track.id)}
                 disabled={armDisabled}
                 sx={{

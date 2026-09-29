@@ -449,7 +449,7 @@ const BottomControlBar = () => {
             <FastForwardIcon />
           </IconButton>
           <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: { xs: 'auto', sm: 120 } }}>
-            <Typography variant="body2">
+            <Typography variant="body2" data-testid="current-time">
               {formatTime(currentTime)}
             </Typography>
             {/* Desktop only - total time */}

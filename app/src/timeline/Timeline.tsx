@@ -227,6 +227,7 @@ export default function Timeline() {
       ref={scrollRef}
       onScroll={onScroll}
       data-timeline-scroll
+      data-px-per-sec={pps}
       sx={{
         flex: 1,
         minHeight: 0,
