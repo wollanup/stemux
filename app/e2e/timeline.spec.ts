@@ -199,6 +199,8 @@ test.describe('timeline', () => {
     await expect(page.getByText(/top strip of the ruler/)).toBeVisible();
     await page.getByRole('button', { name: /Hide markers and loops/ }).click();
     await expect(page.locator('[data-loops-panel]')).toHaveAttribute('data-loops-panel', 'closed');
+    await expect(page.getByTestId('markers-count')).toHaveText('0');
+    await expect(page.getByTestId('loops-count')).toHaveText('0');
     await expect(strip).toHaveAttribute('data-loop-strip', 'read-only');
     expect((await strip.boundingBox())!.height).toBeLessThan(editHeight);
 

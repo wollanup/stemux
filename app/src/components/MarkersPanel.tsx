@@ -49,6 +49,32 @@ const chipLayout = {
   '& .MuiChip-label': { display: 'flex', alignItems: 'center', lineHeight: 1 },
 };
 
+/** Count in a small grey pill, like the badges of app notifications */
+const CountBadge = ({ count, testId }: { count: number; testId: string }) => (
+  <Box
+    component="span"
+    data-testid={testId}
+    sx={{
+      minWidth: 20,
+      height: 20,
+      px: 0.75,
+      boxSizing: 'border-box',
+      borderRadius: 10,
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      bgcolor: 'action.selected',
+      color: 'text.secondary',
+      fontSize: 12,
+      fontWeight: 600,
+      lineHeight: 1,
+      fontVariantNumeric: 'tabular-nums',
+    }}
+  >
+    {count}
+  </Box>
+);
+
 /** Delete / Backspace on a focused chip deletes it */
 const onDeleteKey = (action: () => void) => (e: React.KeyboardEvent) => {
   if (e.target !== e.currentTarget) return;
@@ -199,12 +225,17 @@ const MarkersPanel = () => {
         aria-label={t('markers.showPanel')}
         aria-expanded={false}
         data-loops-panel="closed"
-        sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 2, py: 0.5, bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider', justifyContent: 'flex-start' }}
+        sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 2, py: 1, bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider', justifyContent: 'flex-start' }}
       >
-        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-          {t('markers.summary', { markers: loopState.markers.length, loops: loopState.loops.length })}
+        <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: '20px' }}>
+          {t('markers.markersTitle')}
         </Typography>
-        <ExpandMore fontSize="small" sx={{ ml: 'auto', color: 'text.secondary' }} />
+        <CountBadge count={loopState.markers.length} testId="markers-count" />
+        <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: '20px', ml: 1 }}>
+          {t('markers.loopsTitle')}
+        </Typography>
+        <CountBadge count={loopState.loops.length} testId="loops-count" />
+        <ExpandMore fontSize="small" sx={{ ml: 'auto', color: 'text.secondary', display: 'block' }} />
       </ButtonBase>
     );
   }

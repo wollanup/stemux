@@ -120,14 +120,15 @@
     "loopMenu": "Options de la boucle",
     "loopOnEntry": "Boucler à l'entrée",
     "loops": "Boucles:",
+    "loopsTitle": "Boucles",
     "markerMenu": "Options du repère",
     "markers": "Repères:",
+    "markersTitle": "Repères",
     "pauseLoop": "Mettre la boucle en pause",
     "playLoop": "Lire la boucle",
     "setLoopEnd": "Définir comme fin de boucle",
     "setLoopStart": "Définir comme début de boucle",
-    "showPanel": "Afficher repères et boucles (pour les modifier dans la bande des boucles)",
-    "summary": "Repères ({{markers}}) · Boucles ({{loops}})"
+    "showPanel": "Afficher repères et boucles (pour les modifier dans la bande des boucles)"
   },
   "menu": {
     "deleteAllConfirmButton": "Tout supprimer",
