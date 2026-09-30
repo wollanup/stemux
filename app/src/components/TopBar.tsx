@@ -119,68 +119,12 @@ const TopBar = ({
           <StemuxIcon size={28} />
         </Box>
         
-        {/* Mobile: Title with pieces menu */}
-        {isMobile && currentPieceName ? (
-          <>
-            <Button
-              color="inherit"
-              onClick={handleOpenPiecesMenu}
-              endIcon={<KeyboardArrowDown />}
-              sx={{ 
-                textTransform: 'none',
-                p: 0.5,
-              }}
-            >
-              <Typography variant="body1" component="span">
-                Stemux
-              </Typography>
-            </Button>
-            <Menu
-              anchorEl={piecesMenuAnchorEl}
-              open={Boolean(piecesMenuAnchorEl)}
-              onClose={() => setPiecesMenuAnchorEl(null)}
-              anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-              transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-            >
-              {/* Current piece name (mobile only) */}
-              <MenuItem disabled>
-                <ListItemText 
-                  primary={currentPieceName}
-                  slotProps={{ primary: { sx: { fontWeight: 'bold' } } }}
-                />
-              </MenuItem>
-              
-              <MenuItem
-                onClick={() => {
-                  setPiecesMenuAnchorEl(null);
-                  onOpenPiecesManager();
-                }}
-              >
-                <ListItemIcon>
-                  <Settings fontSize="small" />
-                </ListItemIcon>
-                <ListItemText>{t('menu.pieces')}</ListItemText>
-              </MenuItem>
-              
-              {recentPieces.length > 0 && <MenuItem disabled sx={{ opacity: 0.6 }}>
-                <ListItemText
-                  primary={t('pieces.recentPieces')}
-                  slotProps={{ primary: { variant: 'caption', color: 'text.secondary' } }}
-                />
-              </MenuItem>}
-              
-              {recentPieces.map((piece) => (
-                <MenuItem key={piece.id} onClick={() => handleLoadPiece(piece.id)}>
-                  <ListItemText primary={piece.name} />
-                </MenuItem>
-              ))}
-            </Menu>
-          </>
-        ) : !isMobile ? (
+        {/* Mobile: no title, pieces are managed from the menu */}
+        {!isMobile && (
           <Typography variant="body1" component="div">
             Stemux
           </Typography>
-        ) : null}
+        )}
 
         {/* Desktop: Piece name with menu */}
         {!isMobile && currentPieceName && (

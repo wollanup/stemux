@@ -137,6 +137,7 @@
     "globalStats": "Global Statistics",
     "newPiece": "New Piece",
     "noPieces": "No other pieces",
+    "open": "Open",
     "recentPieces": "Recent Pieces",
     "title": "Manage Pieces",
     "totalSize": "Total storage used",
