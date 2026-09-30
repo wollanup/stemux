@@ -23,6 +23,8 @@ export default function PeakMeter({ trackId }: { trackId: string }) {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    // Draw at least once (new theme colors)
+    canvas.dataset.drawn = '';
     let meters: ChannelMeter[] = [];
     let last = performance.now();
     let lastTitle = 0;

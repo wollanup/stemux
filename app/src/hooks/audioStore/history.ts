@@ -20,9 +20,20 @@ export interface EditSnapshot {
   clips: Record<string, ClipFields>;
 }
 
+/**
+ * What an edit changed, before and after: markers and loops only when they
+ * changed, clips of the tracks it touched only. Restoring an entry leaves
+ * everything else alone (a take recorded since keeps its place).
+ */
+export interface EditPart {
+  markers?: Marker[];
+  loops?: Omit<Loop, 'enabled'>[];
+  clips: Record<string, ClipFields>;
+}
+
 export interface HistoryEntry {
-  before: EditSnapshot;
-  after: EditSnapshot;
+  before: EditPart;
+  after: EditPart;
 }
 
 const HISTORY_LIMIT = 100;
@@ -37,31 +48,51 @@ export const snapshotOf = (state: Pick<AudioStore, 'loopState' | 'tracks'>): Edi
   ),
 });
 
+const markersSignature = (snapshot: Pick<EditSnapshot, 'markers' | 'loops'>) =>
+  JSON.stringify([snapshot.markers.map((m) => [m.id, m.time, m.label]), snapshot.loops.map((l) => [l.id, l.startMarkerId, l.endMarkerId])]);
+const clipSignature = (clip: ClipFields | undefined) => JSON.stringify(clip && [clip.clipOffset, clip.trimStart, clip.clipDuration]);
+
 /** What an edit can change, as a string (colors are not undone: left out) */
 const signature = (snapshot: EditSnapshot) =>
-  JSON.stringify([
-    snapshot.markers.map((m) => [m.id, m.time, m.label]),
-    snapshot.loops.map((l) => [l.id, l.startMarkerId, l.endMarkerId]),
-    Object.entries(snapshot.clips).map(([id, c]) => [id, c.clipOffset, c.trimStart, c.clipDuration]),
-  ]);
+  markersSignature(snapshot) + JSON.stringify(Object.entries(snapshot.clips).map(([id, c]) => [id, clipSignature(c)]));
+
+/** The parts that differ between two snapshots, or null when nothing changed */
+export function changedParts(before: EditSnapshot, after: EditSnapshot): HistoryEntry | null {
+  const entry: HistoryEntry = { before: { clips: {} }, after: { clips: {} } };
+  let changed = false;
+  if (markersSignature(before) !== markersSignature(after)) {
+    entry.before = { ...entry.before, markers: before.markers, loops: before.loops };
+    entry.after = { ...entry.after, markers: after.markers, loops: after.loops };
+    changed = true;
+  }
+  for (const id of new Set([...Object.keys(before.clips), ...Object.keys(after.clips)])) {
+    if (before.clips[id] && after.clips[id] && clipSignature(before.clips[id]) !== clipSignature(after.clips[id])) {
+      entry.before.clips[id] = before.clips[id];
+      entry.after.clips[id] = after.clips[id];
+      changed = true;
+    }
+  }
+  return changed ? entry : null;
+}
 
 /**
- * State after restoring a snapshot. Loops keep their current color and
- * enabled state when they still exist; clips of deleted tracks are ignored,
- * tracks added since keep theirs.
+ * State after restoring one side of an entry. Loops keep their current color
+ * and enabled state when they still exist; clips of deleted tracks are
+ * ignored; what the entry did not change stays as it is.
  */
-export function restoreSnapshot(state: Pick<AudioStore, 'loopState' | 'tracks' | 'armedLoopId'>, snapshot: EditSnapshot) {
+export function restoreSnapshot(state: Pick<AudioStore, 'loopState' | 'tracks' | 'armedLoopId'>, part: EditPart) {
+  const tracks = state.tracks.map((t) => (part.clips[t.id] ? { ...t, ...part.clips[t.id] } : t));
+  if (!part.markers || !part.loops) return { loopState: state.loopState, tracks, armedLoopId: state.armedLoopId };
   const current = new Map(state.loopState.loops.map((l) => [l.id, l]));
-  const loops: Loop[] = snapshot.loops.map((l) => ({
+  const loops: Loop[] = part.loops.map((l) => ({
     ...l,
     color: current.get(l.id)?.color ?? l.color,
     enabled: current.get(l.id)?.enabled ?? false,
   }));
   const ids = new Set(loops.map((l) => l.id));
   const activeLoopId = state.loopState.activeLoopId && ids.has(state.loopState.activeLoopId) ? state.loopState.activeLoopId : null;
-  const tracks = state.tracks.map((t) => (snapshot.clips[t.id] ? { ...t, ...snapshot.clips[t.id] } : t));
   return {
-    loopState: { markers: snapshot.markers, loops, activeLoopId },
+    loopState: { markers: part.markers, loops, activeLoopId },
     tracks,
     armedLoopId: state.armedLoopId && ids.has(state.armedLoopId) ? state.armedLoopId : null,
   };
@@ -71,8 +102,8 @@ export const createHistoryActions = (set: SetState, get: () => AudioStore) => {
   /** Nested edits belong to the outermost one */
   let depth = 0;
 
-  const apply = (snapshot: EditSnapshot) => {
-    const next = restoreSnapshot(get(), snapshot);
+  const apply = (part: EditPart) => {
+    const next = restoreSnapshot(get(), part);
     set(next);
     const { currentPieceId, playbackState, masterVolume } = get();
     if (currentPieceId) {
@@ -109,9 +140,9 @@ export const createHistoryActions = (set: SetState, get: () => AudioStore) => {
         return fn();
       } finally {
         depth--;
-        const after = snapshotOf(get());
-        if (signature(before) !== signature(after)) {
-          set((state) => ({ undoStack: [...state.undoStack, { before, after }].slice(-HISTORY_LIMIT), redoStack: [] }));
+        const entry = changedParts(before, snapshotOf(get()));
+        if (entry) {
+          set((state) => ({ undoStack: [...state.undoStack, entry].slice(-HISTORY_LIMIT), redoStack: [] }));
         }
       }
     },

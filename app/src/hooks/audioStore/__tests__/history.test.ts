@@ -176,3 +176,22 @@ describe('magnetism setting', () => {
     expect(loadSnapEnabled()).toBe(false);
   });
 });
+
+describe('undo leaves alone what the edit did not change', () => {
+  it('keeps a clip moved outside the history (a new take) when undoing a marker', () => {
+    s().addMarker(5);
+    // A take recorded at 30s places its clip without going through the history
+    s().updateTrack('b', { clipOffset: 30 });
+    s().undo();
+    expect(times()).toEqual([]);
+    expect(clipOf('b')).toEqual([30, undefined, undefined]);
+  });
+
+  it('only restores the clip of the track that was edited', () => {
+    s().updateClip('a', at(3));
+    s().updateTrack('b', { clipOffset: 12 });
+    s().undo();
+    expect(clipOf('a')).toEqual([undefined, undefined, undefined]);
+    expect(clipOf('b')).toEqual([12, undefined, undefined]);
+  });
+});
