@@ -13,8 +13,8 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "preview": "vite preview",
-    "i18n:extract": "i18next-parser --config i18next-parser.config.cjs",
-    "i18n:check": "i18next-parser --config i18next-parser.config.cjs --fail-on-warnings"
+    "i18n:extract": "i18next --config i18next-parser.config.cjs",
+    "i18n:check": "i18next --config i18next-parser.config.cjs --fail-on-warnings --fail-on-update"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

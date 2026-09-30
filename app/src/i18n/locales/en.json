@@ -41,10 +41,13 @@
         "openTitle": "Visualization",
         "title": "Markers and loops"
       },
+      "pieces": {
+        "description": "Organize your work by creating multiple pieces. Each piece keeps its tracks, loops, and settings separately. Click \"Stemux ▼\" at the top to access the menu: create, rename, delete, or switch between your pieces.",
+        "title": "Pieces Management"
+      },
       "tips": {
         "tip1": "Click on track names to rename them",
         "tip2": "Files are saved in your browser - no internet required after loading",
-        "tip3": "Clicking on a marker automatically disables the active loop",
         "tip4": "You can create multiple loops and switch between them instantly",
         "title": "Tips & Tricks"
       },
@@ -62,10 +65,6 @@
       "welcome": {
         "description": "Stemux is a multi-track audio player designed for musicians who want to practice with isolated stems. Load your tracks, control volumes independently, and create loops for focused practice.",
         "title": "Welcome to Stemux!"
-      },
-      "pieces": {
-        "title": "Pieces Management",
-        "description": "Organize your work by creating multiple pieces. Each piece keeps its tracks, loops, and settings separately. Click \"Stemux ▼\" at the top to access the menu: create, rename, delete, or switch between your pieces."
       }
     },
     "title": "User Guide"
@@ -75,6 +74,7 @@
   },
   "markers": {
     "cancelLoopStart": "Cancel loop start",
+    "continueAfterLoop": "Continue past the loop",
     "deleteAllConfirmMessage": "This action will permanently delete all markers ({{markerCount}}) and all loops ({{loopCount}}). This action cannot be undone.",
     "deleteAllConfirmTitle": "Delete all markers and loops?",
     "deleteAllDialogCancel": "Cancel",
@@ -83,20 +83,17 @@
     "deleteMarker": "Delete marker",
     "loops": "Loops:",
     "markers": "Markers:",
-    "setLoopEnd": "Set as loop end",
-    "setLoopStart": "Set as loop start",
-    "playLoop": "Play the loop",
     "pauseLoop": "Pause the loop",
-    "continueAfterLoop": "Continue past the loop"
+    "playLoop": "Play the loop",
+    "setLoopEnd": "Set as loop end",
+    "setLoopStart": "Set as loop start"
   },
   "menu": {
-    "darkMode": "Dark mode",
     "deleteAllConfirmButton": "Delete All",
     "deleteAllConfirmMessage": "Are you sure you want to delete all tracks? This action cannot be undone.",
     "deleteAllConfirmTitle": "Delete All Tracks?",
     "deleteAllTracks": "Delete All Tracks",
     "interface": "Interface",
-    "lightMode": "Light mode",
     "pieces": "Manage Pieces",
     "refresh": "Refresh app",
     "theme": "Theme",
@@ -110,56 +107,83 @@
     "title": "Menu"
   },
   "pieces": {
-    "title": "Manage Pieces",
-    "recentPieces": "Recent Pieces",
-    "currentPiece": "Current Piece",
-    "newPiece": "New Piece",
-    "noPieces": "No other pieces",
-    "duration": "Duration",
-    "tracks": "{{count}} track",
-    "tracks_other": "{{count}} tracks",
-    "size": "Size",
-    "delete": "Delete",
-    "deleteConfirmTitle": "Delete piece?",
-    "deleteConfirmMessage": "This will permanently delete the piece \"{{name}}\" and all its tracks ({{count}}). This action cannot be undone.",
-    "deleteConfirmButton": "Delete",
     "cancelButton": "Cancel",
     "closeButton": "Close",
-    "globalStats": "Global Statistics",
-    "totalSize": "Total storage used",
+    "currentPiece": "Current Piece",
+    "delete": "Delete",
     "deleteAll": "Delete all pieces",
-    "deleteAllConfirmTitle": "Delete all pieces?",
-    "deleteAllConfirmMessage": "This will permanently delete ALL pieces and their tracks. This action cannot be undone.",
     "deleteAllConfirmButton": "Delete All",
-    "renameDialogTitle": "Rename piece",
-    "renameDialogLabel": "Piece name",
-    "renameDialogCancel": "Cancel",
-    "renameDialogSave": "Save"
+    "deleteAllConfirmMessage": "This will permanently delete ALL pieces and their tracks. This action cannot be undone.",
+    "deleteAllConfirmTitle": "Delete all pieces?",
+    "deleteConfirmButton": "Delete",
+    "deleteConfirmMessage_one": "This will permanently delete the piece \"{{name}}\" and all its tracks ({{count}}). This action cannot be undone.",
+    "deleteConfirmMessage_other": "This will permanently delete the piece \"{{name}}\" and all its tracks ({{count}}). This action cannot be undone.",
+    "deleteConfirmTitle": "Delete piece?",
+    "globalStats": "Global Statistics",
+    "newPiece": "New Piece",
+    "noPieces": "No other pieces",
+    "recentPieces": "Recent Pieces",
+    "title": "Manage Pieces",
+    "totalSize": "Total storage used",
+    "tracks_one": "{{count}} track",
+    "tracks_other": "{{count}} tracks"
   },
   "pwa": {
     "reload": "Reload",
     "updateAvailable": "New version available! Click reload to update."
   },
+  "recording": {
+    "armToRecord": "Arm track to record",
+    "armTrack": "Arm for recording",
+    "clearRecording": "Clear recording",
+    "clearRecordingFirst": "Delete recording first to arm",
+    "downloadRecording": "Download recording",
+    "errors": {
+      "checkPermissions": "Check that:\n1. Your device allows Chrome to access the mic (Settings → Apps → Chrome)\n2. This site has permission to use the mic",
+      "microphoneInUse": "The microphone is already in use by another application.",
+      "noMicrophone": "No microphone detected. Please connect a microphone.",
+      "permissionDenied": "Microphone permission denied. Please allow access to record.",
+      "unknown": "Recording failed"
+    },
+    "normalSpeedRequired": "Set the speed back to 1x to record",
+    "pauseRecording": "Pause (recording in progress)",
+    "readyToRecord": "Ready to record - Press Play",
+    "startRecording": "Start Recording"
+  },
+  "recordingGuide": {
+    "footer": "This message will only show once. You can show it again from the help menu.",
+    "intro": "To record with your microphone, two permissions are required.",
+    "step1Description": "Your device (Android/iOS) must allow Chrome/Safari to access the microphone. Check in Settings → Apps → Chrome → Permissions.",
+    "step1Title": "1. Device Permission",
+    "step2Description": "This site needs your permission to use the mic. A popup will appear, click 'Allow'.",
+    "step2Title": "2. Site Permission",
+    "step3Description": "Arm a track (REC button), then press Play to record.",
+    "step3Title": "3. Ready!",
+    "stepsTitle": "Steps to follow:",
+    "title": "Recording Guide",
+    "troubleshoot": "If problems occur: check that Chrome has microphone access in your phone settings.",
+    "understood": "Got it"
+  },
   "settings": {
-    "title": "Interface Settings",
-    "waveformStyle": {
-      "title": "Modern Waveform",
-      "description": "Use rounded bars instead of classic waveform lines"
-    },
-    "normalize": {
-      "title": "Normalize Waveforms",
-      "description": "Auto-adjust volume levels for consistent visual display"
-    },
     "latency": {
-      "title": "Latency compensation (recording)",
       "auto": "Auto",
       "autoDescription": "Browser estimate: {{ms}} ms (output only, often too low). Measure it for accurate timing.",
-      "manualDescription": "Offset removed from every take: headphone output + mic input round trip.",
-      "calibrationHelp": "Measurement: put the mic in front of the headphones or speakers (or connect a sound card output to an input), lower the volume a bit, then start. A few clicks will be played.",
       "calibrate": "Measure latency",
       "calibrating": "Measuring…",
       "calibrationDone": "Measured latency: {{ms}} ms",
-      "calibrationFailed": "Clicks not detected or unstable measurement. Move the mic closer, raise the volume or use a loopback cable, then try again."
+      "calibrationFailed": "Clicks not detected or unstable measurement. Move the mic closer, raise the volume or use a loopback cable, then try again.",
+      "calibrationHelp": "Measurement: put the mic in front of the headphones or speakers (or connect a sound card output to an input), lower the volume a bit, then start. A few clicks will be played.",
+      "manualDescription": "Offset removed from every take: headphone output + mic input round trip.",
+      "title": "Latency compensation (recording)"
+    },
+    "normalize": {
+      "description": "Auto-adjust volume levels for consistent visual display",
+      "title": "Normalize Waveforms"
+    },
+    "title": "Interface Settings",
+    "waveformStyle": {
+      "description": "Use rounded bars instead of classic waveform lines",
+      "title": "Modern Waveform"
     }
   },
   "speed": {
@@ -171,68 +195,25 @@
     "title": "Playback Speed"
   },
   "track": {
+    "addRecordableTrack": "Add Recording Track",
     "cancelButton": "Cancel",
     "collapse": "Collapse",
+    "count": "{{current}}/{{max}} tracks",
     "deleteConfirmButton": "Delete",
     "deleteConfirmMessage": "Are you sure you want to delete this track? This action cannot be undone.",
     "deleteConfirmTitle": "Delete Track?",
     "expand": "Expand",
-    "importing": "Importing file...",
-    "loading": "Loading...",
-    "addAudioTrack": "Add Audio Track",
     "importAudioTrack": "Import Audio Track",
-    "addRecordableTrack": "Add Recording Track",
-    "count": "{{current}}/{{max}} tracks",
-    "solo": "Solo (long press: exclusive solo)",
     "mute": "Mute (long press: unmute all)",
+    "resizeHeaders": "Drag to change the width (double click: default size)",
     "resizeHeight": "Drag to change the height (double click: default size)",
-    "resizeHeaders": "Drag to change the width (double click: default size)"
-  },
-  "recordingGuide": {
-    "title": "Recording Guide",
-    "intro": "To record with your microphone, two permissions are required.",
-    "stepsTitle": "Steps to follow:",
-    "step1Title": "1. Device Permission",
-    "step1Description": "Your device (Android/iOS) must allow Chrome/Safari to access the microphone. Check in Settings → Apps → Chrome → Permissions.",
-    "step2Title": "2. Site Permission",
-    "step2Description": "This site needs your permission to use the mic. A popup will appear, click 'Allow'.",
-    "step3Title": "3. Ready!",
-    "step3Description": "Arm a track (REC button), then press Play to record.",
-    "troubleshoot": "If problems occur: check that Chrome has microphone access in your phone settings.",
-    "footer": "This message will only show once. You can show it again from the help menu.",
-    "understood": "Got it"
-  },
-  "recording": {
-    "title": "Recording",
-    "armTrack": "Arm for recording",
-    "readyToRecord": "Ready to record - Press Play",
-    "armToRecord": "Arm track to record",
-    "recording": "Recording",
-    "stopped": "Stopped",
-    "notSupported": "Recording is not supported by your browser",
-    "loopsDisabled": "Loops are disabled during recording",
-    "loopsDisabledDuringRec": "Loops disabled (recording mode)",
-    "startRecording": "Start Recording",
-    "pauseRecording": "Pause (recording in progress)",
-    "clearRecording": "Clear recording",
-    "downloadRecording": "Download recording",
-    "clearRecordingFirst": "Delete recording first to arm",
-    "errors": {
-      "permissionDenied": "Microphone permission denied. Please allow access to record.",
-      "checkPermissions": "Check that:\n1. Your device allows Chrome to access the mic (Settings → Apps → Chrome)\n2. This site has permission to use the mic",
-      "noMicrophone": "No microphone detected. Please connect a microphone.",
-      "microphoneInUse": "The microphone is already in use by another application.",
-      "maxTracksReached": "8 track limit reached",
-      "alreadyArmed": "Another track is already armed",
-      "unknown": "Recording failed"
-    },
-    "normalSpeedRequired": "Set the speed back to 1x to record"
+    "solo": "Solo (long press: exclusive solo)"
   },
   "units": {
     "bytes": "B",
+    "gb": "GB",
     "kb": "KB",
-    "mb": "MB",
-    "gb": "GB"
+    "mb": "MB"
   },
   "upload": {
     "description": "Drop audio files here or click to select",
