@@ -46,6 +46,10 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      # Fails when en/fr locale keys drift from the t() calls in src
+      - name: Translation keys
+        run: npm run i18n:check
+
       - name: Unit tests
         run: npm test
 
