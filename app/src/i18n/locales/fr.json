@@ -108,12 +108,15 @@
   "markers": {
     "cancelLoopStart": "Annuler début de boucle",
     "continueAfterLoop": "Continuer après la boucle",
+    "deleteAll": "Supprimer tous les repères et boucles",
     "deleteAllConfirmMessage": "Cette action supprimera tous les repères ({{markerCount}}) et toutes les boucles ({{loopCount}}). Ctrl+Z permet de les récupérer.",
     "deleteAllConfirmTitle": "Supprimer tous les repères et boucles ?",
     "deleteAllDialogCancel": "Annuler",
     "deleteAllDialogConfirm": "Supprimer tout",
     "deleteLoop": "Supprimer la boucle",
     "deleteMarker": "Supprimer le repère",
+    "emptyHint": "Cliquez (ou touchez) la bande du haut de la règle pour en ajouter un",
+    "hidePanel": "Masquer repères et boucles (la bande des boucles passe en lecture seule)",
     "loopMenu": "Options de la boucle",
     "loopOnEntry": "Boucler à l'entrée",
     "loops": "Boucles:",
@@ -122,7 +125,9 @@
     "pauseLoop": "Mettre la boucle en pause",
     "playLoop": "Lire la boucle",
     "setLoopEnd": "Définir comme fin de boucle",
-    "setLoopStart": "Définir comme début de boucle"
+    "setLoopStart": "Définir comme début de boucle",
+    "showPanel": "Afficher repères et boucles (pour les modifier dans la bande des boucles)",
+    "summary": "Repères ({{markers}}) · Boucles ({{loops}})"
   },
   "menu": {
     "deleteAllConfirmButton": "Tout supprimer",

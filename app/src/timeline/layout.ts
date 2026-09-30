@@ -7,7 +7,29 @@ export const HEADER_WIDTH_MAX = 520;
 
 /** Ruler: loop strip on top (loops and marker handles), graduation below */
 export const LOOP_STRIP_HEIGHT = 24;
-export const RULER_HEIGHT = 48;
+export const GRADUATION_HEIGHT = 24;
+export const RULER_HEIGHT = LOOP_STRIP_HEIGHT + GRADUATION_HEIGHT;
+
+export interface RulerLayout {
+  /** Height of the loop strip, of the whole ruler (px) */
+  strip: number;
+  height: number;
+  /** Marker handle width, grab distance on the line side (px) */
+  handle: number;
+  grab: number;
+  /** Markers and loops can be edited in the strip */
+  editable: boolean;
+}
+
+/**
+ * Loops panel shown: the strip is for editing, taller with wider handles
+ * (much more on touch screens, where a finger is not a mouse pointer).
+ * Panel hidden: a thin strip that only shows the loops.
+ */
+export function rulerLayout(editable: boolean, coarsePointer: boolean): RulerLayout {
+  const [strip, handle, grab] = !editable ? [LOOP_STRIP_HEIGHT, 18, 6] : coarsePointer ? [44, 30, 12] : [32, 22, 8];
+  return { strip, height: strip + GRADUATION_HEIGHT, handle, grab, editable };
+}
 
 /** Track heights (resizable per track, saved with the piece) */
 export const LANE_HEIGHT = 80;

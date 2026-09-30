@@ -12,9 +12,10 @@ import type { LoopState } from '../types/audio';
 import { LOOP_COLORS, loopColor, markerColor, nextColor } from '../utils/colors';
 import { formatTimeLabel, tickSpacing, ticks } from './timelineMath';
 import { getView, subscribeView } from './viewStore';
-import { cursorFor, DRAG_THRESHOLD_PX, HANDLE_WIDTH, hitTest, loopShift, loopStartMarkerIds, resolveGesture, scrubTime, type RulerHit } from './rulerGestures';
+import { cursorFor, DRAG_THRESHOLD_PX, hitTest, loopShift, loopStartMarkerIds, resolveGesture, scrubTime, type RulerHit } from './rulerGestures';
 import { applyMarkerPreview, setMarkerPreview, useMarkerPreview, type MarkerPreview } from './markerPreview';
-import { LOOP_STRIP_HEIGHT, RULER_HEIGHT } from './layout';
+import { GRADUATION_HEIGHT } from './layout';
+import { useRulerLayout } from './useRulerLayout';
 import { gridTicks } from '../tempo/tempo';
 import { snapToGrid } from './gridSnap';
 
@@ -40,10 +41,10 @@ const snapFor = (drag: Pick<Drag, 'alt'>, pxPerSec: number) => (time: number) =>
 const DOUBLE_TAP_MS = 350;
 
 /** Graduation, drawn for the visible part only: seconds, or bars when the ruler counts bars */
-function Graduation() {
+function Graduation({ top }: { top: number }) {
   const theme = useTheme();
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const height = RULER_HEIGHT - LOOP_STRIP_HEIGHT;
+  const height = GRADUATION_HEIGHT;
   const tempo = useAudioStore((s) => s.tempo);
   const bars = useAudioStore((s) => s.rulerMode === 'bars') && tempo !== null;
 
@@ -98,7 +99,7 @@ function Graduation() {
     return subscribeView(draw);
   }, [draw]);
 
-  return <canvas ref={canvasRef} data-graduation={bars ? 'bars' : 'time'} style={{ position: 'absolute', top: LOOP_STRIP_HEIGHT, height, pointerEvents: 'none' }} />;
+  return <canvas ref={canvasRef} data-graduation={bars ? 'bars' : 'time'} style={{ position: 'absolute', top, height, pointerEvents: 'none' }} />;
 }
 
 /** New times of the markers moved by a drag (a handle, or both ends of a loop) */
@@ -123,6 +124,8 @@ export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: Ti
   const loopState = useAudioStore((s) => s.loopState);
   const armedLoopId = useAudioStore((s) => s.armedLoopId);
   const preview = useMarkerPreview();
+  const layout = useRulerLayout();
+  const { strip } = layout;
   const [drag, setDrag] = useState<Drag | null>(null);
   const [hoverCursor, setHoverCursor] = useState('pointer');
   const lastLoopTap = useRef<{ time: number; loopId: string } | null>(null);
@@ -132,15 +135,19 @@ export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: Ti
 
   const contentX = (e: React.PointerEvent<HTMLDivElement>) => e.clientX - e.currentTarget.getBoundingClientRect().left;
 
-  const hitAt = (e: React.PointerEvent<HTMLDivElement>) => {
+  /** What is under the pointer; null in the strip when it is read-only (loops panel hidden) */
+  const hitAt = (e: React.PointerEvent<HTMLDivElement>): RulerHit | null => {
     const y = e.clientY - e.currentTarget.getBoundingClientRect().top;
-    return hitTest(contentX(e), y < LOOP_STRIP_HEIGHT, loopState, pxPerSec);
+    const inStrip = y < strip;
+    if (inStrip && !layout.editable) return null;
+    return hitTest(contentX(e), inStrip, loopState, pxPerSec, layout);
   };
 
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.button !== 0) return;
     const x = contentX(e);
     const hit = hitAt(e);
+    if (!hit) return;
     e.currentTarget.setPointerCapture(e.pointerId);
     setDrag({ pointerId: e.pointerId, hit, downX: x, x, alt: e.altKey });
     // Graduation: the playhead jumps under the pointer right away
@@ -150,7 +157,8 @@ export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: Ti
   const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!drag) {
       // Hover: horizontal arrow on handles, hand where a click seeks
-      const cursor = cursorFor(hitAt(e));
+      const hit = hitAt(e);
+      const cursor = hit ? cursorFor(hit) : 'default';
       if (cursor !== hoverCursor) setHoverCursor(cursor);
       return;
     }
@@ -238,7 +246,7 @@ export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: Ti
       sx={{
         position: 'relative',
         width,
-        height: RULER_HEIGHT,
+        height: layout.height,
         flexShrink: 0,
         cursor,
         touchAction: 'none',
@@ -248,7 +256,7 @@ export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: Ti
       }}
     >
       {/* Loop strip */}
-      <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, height: LOOP_STRIP_HEIGHT, bgcolor: alpha(theme.palette.text.primary, 0.04) }} />
+      <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, height: strip, bgcolor: alpha(theme.palette.text.primary, layout.editable ? 0.07 : 0.04) }} data-loop-strip={layout.editable ? 'edit' : 'read-only'} />
 
       {loopState.loops.map((loop) => {
         const a = markerTime(loop.startMarkerId);
@@ -265,7 +273,7 @@ export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: Ti
             sx={{
               position: 'absolute',
               top: 2,
-              height: LOOP_STRIP_HEIGHT - 4,
+              height: strip - 4,
               left: Math.min(a, b) * pxPerSec,
               width: Math.abs(b - a) * pxPerSec,
               bgcolor: alpha(color, active ? 0.6 : 0.25),
@@ -283,7 +291,7 @@ export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: Ti
           sx={{
             position: 'absolute',
             top: 2,
-            height: LOOP_STRIP_HEIGHT - 4,
+            height: strip - 4,
             left: newLoop.left,
             width: newLoop.width,
             bgcolor: alpha(newLoopColor, 0.35),
@@ -294,7 +302,7 @@ export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: Ti
         />
       )}
 
-      <Graduation />
+      <Graduation top={strip} />
 
       {/* Marker flags (numbered in time order, like the markers panel) */}
       {markers.map((marker, index) => {
@@ -313,13 +321,13 @@ export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: Ti
               sx={{
                 position: 'absolute',
                 top: 2,
-                height: LOOP_STRIP_HEIGHT - 4,
+                height: strip - 4,
                 ...(opensLoop ? { right: 2 } : { left: 2 }),
-                width: HANDLE_WIDTH - 2,
+                width: layout.handle - 2,
                 boxSizing: 'border-box',
                 textAlign: 'center',
-                fontSize: 11,
-                lineHeight: `${LOOP_STRIP_HEIGHT - 4}px`,
+                fontSize: strip >= 40 ? 14 : 11,
+                lineHeight: `${strip - 4}px`,
                 fontWeight: 700,
                 color: theme.palette.getContrastText(color),
                 bgcolor: color,
@@ -337,7 +345,7 @@ export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: Ti
         ref={playheadRef}
         sx={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: 0, pointerEvents: 'none', willChange: 'transform' }}
       >
-        <Box sx={{ position: 'absolute', top: LOOP_STRIP_HEIGHT, bottom: 0, left: -1, width: 2, bgcolor: 'primary.light' }} />
+        <Box sx={{ position: 'absolute', top: strip, bottom: 0, left: -1, width: 2, bgcolor: 'primary.light' }} />
         <Box
           sx={{
             position: 'absolute',

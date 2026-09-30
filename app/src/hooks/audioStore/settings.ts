@@ -9,6 +9,17 @@ import {
   saveWaveformNormalize,
 } from './shared';
 
+const LOOPS_PANEL_KEY = 'loops-panel-open';
+
+/** Markers and loops panel shown (strip editable) or hidden (strip read-only); shown by default */
+export const loadLoopsPanelOpen = () => {
+  try {
+    return localStorage.getItem(LOOPS_PANEL_KEY) !== 'false';
+  } catch {
+    return true;
+  }
+};
+
 export const createSettingsActions = (set: (partial: Partial<AudioStore> | ((state: AudioStore) => Partial<AudioStore>)) => void) => ({
   setWaveformStyle: (style: 'modern' | 'classic') => {
     set({ waveformStyle: style });
@@ -18,5 +29,14 @@ export const createSettingsActions = (set: (partial: Partial<AudioStore> | ((sta
   setWaveformNormalize: (normalize: boolean) => {
     set({ waveformNormalize: normalize });
     saveWaveformNormalize(normalize);
+  },
+
+  setLoopsPanelOpen: (open: boolean) => {
+    set({ loopsPanelOpen: open });
+    try {
+      localStorage.setItem(LOOPS_PANEL_KEY, String(open));
+    } catch {
+      // storage unavailable: not remembered
+    }
   },
 });

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
   clampHeaderWidth,
+  rulerLayout,
   clampLaneHeight,
   HEADER_WIDTH_DEFAULT,
   HEADER_WIDTH_MAX,
@@ -35,5 +36,21 @@ describe('resizable sizes', () => {
     expect(loadHeaderWidth()).toBe(HEADER_WIDTH_DEFAULT);
     localStorage.setItem('timeline-header-width', '5000');
     expect(loadHeaderWidth()).toBe(HEADER_WIDTH_MAX);
+  });
+});
+
+describe('ruler layout', () => {
+  it('is thin and read-only when the loops panel is hidden', () => {
+    expect(rulerLayout(false, true)).toEqual({ strip: 24, height: 48, handle: 18, grab: 6, editable: false });
+  });
+
+  it('is taller with wider handles for editing, even more on touch screens', () => {
+    const mouse = rulerLayout(true, false);
+    const touch = rulerLayout(true, true);
+    expect(mouse.strip).toBeGreaterThan(24);
+    expect(touch.strip).toBeGreaterThan(mouse.strip);
+    expect(touch.handle).toBeGreaterThan(mouse.handle);
+    expect(touch.grab).toBeGreaterThan(mouse.grab);
+    expect(touch.height).toBe(touch.strip + 24);
   });
 });

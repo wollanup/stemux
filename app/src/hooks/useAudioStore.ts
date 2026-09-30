@@ -31,7 +31,7 @@ import { createTrackActions } from './audioStore/tracks';
 import { createLoopActions } from './audioStore/loops';
 import { createRecordingActions } from './audioStore/recording';
 import { createPieceActions } from './audioStore/pieces';
-import { createSettingsActions } from './audioStore/settings';
+import { createSettingsActions, loadLoopsPanelOpen } from './audioStore/settings';
 import { createClipActions, loadEditMode, loadSnapEnabled } from './audioStore/clips';
 import { createHistoryActions } from './audioStore/history';
 import { createTempoActions, loadRulerMode } from './audioStore/tempo';
@@ -57,6 +57,7 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
   zoomLevel: 0,
   waveformStyle: loadWaveformStyle() as 'modern' | 'classic',
   waveformNormalize: loadWaveformNormalize(),
+  loopsPanelOpen: loadLoopsPanelOpen(),
   currentPieceId: loadCurrentPieceId(),
   currentPieceName: '',
 

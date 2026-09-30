@@ -18,7 +18,8 @@ import TrackRow from './TrackRow';
 import { clampScroll, contentWidth as computeContentWidth, followScroll, pxPerSecond, scrollForAnchor } from './timelineMath';
 import { getView, setView, setZoomAnchor, takeZoomAnchor } from './viewStore';
 import { zoomBy } from './zoomActions';
-import { clampHeaderWidth, HEADER_WIDTH_DEFAULT, loadHeaderWidth, RULER_HEIGHT, saveHeaderWidth } from './layout';
+import { clampHeaderWidth, HEADER_WIDTH_DEFAULT, loadHeaderWidth, saveHeaderWidth } from './layout';
+import { useRulerLayout } from './useRulerLayout';
 import ResizeHandle from './ResizeHandle';
 import TimelineScrollbar from './TimelineScrollbar';
 import GridLines from './GridLines';
@@ -74,6 +75,7 @@ export default function Timeline() {
   const reorderTracks = useAudioStore((s) => s.reorderTracks);
 
   const snapGuide = useSnapGuide();
+  const rulerHeight = useRulerLayout().height;
   const scrollRef = useRef<HTMLDivElement>(null);
   const rulerPlayheadRef = useRef<HTMLDivElement>(null);
   const lanePlayheadRef = useRef<HTMLDivElement>(null);
@@ -283,7 +285,7 @@ export default function Timeline() {
     >
       <Box sx={{ position: 'relative', width: headerWidth + width, minWidth: '100%' }}>
         {/* Ruler row */}
-        <Box sx={{ position: 'sticky', top: 0, zIndex: 5, display: 'flex', height: RULER_HEIGHT }}>
+        <Box sx={{ position: 'sticky', top: 0, zIndex: 5, display: 'flex', height: rulerHeight }}>
           {wide && (
             <Box
               sx={{

@@ -108,12 +108,15 @@
   "markers": {
     "cancelLoopStart": "Cancel loop start",
     "continueAfterLoop": "Continue past the loop",
+    "deleteAll": "Delete all markers and loops",
     "deleteAllConfirmMessage": "This will delete all markers ({{markerCount}}) and all loops ({{loopCount}}). Ctrl+Z brings them back.",
     "deleteAllConfirmTitle": "Delete all markers and loops?",
     "deleteAllDialogCancel": "Cancel",
     "deleteAllDialogConfirm": "Delete all",
     "deleteLoop": "Delete loop",
     "deleteMarker": "Delete marker",
+    "emptyHint": "Click (or tap) the top strip of the ruler to add one",
+    "hidePanel": "Hide markers and loops (the loop strip becomes read-only)",
     "loopMenu": "Loop options",
     "loopOnEntry": "Loop on entry",
     "loops": "Loops:",
@@ -122,7 +125,9 @@
     "pauseLoop": "Pause the loop",
     "playLoop": "Play the loop",
     "setLoopEnd": "Set as loop end",
-    "setLoopStart": "Set as loop start"
+    "setLoopStart": "Set as loop start",
+    "showPanel": "Show markers and loops (to edit them in the loop strip)",
+    "summary": "Markers ({{markers}}) · Loops ({{loops}})"
   },
   "menu": {
     "deleteAllConfirmButton": "Delete All",

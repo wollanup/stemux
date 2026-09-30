@@ -19,6 +19,7 @@ import {
   Album,
   DarkMode,
   DeleteSweep,
+  WrongLocation,
   GraphicEq,
   HelpOutline,
   LightMode,
@@ -35,6 +36,7 @@ import { useTranslation } from 'react-i18next';
 import { StemuxIcon } from './StemuxIcon';
 import MagnetIcon from './MagnetIcon';
 import TempoPanel from './TempoPanel';
+import DeleteAllMarkersDialog from './DeleteAllMarkersDialog';
 import { usePlaybackTime } from '../hooks/usePlaybackTime';
 import { useAudioStore } from '../hooks/useAudioStore';
 import type { PieceWithStats } from '../types/audio';
@@ -84,6 +86,8 @@ const TopBar = ({
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [piecesMenuAnchorEl, setPiecesMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [recentPieces, setRecentPieces] = useState<PieceWithStats[]>([]);
+  const [deleteMarkersOpen, setDeleteMarkersOpen] = useState(false);
+  const markerCount = useAudioStore((s) => s.loopState.markers.length);
   
   const { getRecentPieces, getCurrentPiece, loadPiece, currentPieceName, snapEnabled, setSnapEnabled, editMode, setEditMode } = useAudioStore();
 
@@ -322,6 +326,19 @@ const TopBar = ({
           <MenuItem
             onClick={() => {
               setMenuAnchorEl(null);
+              setDeleteMarkersOpen(true);
+            }}
+            disabled={markerCount === 0}
+          >
+            <ListItemIcon>
+              <WrongLocation fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>{t('markers.deleteAll')}</ListItemText>
+          </MenuItem>
+
+          <MenuItem
+            onClick={() => {
+              setMenuAnchorEl(null);
               onOpenDeleteAllDialog();
             }}
             disabled={tracksCount === 0}
@@ -363,6 +380,8 @@ const TopBar = ({
           </MenuItem>
         </Menu>
       </Toolbar>
+
+      <DeleteAllMarkersDialog open={deleteMarkersOpen} onClose={() => setDeleteMarkersOpen(false)} />
 
       {/* Progress bar */}
       <LinearProgress
