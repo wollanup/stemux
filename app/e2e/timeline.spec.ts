@@ -142,6 +142,19 @@ test.describe('timeline', () => {
     await expect(page.locator('[data-track-row]')).toHaveCount(2);
   });
 
+  test('the mouse wheel over a volume slider changes the volume', async ({ page }) => {
+    await openWithTracks(page, stems);
+    const slider = page.locator('[data-track-row="bass.wav"] .MuiSlider-root');
+    const volume = () => slider.locator('input').inputValue().then(Number);
+    const before = await volume();
+    const box = (await slider.boundingBox())!;
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.wheel(0, 200); // down: 4 steps of 2%
+    await expect.poll(volume).toBe(before - 8);
+    await page.mouse.wheel(0, -100);
+    await expect.poll(volume).toBe(before - 4);
+  });
+
   test('double clicking a loop enables it and plays it from its start', async ({ page }) => {
     await openWithTracks(page, stems);
     let ruler = (await page.getByTestId('time-ruler').boundingBox())!;

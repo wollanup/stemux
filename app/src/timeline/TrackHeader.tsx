@@ -37,6 +37,7 @@ import type { DraggableAttributes, DraggableSyntheticListeners } from '@dnd-kit/
 import { useTranslation } from 'react-i18next';
 import { useAudioStore } from '../hooks/useAudioStore';
 import { useThrottle } from '../hooks/useThrottle';
+import { useWheelAdjust } from '../hooks/useWheelAdjust';
 import { getMic, subscribeMic } from '../audio/micSession';
 import type { MicRecorder } from '../audio/MicRecorder';
 import type { AudioTrack } from '../types/audio';
@@ -119,6 +120,12 @@ export default function TrackHeader({ track, variant, height, dimmed, dragHandle
   const [colorAnchor, setColorAnchor] = useState<HTMLElement | null>(null);
   const menuButton = useRef<HTMLButtonElement>(null);
   const throttledSetVolume = useThrottle((id: string, volume: number) => setVolume(id, volume), 50);
+
+  // Wheel over the volume slider: 2% per step
+  const volumeWheelRef = useWheelAdjust<HTMLSpanElement>((steps) => {
+    const current = useAudioStore.getState().tracks.find((t) => t.id === track.id);
+    if (current) setVolume(track.id, Math.max(0, Math.min(1, Math.round((current.volume + steps * 0.02) * 100) / 100)));
+  }, !track.isMuted);
 
   const isCollapsed = track.isCollapsed ?? false;
   const isRecording = track.recordingState === 'recording';
@@ -254,6 +261,7 @@ export default function TrackHeader({ track, variant, height, dimmed, dragHandle
         <LevelMeter />
       ) : (
         <Slider
+          ref={volumeWheelRef}
           value={dragVolume ?? track.volume * 100}
           onChange={(_, value) => {
             setDragVolume(value as number);
