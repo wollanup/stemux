@@ -218,6 +218,9 @@ export default function TrackHeader({ track, variant, height, dimmed, dragHandle
         />
       )}
 
+      <IconButton ref={menuButton} size="small" onClick={(e) => setMenuAnchor(e.currentTarget)} aria-label={t('track.options')}>
+        <MoreVertIcon fontSize="small" />
+      </IconButton>
       <IconButton
         size="small"
         onClick={() => updateTrack(track.id, { isCollapsed: !isCollapsed })}
@@ -225,9 +228,6 @@ export default function TrackHeader({ track, variant, height, dimmed, dragHandle
         aria-label={isCollapsed ? t('track.expand') : t('track.collapse')}
       >
         <ExpandMoreIcon fontSize="small" />
-      </IconButton>
-      <IconButton ref={menuButton} size="small" onClick={(e) => setMenuAnchor(e.currentTarget)} aria-label={t('track.options')}>
-        <MoreVertIcon fontSize="small" />
       </IconButton>
     </Box>
   );
@@ -340,12 +340,13 @@ export default function TrackHeader({ track, variant, height, dimmed, dragHandle
         boxSizing: 'border-box',
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'center',
+        // Content at the top: it stays in place whatever the lane height
+        justifyContent: 'flex-start',
         gap: variant === 'column' ? 0 : 0.25,
         position: 'relative',
         // Column: room for the peak meter, clear of the width handle
         pr: variant === 'column' ? `${PEAK_METER_WIDTH + METER_RIGHT_PX + 4}px` : 0.5,
-        py: variant === 'row' ? 0.5 : 0,
+        py: 0.5,
         // Opaque: the playhead and loop overlay pass under the headers
         bgcolor: 'background.paper',
         backgroundImage: track.isArmed
