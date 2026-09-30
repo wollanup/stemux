@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { openWithTracks, pxPerSecond, rulerX, wavFile } from './helpers';
 
 const stems = [wavFile('bass.wav', 60, 110), wavFile('other.wav', 40, 330)];
-const GRADUATION_Y = 36;
+const STRIP_Y = 12; // loop strip of the ruler: a click adds a marker
 
 /** Clip of other.wav: [position, trimmed at start, duration] in seconds */
 async function otherClip(page: Page) {
@@ -66,7 +66,7 @@ test.describe('clip editing', () => {
 
   test('a clip snaps to a marker, unless Alt is held or the magnet is off', async ({ page }) => {
     const ruler = (await page.getByTestId('time-ruler').boundingBox())!;
-    await page.mouse.dblclick(await rulerX(page, 20), ruler.y + GRADUATION_Y);
+    await page.mouse.click(await rulerX(page, 20), ruler.y + STRIP_Y);
     await expect(page.locator('[data-marker]')).toHaveCount(1);
     const pps = await pxPerSecond(page);
 

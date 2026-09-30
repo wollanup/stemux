@@ -18,7 +18,7 @@ test.describe('timeline', () => {
     expect(widths[2] / widths[0]).toBeCloseTo(0.75, 2);
   });
 
-  test('a click on the graduation moves the playhead, a click in the loop strip does not', async ({ page }) => {
+  test('a click on the graduation moves the playhead, a click in the loop strip adds a marker', async ({ page }) => {
     await openWithTracks(page, stems);
     const ruler = (await page.getByTestId('time-ruler').boundingBox())!;
 
@@ -26,8 +26,14 @@ test.describe('timeline', () => {
     await expect.poll(() => shownTime(page)).toBe(20);
 
     await page.mouse.click(await rulerX(page, 40.5), ruler.y + RULER_STRIP_Y);
-    await page.waitForTimeout(300);
+    await expect(page.locator('[data-marker]')).toHaveCount(1);
     expect(await shownTime(page)).toBe(20);
+
+    // A double click on the graduation is just two seeks now (the markers list moved the ruler down)
+    const rulerNow = (await page.getByTestId('time-ruler').boundingBox())!;
+    await page.mouse.dblclick(await rulerX(page, 30.5), rulerNow.y + RULER_GRADUATION_Y);
+    await expect.poll(() => shownTime(page)).toBe(30);
+    await expect(page.locator('[data-marker]')).toHaveCount(1);
   });
 
   test('pressing on the graduation places the playhead, dragging moves it precisely', async ({ page }) => {
@@ -150,10 +156,11 @@ test.describe('timeline', () => {
     await page.mouse.click(await rulerX(page, 45.5), ruler.y + RULER_GRADUATION_Y);
     await expect.poll(() => shownTime(page)).toBe(45);
 
-    // A single click on the loop does nothing
+    // A single click on the loop does nothing (no marker inside a loop)
     await page.mouse.click(await rulerX(page, 25), ruler.y + RULER_STRIP_Y);
     await page.waitForTimeout(400);
     expect(await shownTime(page)).toBe(45);
+    await expect(page.locator('[data-marker]')).toHaveCount(2);
 
     await page.mouse.dblclick(await rulerX(page, 25), ruler.y + RULER_STRIP_Y);
     await expect(page.getByRole('button', { name: 'Pause', exact: true })).toBeVisible();
@@ -226,7 +233,7 @@ test.describe('timeline', () => {
   test('the marker line across the tracks follows a handle while it is dragged', async ({ page }) => {
     await openWithTracks(page, stems);
     const ruler = (await page.getByTestId('time-ruler').boundingBox())!;
-    await page.mouse.dblclick(await rulerX(page, 30), ruler.y + RULER_GRADUATION_Y);
+    await page.mouse.click(await rulerX(page, 30), ruler.y + RULER_STRIP_Y);
     await expect(page.locator('[data-marker]')).toHaveCount(1);
 
     const handle = (await page.locator('[data-marker] > div').first().boundingBox())!;
@@ -271,7 +278,7 @@ test.describe('timeline', () => {
   test('a marker handle shows a horizontal arrow and can be dragged', async ({ page }) => {
     await openWithTracks(page, stems);
     const ruler = (await page.getByTestId('time-ruler').boundingBox())!;
-    await page.mouse.dblclick(await rulerX(page, 30), ruler.y + RULER_GRADUATION_Y);
+    await page.mouse.click(await rulerX(page, 30), ruler.y + RULER_STRIP_Y);
     await expect(page.locator('[data-marker]')).toHaveCount(1);
 
     const handle = page.locator('[data-marker] > div').first();

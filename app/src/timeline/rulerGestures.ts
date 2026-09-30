@@ -2,7 +2,7 @@
  * Ruler gestures (no edit mode):
  * - graduation: press → the playhead jumps there, drag → it follows the
  *   pointer (precise placement), release → it stays there
- * - loop strip: drag → create a loop, click → nothing
+ * - loop strip: drag → create a loop, click → new marker
  * - loop (in the strip): drag → move it, double click → play it
  * - marker handle (loop strip): drag → move it, click → seek to it
  */
@@ -21,6 +21,7 @@ export type RulerHit =
 export type RulerAction =
   | { type: 'seek'; time: number }
   | { type: 'createLoop'; start: number; end: number }
+  | { type: 'addMarker'; time: number }
   | { type: 'moveMarker'; markerId: string; time: number }
   | { type: 'moveLoop'; loopId: string; delta: number }
   | { type: 'none' };
@@ -107,8 +108,8 @@ export function resolveGesture(hit: RulerHit, downX: number, upX: number, pps: n
       : { type: 'seek', time: hit.time };
   }
 
-  // Loop strip: a click does nothing (no playhead move)
-  if (!moved) return { type: 'none' };
+  // Loop strip: a click adds a marker outside loops (inside, a double click plays the loop)
+  if (!moved) return hit.kind === 'strip' ? { type: 'addMarker', time: clampTime(upX) } : { type: 'none' };
 
   // Dragging a loop moves it
   if (hit.kind === 'loop') {
@@ -125,7 +126,7 @@ export function resolveGesture(hit: RulerHit, downX: number, upX: number, pps: n
   return end - start >= MIN_LOOP_SECONDS ? { type: 'createLoop', start, end } : { type: 'none' };
 }
 
-/** Mouse cursor: hand where a click seeks, horizontal arrow on handles, grab on loops */
+/** Mouse cursor: hand where a click seeks, horizontal arrow on handles, grab on loops, copy where a click adds a marker */
 export function cursorFor(hit: RulerHit, dragging = false): string {
   switch (hit.kind) {
     case 'marker':
@@ -133,7 +134,7 @@ export function cursorFor(hit: RulerHit, dragging = false): string {
     case 'loop':
       return dragging ? 'grabbing' : 'grab';
     case 'strip':
-      return dragging ? 'crosshair' : 'default';
+      return dragging ? 'crosshair' : 'copy';
     case 'time':
       return 'pointer';
   }

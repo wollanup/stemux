@@ -1,7 +1,8 @@
 /**
  * Global time ruler. Loop strip on top (loops and marker flags), graduation
- * below. No edit mode: click = seek, drag = new loop, drag a marker or a loop
- * = move it, double click a loop = play it, double click/tap = new marker.
+ * below. No edit mode: click on the graduation = seek, click in the strip =
+ * new marker, drag in the strip = new loop, drag a marker or a loop = move
+ * it, double click a loop = play it.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -97,7 +98,6 @@ export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: Ti
   const preview = useMarkerPreview();
   const [drag, setDrag] = useState<Drag | null>(null);
   const [hoverCursor, setHoverCursor] = useState('pointer');
-  const lastTap = useRef<{ time: number; x: number } | null>(null);
   const lastLoopTap = useRef<{ time: number; loopId: string } | null>(null);
 
   // The lanes draw the preview too: never leave one behind
@@ -158,20 +158,12 @@ export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: Ti
         }
         break;
       }
-      case 'seek': {
-        // Double click / double tap on the graduation adds a marker (a scrub is not a tap)
-        const now = performance.now();
-        const previous = lastTap.current;
-        const isTap = drag.hit.kind === 'time' && Math.abs(x - drag.downX) < DRAG_THRESHOLD_PX;
-        if (isTap && previous && now - previous.time < DOUBLE_TAP_MS && Math.abs(previous.x - x) < 10) {
-          store.addMarker(action.time);
-          lastTap.current = null;
-        } else {
-          lastTap.current = isTap ? { time: now, x } : null;
-          store.seek(action.time);
-        }
+      case 'seek':
+        store.seek(action.time);
         break;
-      }
+      case 'addMarker':
+        store.addMarker(action.time);
+        break;
       case 'createLoop': {
         // Two markers and the loop: undone at once
         const loopId = store.edit(() => {

@@ -68,8 +68,8 @@ describe('resolveGesture', () => {
     expect(scrubTime(123, PPS, 60)).toBe(12.3);
   });
 
-  it('loop strip: a click does nothing (no playhead move)', () => {
-    expect(resolveGesture({ kind: 'strip' }, 140, 141, PPS, 60)).toEqual({ type: 'none' });
+  it('loop strip: a click adds a marker (no playhead move)', () => {
+    expect(resolveGesture({ kind: 'strip' }, 140, 141, PPS, 60)).toEqual({ type: 'addMarker', time: 14.1 });
   });
 
   it('loop strip: a drag creates a loop, in either direction, within the piece', () => {
@@ -107,7 +107,7 @@ describe('cursorFor', () => {
   it('shows a horizontal arrow on handles and a hand on the graduation', () => {
     expect(cursorFor({ kind: 'marker', markerId: 'a', time: 10 })).toBe('ew-resize');
     expect(cursorFor({ kind: 'time' })).toBe('pointer');
-    expect(cursorFor({ kind: 'strip' })).toBe('default');
+    expect(cursorFor({ kind: 'strip' })).toBe('copy');
   });
 
   it('shows a grab hand on loops, a crosshair while drawing a new one', () => {
