@@ -62,6 +62,7 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
     !!navigator.mediaDevices &&
     typeof navigator.mediaDevices.getUserMedia === 'function',
   loopBackup: null,
+  armedLoopId: null,
 
   // Clip editing
   snapEnabled: loadSnapEnabled(),
@@ -194,7 +195,11 @@ syncEngineMix(useAudioStore.getState());
 syncEngineLoop(useAudioStore.getState());
 void audioEngine.setPlaybackRate(useAudioStore.getState().playbackState.playbackRate);
 
-audioEngine.on('timeupdate', () => setPlaybackTime(audioEngine.getCurrentTime()));
+audioEngine.on('timeupdate', () => {
+  const time = audioEngine.getCurrentTime();
+  setPlaybackTime(time);
+  if (audioEngine.isPlaying()) useAudioStore.getState().enterArmedLoop(time);
+});
 
 audioEngine.on('durationchange', () => {
   const duration = audioEngine.getDuration();

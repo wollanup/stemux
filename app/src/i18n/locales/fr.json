@@ -93,6 +93,7 @@
     "deleteAllDialogConfirm": "Supprimer tout",
     "deleteLoop": "Supprimer la boucle",
     "deleteMarker": "Supprimer le repère",
+    "loopOnEntry": "Boucler à l'entrée",
     "loops": "Boucles:",
     "markers": "Repères:",
     "pauseLoop": "Mettre la boucle en pause",

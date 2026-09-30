@@ -93,6 +93,7 @@
     "deleteAllDialogConfirm": "Delete all",
     "deleteLoop": "Delete loop",
     "deleteMarker": "Delete marker",
+    "loopOnEntry": "Loop on entry",
     "loops": "Loops:",
     "markers": "Markers:",
     "pauseLoop": "Pause the loop",

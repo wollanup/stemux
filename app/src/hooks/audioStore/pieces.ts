@@ -103,6 +103,7 @@ export const createPieceActions = (set: (partial: Partial<AudioStore> | ((state:
       loopState: {
         ...settings.loopState,
       },
+      armedLoopId: null,
       playbackState: {
         isPlaying: false,
         currentTime: 0,

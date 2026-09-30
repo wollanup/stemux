@@ -3,9 +3,25 @@
  * Handles markers (add/remove/update) and loops (create/remove/toggle)
  */
 
-import type { AudioStore } from '../../types/audio';
+import type { AudioStore, LoopState } from '../../types/audio';
+import { LOOP_COLORS, loopColor, nextColor } from '../../utils/colors';
 import { logger } from '../../utils/logger';
 import { saveTrackSettingsToPiece } from './storage';
+
+/** Start and end times of a loop, in time order */
+const loopBounds = (loopState: LoopState, id: string) => {
+  const loop = loopState.loops.find(l => l.id === id);
+  const a = loop && loopState.markers.find(m => m.id === loop.startMarkerId)?.time;
+  const b = loop && loopState.markers.find(m => m.id === loop.endMarkerId)?.time;
+  return a === undefined || b === undefined ? null : { start: Math.min(a, b), end: Math.max(a, b) };
+};
+
+const saveLoopState = (state: AudioStore, loopState: LoopState, what: string) => {
+  const { currentPieceId, tracks, playbackState, masterVolume } = state;
+  if (!currentPieceId) return;
+  saveTrackSettingsToPiece(currentPieceId, tracks, loopState, playbackState.playbackRate, masterVolume)
+    .catch(err => console.error(`Failed to save ${what}:`, err));
+};
 
 export const createLoopActions = (set: (partial: Partial<AudioStore> | ((state: AudioStore) => Partial<AudioStore>)) => void, get: () => AudioStore) => ({
   addMarker: (time: number, label?: string) => {
@@ -84,7 +100,8 @@ export const createLoopActions = (set: (partial: Partial<AudioStore> | ((state: 
         : loopState.activeLoopId,
     };
 
-    set({ loopState: newLoopState });
+    const armedRemoved = loopsToRemove.some(l => l.id === get().armedLoopId);
+    set({ loopState: newLoopState, ...(armedRemoved ? { armedLoopId: null } : {}) });
 
     // Save to piece
     if (currentPieceId) {
@@ -127,6 +144,27 @@ export const createLoopActions = (set: (partial: Partial<AudioStore> | ((state: 
     }
   },
 
+  /** Move both markers of a loop, keeping the loop within the piece */
+  moveLoop: (id: string, delta: number) => {
+    const { loopState, playbackState } = get();
+    const loop = loopState.loops.find(l => l.id === id);
+    const bounds = loopBounds(loopState, id);
+    if (!loop || !bounds) return;
+    const shift = Math.max(-bounds.start, Math.min(playbackState.duration - bounds.end, delta));
+    if (shift === 0) return;
+
+    const moved = [loop.startMarkerId, loop.endMarkerId];
+    const newLoopState = {
+      ...loopState,
+      markers: loopState.markers
+        .map(m => (moved.includes(m.id) ? { ...m, time: m.time + shift } : m))
+        .sort((a, b) => a.time - b.time),
+    };
+    logger.debug(`🔁 Moved loop ${id} by ${shift.toFixed(2)}s`);
+    set({ loopState: newLoopState });
+    saveLoopState(get(), newLoopState, 'loop move');
+  },
+
   createLoop: (startMarkerId: string, endMarkerId: string) => {
     const { loopState, currentPieceId, tracks, playbackState, masterVolume } = get();
 
@@ -156,12 +194,14 @@ export const createLoopActions = (set: (partial: Partial<AudioStore> | ((state: 
       endMarkerId: string;
       enabled: boolean;
       createdAt: number;
+      color: string;
     } = {
       id,
       startMarkerId: start,
       endMarkerId: end,
       enabled: false,
       createdAt: Date.now(),
+      color: nextColor(LOOP_COLORS, loopState.loops.map(l => loopColor(l, loopState.loops))),
     };
 
     logger.debug(`🔁 Created loop ${id} from ${startMarker.time.toFixed(2)}s to ${endMarker.time.toFixed(2)}s`);
@@ -199,7 +239,7 @@ export const createLoopActions = (set: (partial: Partial<AudioStore> | ((state: 
       activeLoopId: loopState.activeLoopId === id ? null : loopState.activeLoopId,
     };
 
-    set({ loopState: newLoopState });
+    set({ loopState: newLoopState, ...(get().armedLoopId === id ? { armedLoopId: null } : {}) });
 
     // Save to piece
     if (currentPieceId) {
@@ -236,7 +276,7 @@ export const createLoopActions = (set: (partial: Partial<AudioStore> | ((state: 
       activeLoopId: newEnabled ? id : null,
     };
 
-    set({ loopState: newLoopState });
+    set({ loopState: newLoopState, ...(newEnabled ? { armedLoopId: null } : {}) });
 
     // Save to piece
     if (currentPieceId) {
@@ -280,6 +320,8 @@ export const createLoopActions = (set: (partial: Partial<AudioStore> | ((state: 
     set({
       loopState: newLoopState,
       _preserveLoopOnNextSeek: id !== null,
+      // A loop enabled explicitly replaces the one waiting for the playhead
+      ...(id !== null ? { armedLoopId: null } : {}),
     });
 
     // Save to piece
@@ -319,5 +361,32 @@ export const createLoopActions = (set: (partial: Partial<AudioStore> | ((state: 
     } else {
       get().playLoop(id);
     }
+  },
+
+  /** Loop menu: enable this loop when the playhead enters it (null cancels) */
+  armLoop: (id: string | null) => {
+    set({ armedLoopId: id });
+  },
+
+  /** Called while playing: enables the armed loop once the playhead is inside it */
+  enterArmedLoop: (time: number) => {
+    const { armedLoopId, loopState } = get();
+    if (!armedLoopId) return;
+    const bounds = loopBounds(loopState, armedLoopId);
+    if (!bounds) {
+      set({ armedLoopId: null });
+      return;
+    }
+    if (time < bounds.start || time >= bounds.end) return;
+
+    // No seek: playback goes on, the engine loops at the end
+    const newLoopState = {
+      ...loopState,
+      loops: loopState.loops.map(l => ({ ...l, enabled: l.id === armedLoopId })),
+      activeLoopId: armedLoopId,
+    };
+    logger.debug(`🔁 Playhead entered armed loop ${armedLoopId}`);
+    set({ loopState: newLoopState, armedLoopId: null });
+    saveLoopState(get(), newLoopState, 'armed loop');
   },
 });
