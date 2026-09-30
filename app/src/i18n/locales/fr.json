@@ -87,7 +87,8 @@
     "setLoopStart": "Définir comme début de boucle",
     "playLoop": "Lire la boucle",
     "pauseLoop": "Mettre la boucle en pause",
-    "continueAfterLoop": "Continuer après la boucle"
+    "continueAfterLoop": "Continuer après la boucle",
+    "loopOnEntry": "Boucler à l'entrée"
   },
   "menu": {
     "darkMode": "Mode sombre",

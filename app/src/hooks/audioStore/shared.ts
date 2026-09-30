@@ -2,11 +2,10 @@
  * Shared utilities and constants for audioStore
  */
 
+import { TRACK_COLORS } from '../../utils/colors';
+
 // Track colors palette
-export const COLORS = [
-  '#4ECDC4', '#FFA07A', '#BB8FCE', '#F7DC6F',
-  '#85C1E2', '#FF6B6B', '#98D8C8', '#e680a5',
-];
+export const COLORS = TRACK_COLORS;
 
 // Serializes track additions: callers fire addTrack() for several files at once
 // without awaiting, and each addition may create the piece and does a

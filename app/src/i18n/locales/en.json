@@ -87,7 +87,8 @@
     "setLoopStart": "Set as loop start",
     "playLoop": "Play the loop",
     "pauseLoop": "Pause the loop",
-    "continueAfterLoop": "Continue past the loop"
+    "continueAfterLoop": "Continue past the loop",
+    "loopOnEntry": "Loop on entry"
   },
   "menu": {
     "darkMode": "Dark mode",

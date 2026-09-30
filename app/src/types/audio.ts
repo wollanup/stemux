@@ -40,6 +40,7 @@ export interface Loop {
   endMarkerId: string;
   enabled: boolean;
   createdAt: number;
+  color?: string; // From LOOP_COLORS; missing on loops saved before colors existed
 }
 
 export interface LoopState {
@@ -100,6 +101,8 @@ export interface AudioStore {
   // Recording state
   isRecordingSupported: boolean;
   loopBackup: { activeLoopId: string | null } | null;
+  /** Loop to enable when the playhead enters it (not saved) */
+  armedLoopId: string | null;
   
   addTrack: (file: File) => Promise<void>;
   removeTrack: (id: string) => void;
@@ -131,12 +134,15 @@ export interface AudioStore {
   addMarker: (time: number, label?: string) => string;
   removeMarker: (id: string) => void;
   updateMarkerTime: (id: string, time: number) => void;
+  moveLoop: (id: string, delta: number) => void;
   createLoop: (startMarkerId: string, endMarkerId: string) => string;
   removeLoop: (id: string) => void;
   toggleLoopById: (id: string) => void;
   setActiveLoop: (id: string | null) => void;
   playLoop: (id: string) => void;
   toggleLoopPlayback: (id: string) => void;
+  armLoop: (id: string | null) => void;
+  enterArmedLoop: (time: number) => void;
 
   setWaveformStyle: (style: 'modern' | 'classic') => void;
   setWaveformNormalize: (normalize: boolean) => void;

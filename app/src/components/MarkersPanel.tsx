@@ -1,14 +1,17 @@
-import { Box, IconButton, Typography, Chip, Menu, MenuItem, ListItemIcon, ListItemText, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button } from '@mui/material';
-import { Close, MoreVert, Repeat as LoopIcon, Delete, PlayArrow, Pause, ArrowForward } from '@mui/icons-material';
+import { alpha, Box, IconButton, Typography, Chip, Menu, MenuItem, ListItemIcon, ListItemText, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button, useTheme } from '@mui/material';
+import { Close, MoreVert, Repeat as LoopIcon, Delete, PlayArrow, Pause, ArrowForward, Login, Check } from '@mui/icons-material';
 import { useAudioStore } from '../hooks/useAudioStore';
+import { loopColor, markerColor } from '../utils/colors';
 import { useState } from 'react';
 import {logger} from '../utils/logger';
 import { useTranslation } from 'react-i18next';
 
 const MarkersPanel = () => {
   const { t } = useTranslation();
-  const { loopState, removeMarker, removeLoop, seek, createLoop, setActiveLoop, play, toggleLoopPlayback } = useAudioStore();
+  const theme = useTheme();
+  const { loopState, removeMarker, removeLoop, seek, createLoop, setActiveLoop, play, toggleLoopPlayback, armLoop } = useAudioStore();
   const isPlaying = useAudioStore((s) => s.playbackState.isPlaying);
+  const armedLoopId = useAudioStore((s) => s.armedLoopId);
   const [menuAnchor, setMenuAnchor] = useState<{ element: HTMLElement; markerId: string } | null>(null);
   const [loopMenuAnchor, setLoopMenuAnchor] = useState<{ element: HTMLElement; loopId: string } | null>(null);
   const [loopStartMarker, setLoopStartMarker] = useState<string | null>(null);
@@ -116,6 +119,12 @@ const MarkersPanel = () => {
     handleLoopMenuClose();
   };
 
+  // Loops once the playhead gets in; a second click cancels
+  const handleLoopOnEntry = (loopId: string) => {
+    armLoop(armedLoopId === loopId ? null : loopId);
+    handleLoopMenuClose();
+  };
+
   const isLoopPlaying = (loopId: string) =>
     isPlaying && loopState.activeLoopId === loopId && loopState.loops.some((l) => l.id === loopId && l.enabled);
 
@@ -160,6 +169,7 @@ const MarkersPanel = () => {
           );
 
           const isLoopStartSelection = loopStartMarker === marker.id;
+          const color = markerColor(marker.id, loopState);
 
           return (
             <Chip
@@ -168,7 +178,6 @@ const MarkersPanel = () => {
               size="small"
               icon={<PlayArrow fontSize="small" />}
               variant={isLoopEndpoint ? 'outlined' : 'filled'}
-              color={isInActiveLoop ? 'warning' : 'default'}
               onClick={() => handleMarkerClick(marker.time)}
               onPointerDown={(e) => handlePointerDown(e, marker.id)}
               onPointerUp={handlePointerUp}
@@ -177,10 +186,16 @@ const MarkersPanel = () => {
               deleteIcon={<MoreVert fontSize="small" />}
               sx={{
                 cursor: 'pointer',
-                bgcolor: isLoopStartSelection ? 'warning.main' : undefined,
-                color: isLoopStartSelection ? 'warning.contrastText' : undefined,
+                // Loop ends take the color of their loop
+                ...(isLoopEndpoint && { borderColor: color, '& .MuiChip-icon': { color } }),
+                ...(isInActiveLoop && {
+                  bgcolor: color,
+                  color: theme.palette.getContrastText(color),
+                  '& .MuiChip-icon, & .MuiChip-deleteIcon': { color: 'inherit' },
+                }),
+                ...(isLoopStartSelection && { bgcolor: 'warning.main', color: 'warning.contrastText' }),
                 '&:hover': {
-                  bgcolor: !isLoopEndpoint && isInActiveLoop ? 'warning.dark' : 'action.hover',
+                  bgcolor: isInActiveLoop ? alpha(color, 0.8) : 'action.hover',
                 },
               }}
             />
@@ -209,6 +224,8 @@ const MarkersPanel = () => {
             const endNum = getMarkerNumber(loop.endMarkerId);
             const isActive = loop.enabled;
             const isPlayingLoop = isLoopPlaying(loop.id);
+            const isArmed = armedLoopId === loop.id;
+            const color = loopColor(loop, loopState.loops);
 
             return (
               <Chip
@@ -226,19 +243,32 @@ const MarkersPanel = () => {
                       </Box>
                       <Pause fontSize="small" className="loop-pause" />
                     </Box>
+                  ) : isArmed ? (
+                    <Login fontSize="small" />
                   ) : (
                     <LoopIcon fontSize="small" />
                   )
                 }
-                color={isActive ? 'warning' : 'default'}
+                variant={isActive ? 'filled' : 'outlined'}
+                data-loop-chip={loop.id}
+                data-armed={isArmed || undefined}
                 aria-label={isPlayingLoop ? t('markers.pauseLoop') : t('markers.playLoop')}
                 onClick={() => toggleLoopPlayback(loop.id)}
                 onDelete={(e) => handleLoopMenuClick(e as React.MouseEvent<HTMLElement>, loop.id)}
                 deleteIcon={<MoreVert fontSize="small" />}
                 sx={{
                   cursor: 'pointer',
+                  // Colored like the loop in the ruler: filled when active, dashed when armed
+                  borderColor: color,
+                  borderStyle: isArmed ? 'dashed' : 'solid',
+                  '& .MuiChip-icon': { color: isActive ? 'inherit' : color },
+                  ...(isActive && {
+                    bgcolor: color,
+                    color: theme.palette.getContrastText(color),
+                    '& .MuiChip-deleteIcon': { color: alpha(theme.palette.getContrastText(color), 0.7) },
+                  }),
                   '&:hover': {
-                    bgcolor: isActive ? 'warning.dark' : 'action.hover',
+                    bgcolor: isActive ? alpha(color, 0.8) : alpha(color, 0.12),
                   },
                   '& .loop-playing': {
                     width: 20,
@@ -315,6 +345,16 @@ const MarkersPanel = () => {
               <ArrowForward fontSize="small" />
             </ListItemIcon>
             <ListItemText>{t('markers.continueAfterLoop')}</ListItemText>
+          </MenuItem>
+        )}
+        {/* Not for the enabled loop: the playhead is already in it */}
+        {loopMenuAnchor && !loopState.loops.find((l) => l.id === loopMenuAnchor.loopId)?.enabled && (
+          <MenuItem onClick={() => handleLoopOnEntry(loopMenuAnchor.loopId)} selected={armedLoopId === loopMenuAnchor.loopId}>
+            <ListItemIcon>
+              <Login fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>{t('markers.loopOnEntry')}</ListItemText>
+            {armedLoopId === loopMenuAnchor.loopId && <Check fontSize="small" sx={{ ml: 2 }} />}
           </MenuItem>
         )}
         <MenuItem onClick={() => loopMenuAnchor && handleDeleteLoop(loopMenuAnchor.loopId)}>
