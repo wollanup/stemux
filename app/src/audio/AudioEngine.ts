@@ -48,6 +48,8 @@ interface EngineTrack {
   /** Seconds played */
   length: number;
   gain: GainNode;
+  /** Level meter tap after the gain: one analyser per channel (L, R) */
+  meter: { splitter: ChannelSplitterNode; analysers: AnalyserNode[]; data: Float32Array<ArrayBuffer> };
   sources: Set<AudioBufferSourceNode>;
   stretch: StretchNode | null;
   stretchPromise: Promise<StretchNode> | null;
@@ -160,6 +162,7 @@ export class AudioEngine {
       buffer,
       ...window,
       gain,
+      meter: AudioEngine.createMeter(ctx, gain),
       sources: new Set(),
       stretch: null,
       stretchPromise: null,
@@ -176,11 +179,45 @@ export class AudioEngine {
     this.emit('durationchange');
   }
 
+  /** Analysers on the output of a track gain (not in the audio path) */
+  private static createMeter(ctx: AudioContext, gain: GainNode): EngineTrack['meter'] {
+    const splitter = ctx.createChannelSplitter(2);
+    gain.connect(splitter);
+    const analysers = [0, 1].map((channel) => {
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 2048; // ~43ms at 48kHz: longer than a frame, no peak missed
+      splitter.connect(analyser, channel);
+      return analyser;
+    });
+    return { splitter, analysers, data: new Float32Array(2048) };
+  }
+
+  /**
+   * Peak level (1 = 0 dBFS) of what a track plays right now, after its
+   * volume, mute and solo: one value per channel of its file (1 or 2).
+   */
+  getTrackPeaks(id: string): number[] | null {
+    const track = this.tracks.get(id);
+    if (!track) return null;
+    const channels = Math.min(2, track.buffer.numberOfChannels);
+    const { analysers, data } = track.meter;
+    return analysers.slice(0, channels).map((analyser) => {
+      analyser.getFloatTimeDomainData(data);
+      let peak = 0;
+      for (let i = 0; i < data.length; i++) {
+        const v = Math.abs(data[i]);
+        if (v > peak) peak = v;
+      }
+      return peak;
+    });
+  }
+
   removeTrack(id: string) {
     const track = this.tracks.get(id);
     if (!track) return;
     this.stopVoice(track, 0);
     track.gain.disconnect();
+    track.meter.splitter.disconnect();
     this.destroyStretch(track);
     this.tracks.delete(id);
     this.emit('durationchange');

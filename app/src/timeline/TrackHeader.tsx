@@ -43,6 +43,7 @@ import type { MicRecorder } from '../audio/MicRecorder';
 import type { AudioTrack } from '../types/audio';
 import { TRACK_COLORS } from '../utils/colors';
 import ColorPalette, { ColorDot } from '../components/ColorPalette';
+import PeakMeter, { PEAK_METER_WIDTH } from './PeakMeter';
 
 interface TrackHeaderProps {
   track: AudioTrack;
@@ -51,6 +52,9 @@ interface TrackHeaderProps {
   dimmed: boolean;
   dragHandle: { attributes: DraggableAttributes; listeners: DraggableSyntheticListeners; isDragging: boolean };
 }
+
+/** Gap between the peak meter and the edge of the column: the width handle is there (px) */
+const METER_RIGHT_PX = 8;
 
 /** Input level of the armed track's microphone */
 function LevelMeter() {
@@ -338,7 +342,9 @@ export default function TrackHeader({ track, variant, height, dimmed, dragHandle
         flexDirection: 'column',
         justifyContent: 'center',
         gap: variant === 'column' ? 0 : 0.25,
-        pr: 0.5,
+        position: 'relative',
+        // Column: room for the peak meter, clear of the width handle
+        pr: variant === 'column' ? `${PEAK_METER_WIDTH + METER_RIGHT_PX + 4}px` : 0.5,
         py: variant === 'row' ? 0.5 : 0,
         // Opaque: the playhead and loop overlay pass under the headers
         bgcolor: 'background.paper',
@@ -354,6 +360,12 @@ export default function TrackHeader({ track, variant, height, dimmed, dragHandle
     >
       {nameRow}
       {!isCollapsed && controlsRow}
+      {/* Desktop: peak meter just before the waveform */}
+      {variant === 'column' && (
+        <Box sx={{ position: 'absolute', top: 4, bottom: 4, right: METER_RIGHT_PX }}>
+          <PeakMeter trackId={track.id} />
+        </Box>
+      )}
 
       <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={() => setMenuAnchor(null)}>
         <MenuItem

@@ -177,6 +177,18 @@ test.describe('timeline', () => {
     expect(await shownTime(page)).toBe(0);
   });
 
+  test('each track shows a peak meter in its header, moving while playing', async ({ page }) => {
+    await openWithTracks(page, stems);
+    const meter = page.locator('[data-track-row="bass.wav"] canvas[data-peak-meter]');
+    await expect(meter).toBeVisible();
+    await page.getByRole('button', { name: 'Play', exact: true }).click();
+    await expect(meter).toHaveAttribute('data-drawn', 'live');
+    // The fixture peaks at 0.6 x volume 0.8: about -6 dBFS
+    const peak = async () => Number((await meter.getAttribute('title'))?.match(/-?\d+\.\d/)?.[0] ?? -Infinity);
+    await expect.poll(peak).toBeGreaterThan(-8);
+    await expect(meter).toHaveAttribute('title', /Highest peak: -[\d.]+ dB/);
+  });
+
   test('double clicking a loop enables it and plays it from its start', async ({ page }) => {
     await openWithTracks(page, stems);
     let ruler = (await page.getByTestId('time-ruler').boundingBox())!;

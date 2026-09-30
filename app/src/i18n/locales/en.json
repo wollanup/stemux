@@ -233,8 +233,10 @@
     "deleteConfirmTitle": "Delete Track?",
     "expand": "Expand",
     "importAudioTrack": "Import Audio Track",
+    "meter": "Level meter",
     "mute": "Mute (long press: unmute all)",
     "options": "Track options",
+    "peak": "Highest peak: {{value}} (click to reset)",
     "resizeHeaders": "Drag to change the width (double click: default size)",
     "resizeHeight": "Drag to change the height (double click: default size)",
     "solo": "Solo (long press: exclusive solo)"
