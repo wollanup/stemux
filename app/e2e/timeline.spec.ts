@@ -459,4 +459,21 @@ test.describe('touch screen', () => {
     await page.waitForTimeout(300);
     await expect(page.locator('[data-marker]')).toHaveCount(1);
   });
+
+  test('tempo and edit mode are in the menu, not in the bar; no bar.beat at the bottom', async ({ page }) => {
+    await openWithTracks(page, stems);
+    await expect(page.locator('[data-tempo-button]')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Edit clips' })).toHaveCount(0);
+
+    await page.getByRole('button', { name: 'Menu' }).click();
+    await expect(page.getByRole('menuitemcheckbox', { name: 'Edit clips' })).toHaveAttribute('aria-checked', 'false');
+    await page.getByRole('menuitemcheckbox', { name: 'Edit clips' }).click();
+    await page.getByRole('button', { name: 'Menu' }).click();
+    await expect(page.getByRole('menuitemcheckbox', { name: 'Edit clips' })).toHaveAttribute('aria-checked', 'true');
+    await page.getByRole('menuitem', { name: /Tempo/ }).click();
+    await expect(page.locator('[data-tempo-panel]')).toBeVisible();
+    await page.getByRole('button', { name: 'Detect' }).click();
+    await expect(page.locator('[data-tempo-message]')).toHaveText(/120 BPM/);
+    await expect(page.getByTestId('current-bar')).toBeHidden();
+  });
 });

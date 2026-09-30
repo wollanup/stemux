@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   AppBar,
   Box,
@@ -7,6 +7,7 @@ import {
   LinearProgress,
   ListItemIcon,
   ListItemText,
+  Divider,
   Menu,
   MenuItem,
   Slider,
@@ -29,6 +30,8 @@ import {
   ZoomIn,
   ZoomOut,
   KeyboardArrowDown,
+  Check,
+  MusicNote,
   OpenWith,
   PanTool,
 } from '@mui/icons-material';
@@ -87,6 +90,9 @@ const TopBar = ({
   const [piecesMenuAnchorEl, setPiecesMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [recentPieces, setRecentPieces] = useState<PieceWithStats[]>([]);
   const [deleteMarkersOpen, setDeleteMarkersOpen] = useState(false);
+  const [tempoAnchor, setTempoAnchor] = useState<HTMLElement | null>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const tempo = useAudioStore((s) => s.tempo);
   const markerCount = useAudioStore((s) => s.loopState.markers.length);
   
   const { getRecentPieces, getCurrentPiece, loadPiece, currentPieceName, snapEnabled, setSnapEnabled, editMode, setEditMode } = useAudioStore();
@@ -181,23 +187,30 @@ const TopBar = ({
 
         <Box sx={{ flexGrow: 1 }} />
 
-        <TempoPanel disabled={!hasLoadedTracks} compact={isMobile} />
+        {/* Mobile: tempo and edit mode are in the menu, to keep the bar light */}
+        <TempoPanel
+          disabled={!hasLoadedTracks}
+          compact={isMobile}
+          {...(isMobile ? { anchorEl: tempoAnchor, onClose: () => setTempoAnchor(null) } : {})}
+        />
 
         {/* Drag on the lanes: scroll (hand, default) or edit clips (move arrows) */}
-        <Tooltip title={editMode ? t('timeline.editModeOn') : t('timeline.editModeOff')}>
-          <span>
-            <IconButton
-              color={editMode ? 'primary' : 'inherit'}
-              onClick={() => setEditMode(!editMode)}
-              disabled={!hasLoadedTracks}
-              aria-label={t('timeline.editMode')}
-              aria-pressed={editMode}
-              sx={{ mr: 0.5 }}
-            >
-              {editMode ? <OpenWith fontSize="small" /> : <PanTool fontSize="small" />}
-            </IconButton>
-          </span>
-        </Tooltip>
+        {!isMobile && (
+          <Tooltip title={editMode ? t('timeline.editModeOn') : t('timeline.editModeOff')}>
+            <span>
+              <IconButton
+                color={editMode ? 'primary' : 'inherit'}
+                onClick={() => setEditMode(!editMode)}
+                disabled={!hasLoadedTracks}
+                aria-label={t('timeline.editMode')}
+                aria-pressed={editMode}
+                sx={{ mr: 0.5 }}
+              >
+                {editMode ? <OpenWith fontSize="small" /> : <PanTool fontSize="small" />}
+              </IconButton>
+            </span>
+          </Tooltip>
+        )}
 
         {/* Magnetism for clip editing (Alt disables it during a drag) */}
         <Tooltip title={snapEnabled ? t('timeline.snapOn') : t('timeline.snapOff')}>
@@ -255,6 +268,7 @@ const TopBar = ({
         <Stack gap={2} direction="row" alignItems="center">
           {/* Menu button */}
           <IconButton
+            ref={menuButtonRef}
             color="inherit"
             onClick={(e) => setMenuAnchorEl(e.currentTarget)}
             aria-label={t('menu.title')}
@@ -271,6 +285,37 @@ const TopBar = ({
           anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
           transformOrigin={{ vertical: 'top', horizontal: 'right' }}
         >
+          {isMobile && [
+            <MenuItem
+              key="tempo"
+              disabled={!hasLoadedTracks}
+              onClick={() => {
+                setMenuAnchorEl(null);
+                setTempoAnchor(menuButtonRef.current);
+              }}
+            >
+              <ListItemIcon>
+                <MusicNote fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>{tempo ? `${t('tempo.title')} · ${Math.round(tempo.bpm * 10) / 10} BPM` : t('tempo.title')}</ListItemText>
+            </MenuItem>,
+            <MenuItem
+              key="edit-mode"
+              role="menuitemcheckbox"
+              aria-checked={editMode}
+              disabled={!hasLoadedTracks}
+              onClick={() => {
+                setMenuAnchorEl(null);
+                setEditMode(!editMode);
+              }}
+            >
+              <ListItemIcon>{editMode ? <OpenWith fontSize="small" /> : <PanTool fontSize="small" />}</ListItemIcon>
+              <ListItemText>{t('timeline.editMode')}</ListItemText>
+              {editMode && <Check fontSize="small" sx={{ ml: 2 }} />}
+            </MenuItem>,
+            <Divider key="divider" />,
+          ]}
+
           <MenuItem
             onClick={() => {
               setMenuAnchorEl(null);
