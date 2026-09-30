@@ -14,12 +14,15 @@ import {
   DialogContentText,
   DialogTitle,
   IconButton,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
   Slider,
   TextField,
   Tooltip,
   Typography,
 } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import HeadsetIcon from '@mui/icons-material/Headset';
@@ -29,6 +32,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import MicIcon from '@mui/icons-material/Mic';
 import DownloadIcon from '@mui/icons-material/Download';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import type { DraggableAttributes, DraggableSyntheticListeners } from '@dnd-kit/core';
 import { useTranslation } from 'react-i18next';
 import { useAudioStore } from '../hooks/useAudioStore';
@@ -36,6 +40,8 @@ import { useThrottle } from '../hooks/useThrottle';
 import { getMic, subscribeMic } from '../audio/micSession';
 import type { MicRecorder } from '../audio/MicRecorder';
 import type { AudioTrack } from '../types/audio';
+import { TRACK_COLORS } from '../utils/colors';
+import ColorPalette, { ColorDot } from '../components/ColorPalette';
 
 interface TrackHeaderProps {
   track: AudioTrack;
@@ -109,6 +115,9 @@ export default function TrackHeader({ track, variant, height, dimmed, dragHandle
   const [editedName, setEditedName] = useState(track.name);
   const [dragVolume, setDragVolume] = useState<number | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
+  const [colorAnchor, setColorAnchor] = useState<HTMLElement | null>(null);
+  const menuButton = useRef<HTMLButtonElement>(null);
   const throttledSetVolume = useThrottle((id: string, volume: number) => setVolume(id, volume), 50);
 
   const isCollapsed = track.isCollapsed ?? false;
@@ -206,8 +215,8 @@ export default function TrackHeader({ track, variant, height, dimmed, dragHandle
       >
         <ExpandMoreIcon fontSize="small" />
       </IconButton>
-      <IconButton size="small" onClick={() => setDeleteDialogOpen(true)} aria-label={t('track.deleteConfirmTitle')}>
-        <CloseIcon fontSize="small" />
+      <IconButton ref={menuButton} size="small" onClick={(e) => setMenuAnchor(e.currentTarget)} aria-label={t('track.options')}>
+        <MoreVertIcon fontSize="small" />
       </IconButton>
     </Box>
   );
@@ -312,6 +321,7 @@ export default function TrackHeader({ track, variant, height, dimmed, dragHandle
 
   return (
     <Box
+      data-track-header
       sx={(theme) => ({
         width: '100%',
         height,
@@ -336,6 +346,38 @@ export default function TrackHeader({ track, variant, height, dimmed, dragHandle
     >
       {nameRow}
       {!isCollapsed && controlsRow}
+
+      <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={() => setMenuAnchor(null)}>
+        <MenuItem
+          onClick={() => {
+            setMenuAnchor(null);
+            setColorAnchor(menuButton.current);
+          }}
+        >
+          <ListItemIcon>
+            <ColorDot color={track.color} />
+          </ListItemIcon>
+          <ListItemText>{t('colors.title')}</ListItemText>
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            setMenuAnchor(null);
+            setDeleteDialogOpen(true);
+          }}
+        >
+          <ListItemIcon>
+            <DeleteIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>{t('track.delete')}</ListItemText>
+        </MenuItem>
+      </Menu>
+      <ColorPalette
+        anchorEl={colorAnchor}
+        colors={TRACK_COLORS}
+        value={track.color}
+        onSelect={(color) => updateTrack(track.id, { color })}
+        onClose={() => setColorAnchor(null)}
+      />
 
       <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
         <DialogTitle>{t('track.deleteConfirmTitle')}</DialogTitle>

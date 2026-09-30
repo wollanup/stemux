@@ -131,6 +131,19 @@ describe('marker and loop edits', () => {
     expect(times()).toEqual([2, 4]);
   });
 
+  it('does not undo a color change, and keeps the new color when undoing a move', () => {
+    const a = s().addMarker(2);
+    const b = s().addMarker(4);
+    const loop = s().createLoop(a, b);
+    s().moveLoop(loop, 1);
+    const entries = s().undoStack.length;
+    s().setLoopColor(loop, '#123456');
+    expect(s().undoStack).toHaveLength(entries);
+    s().undo();
+    expect(times()).toEqual([2, 4]);
+    expect(s().loopState.loops[0].color).toBe('#123456');
+  });
+
   it('does not undo enabling a loop, and keeps it enabled', () => {
     const a = s().addMarker(2);
     const b = s().addMarker(4);

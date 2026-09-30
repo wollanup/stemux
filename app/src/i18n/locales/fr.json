@@ -3,6 +3,10 @@
     "noTracksMessage": "Déposez vos fichiers audio ci-dessus pour commencer",
     "noTracksTitle": "Aucune piste chargée"
   },
+  "colors": {
+    "color": "Couleur {{number}}",
+    "title": "Couleur"
+  },
   "controls": {
     "forward5": "Avancer de 5 secondes (maintenir pour continu)",
     "masterVolume": "Volume général",
@@ -222,12 +226,14 @@
     "cancelButton": "Annuler",
     "collapse": "Réduire",
     "count": "{{current}}/{{max}} pistes",
+    "delete": "Supprimer la piste",
     "deleteConfirmButton": "Supprimer",
     "deleteConfirmMessage": "Êtes-vous sûr de vouloir supprimer cette piste ? Cette action est irréversible.",
     "deleteConfirmTitle": "Supprimer la piste ?",
     "expand": "Agrandir",
     "importAudioTrack": "Importer piste audio",
     "mute": "Muet (appui long : tout réactiver)",
+    "options": "Options de la piste",
     "resizeHeaders": "Glisser pour changer la largeur (double-clic : taille par défaut)",
     "resizeHeight": "Glisser pour changer la hauteur (double-clic : taille par défaut)",
     "solo": "Solo (appui long : solo exclusif)"

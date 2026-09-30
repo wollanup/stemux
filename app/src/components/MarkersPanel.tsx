@@ -1,7 +1,8 @@
 import { alpha, Box, IconButton, Typography, Chip, Menu, MenuItem, ListItemIcon, ListItemText, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button, useTheme } from '@mui/material';
 import { Close, MoreVert, Repeat as LoopIcon, Delete, PlayArrow, Pause, ArrowForward, Login, Check } from '@mui/icons-material';
 import { useAudioStore } from '../hooks/useAudioStore';
-import { loopColor, markerColor } from '../utils/colors';
+import { LOOP_COLORS, loopColor, markerColor } from '../utils/colors';
+import ColorPalette, { ColorDot } from './ColorPalette';
 import { useState } from 'react';
 import {logger} from '../utils/logger';
 import { useTranslation } from 'react-i18next';
@@ -54,7 +55,7 @@ const onDeleteKey = (action: () => void) => (e: React.KeyboardEvent) => {
 const MarkersPanel = () => {
   const { t } = useTranslation();
   const theme = useTheme();
-  const { loopState, removeMarker, removeLoop, seek, createLoop, setActiveLoop, play, toggleLoopPlayback, armLoop } = useAudioStore();
+  const { loopState, removeMarker, removeLoop, seek, createLoop, setActiveLoop, play, toggleLoopPlayback, armLoop, setLoopColor } = useAudioStore();
   const isPlaying = useAudioStore((s) => s.playbackState.isPlaying);
   const armedLoopId = useAudioStore((s) => s.armedLoopId);
   const [menuAnchor, setMenuAnchor] = useState<{ element: HTMLElement; markerId: string } | null>(null);
@@ -62,6 +63,7 @@ const MarkersPanel = () => {
   const [loopStartMarker, setLoopStartMarker] = useState<string | null>(null);
   const [longPressTimer, setLongPressTimer] = useState<number | null>(null);
   const [deleteAllDialogOpen, setDeleteAllDialogOpen] = useState(false);
+  const [colorAnchor, setColorAnchor] = useState<{ element: HTMLElement; loopId: string } | null>(null);
 
   if (loopState.markers.length === 0) return null;
 
@@ -180,6 +182,11 @@ const MarkersPanel = () => {
       loopState.markers.forEach(marker => removeMarker(marker.id));
     });
     setDeleteAllDialogOpen(false);
+  };
+
+  const loopColorOf = (loopId: string) => {
+    const loop = loopState.loops.find((l) => l.id === loopId);
+    return loop ? loopColor(loop, loopState.loops) : LOOP_COLORS[0];
   };
 
   const getMarkerNumber = (markerId: string) => {
@@ -421,6 +428,19 @@ const MarkersPanel = () => {
             {armedLoopId === loopMenuAnchor.loopId && <Check fontSize="small" sx={{ ml: 2 }} />}
           </MenuItem>
         )}
+        {loopMenuAnchor && (
+          <MenuItem
+            onClick={() => {
+              setColorAnchor(loopMenuAnchor);
+              handleLoopMenuClose();
+            }}
+          >
+            <ListItemIcon>
+              <ColorDot color={loopColorOf(loopMenuAnchor.loopId)} />
+            </ListItemIcon>
+            <ListItemText>{t('colors.title')}</ListItemText>
+          </MenuItem>
+        )}
         <MenuItem onClick={() => loopMenuAnchor && handleDeleteLoop(loopMenuAnchor.loopId)}>
           <ListItemIcon>
             <Delete fontSize="small" />
@@ -428,6 +448,14 @@ const MarkersPanel = () => {
           <ListItemText>{t('markers.deleteLoop')}</ListItemText>
         </MenuItem>
       </Menu>
+
+      <ColorPalette
+        anchorEl={colorAnchor?.element ?? null}
+        colors={LOOP_COLORS}
+        value={colorAnchor ? loopColorOf(colorAnchor.loopId) : undefined}
+        onSelect={(color) => colorAnchor && setLoopColor(colorAnchor.loopId, color)}
+        onClose={() => setColorAnchor(null)}
+      />
 
       {/* Delete All Confirmation Dialog */}
       <Dialog

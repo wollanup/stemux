@@ -109,6 +109,33 @@ test.describe('timeline', () => {
     await expect(page.locator('[data-loop]')).toHaveCount(1);
   });
 
+  test('a loop and a track get a color picked from a palette in their ⋮ menu', async ({ page }) => {
+    await openWithTracks(page, stems);
+    const ruler = (await page.getByTestId('time-ruler').boundingBox())!;
+    await page.mouse.move(await rulerX(page, 10), ruler.y + RULER_STRIP_Y);
+    await page.mouse.down();
+    await page.mouse.move(await rulerX(page, 20), ruler.y + RULER_STRIP_Y, { steps: 5 });
+    await page.mouse.up();
+
+    await page.locator('[data-loop-chip]').getByRole('button', { name: 'Loop options' }).click();
+    await page.getByRole('menuitem', { name: 'Color' }).click();
+    await page.getByRole('option', { name: 'Color 3' }).click();
+    // The loop in the ruler takes it (#EC407A)
+    await expect(page.locator('[data-loop]')).toHaveCSS('border-top-color', 'rgb(236, 64, 122)');
+
+    const row = page.locator('[data-track-row="bass.wav"]');
+    await row.getByRole('button', { name: 'Track options' }).click();
+    await page.getByRole('menuitem', { name: 'Color' }).click();
+    await page.getByRole('option', { name: 'Color 6' }).click();
+    // Colored stripe of the header (#FF6B6B)
+    await expect(row.locator('[data-track-header]')).toHaveCSS('border-left-color', 'rgb(255, 107, 107)');
+
+    await row.getByRole('button', { name: 'Track options' }).click();
+    await page.getByRole('menuitem', { name: 'Delete track' }).click();
+    await page.getByRole('button', { name: 'Delete', exact: true }).click();
+    await expect(page.locator('[data-track-row]')).toHaveCount(2);
+  });
+
   test('double clicking a loop enables it and plays it from its start', async ({ page }) => {
     await openWithTracks(page, stems);
     let ruler = (await page.getByTestId('time-ruler').boundingBox())!;

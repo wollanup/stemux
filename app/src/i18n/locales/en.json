@@ -3,6 +3,10 @@
     "noTracksMessage": "Drop your audio files above to get started",
     "noTracksTitle": "No tracks loaded"
   },
+  "colors": {
+    "color": "Color {{number}}",
+    "title": "Color"
+  },
   "controls": {
     "forward5": "Forward 5 seconds (hold for continuous)",
     "masterVolume": "Master volume",
@@ -220,12 +224,14 @@
     "cancelButton": "Cancel",
     "collapse": "Collapse",
     "count": "{{current}}/{{max}} tracks",
+    "delete": "Delete track",
     "deleteConfirmButton": "Delete",
     "deleteConfirmMessage": "Are you sure you want to delete this track? This action cannot be undone.",
     "deleteConfirmTitle": "Delete Track?",
     "expand": "Expand",
     "importAudioTrack": "Import Audio Track",
     "mute": "Mute (long press: unmute all)",
+    "options": "Track options",
     "resizeHeaders": "Drag to change the width (double click: default size)",
     "resizeHeight": "Drag to change the height (double click: default size)",
     "solo": "Solo (long press: exclusive solo)"

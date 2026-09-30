@@ -253,6 +253,15 @@ const createActions = (set: (partial: Partial<AudioStore> | ((state: AudioStore)
     }
   },
 
+  /** Not undoable: colors are a preference, not an edit */
+  setLoopColor: (id: string, color: string) => {
+    const { loopState } = get();
+    if (!loopState.loops.some(l => l.id === id)) return;
+    const newLoopState = { ...loopState, loops: loopState.loops.map(l => (l.id === id ? { ...l, color } : l)) };
+    set({ loopState: newLoopState });
+    saveLoopState(get(), newLoopState, 'loop color');
+  },
+
   toggleLoopById: (id: string) => {
     const { loopState, seek, currentPieceId, tracks, playbackState, masterVolume } = get();
     const loop = loopState.loops.find(l => l.id === id);

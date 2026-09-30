@@ -157,6 +157,7 @@ export interface AudioStore {
   moveLoop: (id: string, delta: number) => void;
   createLoop: (startMarkerId: string, endMarkerId: string) => string;
   removeLoop: (id: string) => void;
+  setLoopColor: (id: string, color: string) => void;
   toggleLoopById: (id: string) => void;
   setActiveLoop: (id: string | null) => void;
   playLoop: (id: string) => void;
