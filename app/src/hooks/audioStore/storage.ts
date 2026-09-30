@@ -36,6 +36,8 @@ export const saveTrackSettingsToPiece = async (
       height: t.height,
       isRecordable: t.isRecordable,
       clipOffset: t.clipOffset,
+      trimStart: t.trimStart,
+      clipDuration: t.clipDuration,
     })),
     loopState: {
       markers: loopState.markers,

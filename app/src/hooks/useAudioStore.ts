@@ -32,6 +32,7 @@ import { createLoopActions } from './audioStore/loops';
 import { createRecordingActions } from './audioStore/recording';
 import { createPieceActions } from './audioStore/pieces';
 import { createSettingsActions } from './audioStore/settings';
+import { createClipActions, loadSnapEnabled } from './audioStore/clips';
 
 // Re-export for backwards compatibility with existing code
 export { loadTrackSettings } from './audioStore/shared';
@@ -62,6 +63,11 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
     typeof navigator.mediaDevices.getUserMedia === 'function',
   loopBackup: null,
 
+  // Clip editing
+  snapEnabled: loadSnapEnabled(),
+  clipUndo: [],
+  clipRedo: [],
+
   // Compose all action modules
   ...createPlaybackActions(set, get),
   ...createTrackActions(set, get),
@@ -69,6 +75,7 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
   ...createRecordingActions(set, get),
   ...createPieceActions(set, get),
   ...createSettingsActions(set),
+  ...createClipActions(set, get),
 }));
 
 // Function to restore tracks from IndexedDB on app init

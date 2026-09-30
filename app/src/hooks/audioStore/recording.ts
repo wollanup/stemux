@@ -241,7 +241,7 @@ export const createRecordingActions = (set: (partial: Partial<AudioStore> | ((st
         // Save piece settings with updated track
         const updatedTracks = get().tracks.map((t) =>
           t.id === trackId
-            ? { ...t, recordedBlob: blob, file, clipOffset, recordingState: 'stopped' as const }
+            ? { ...t, recordedBlob: blob, file, clipOffset, trimStart: undefined, clipDuration: undefined, recordingState: 'stopped' as const }
             : t
         );
 
@@ -260,7 +260,7 @@ export const createRecordingActions = (set: (partial: Partial<AudioStore> | ((st
       set((state: AudioStore) => ({
         tracks: state.tracks.map((t) =>
           t.id === trackId
-            ? { ...t, recordedBlob: blob, file, clipOffset, recordingState: 'stopped' as const }
+            ? { ...t, recordedBlob: blob, file, clipOffset, trimStart: undefined, clipDuration: undefined, recordingState: 'stopped' as const }
             : t
         ),
       }));
@@ -295,7 +295,7 @@ export const createRecordingActions = (set: (partial: Partial<AudioStore> | ((st
         // Save piece settings (track remains but without file)
         const updatedTracks = tracks.map((t) =>
           t.id === trackId
-            ? { ...t, recordedBlob: undefined, file: undefined, clipOffset: undefined, recordingState: 'idle' as const }
+            ? { ...t, recordedBlob: undefined, file: undefined, clipOffset: undefined, trimStart: undefined, clipDuration: undefined, recordingState: 'idle' as const }
             : t
         );
 
@@ -314,7 +314,7 @@ export const createRecordingActions = (set: (partial: Partial<AudioStore> | ((st
       set((state: AudioStore) => ({
         tracks: state.tracks.map((t) =>
           t.id === trackId
-            ? { ...t, recordedBlob: undefined, file: undefined, clipOffset: undefined, recordingState: 'idle' as const }
+            ? { ...t, recordedBlob: undefined, file: undefined, clipOffset: undefined, trimStart: undefined, clipDuration: undefined, recordingState: 'idle' as const }
             : t
         ),
       }));

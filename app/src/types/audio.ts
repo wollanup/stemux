@@ -1,3 +1,5 @@
+import type { ClipGeometry } from '../timeline/clipEdit';
+
 export interface AudioTrack {
   id: string;
   name: string;
@@ -17,6 +19,8 @@ export interface AudioTrack {
   recordingState?: 'idle' | 'armed' | 'recording' | 'stopped';
   recordingStartOffset?: number; // Piece position (seconds) of the first recorded sample
   clipOffset?: number; // Position of the clip on the timeline (seconds), 0 = start of the piece
+  trimStart?: number; // Seconds of the file skipped at the start of the clip
+  clipDuration?: number; // Seconds of the file played (undefined: until its end)
 }
 
 export interface PlaybackState {
@@ -61,6 +65,8 @@ export interface PieceSettings {
     height?: number;
     isRecordable?: boolean; // Track is a recording track
     clipOffset?: number; // Position of the clip on the timeline (seconds)
+    trimStart?: number;
+    clipDuration?: number;
   }>;
   loopState: {
     markers: Marker[];
@@ -100,6 +106,15 @@ export interface AudioStore {
   // Recording state
   isRecordingSupported: boolean;
   loopBackup: { activeLoopId: string | null } | null;
+
+  // Clip editing
+  snapEnabled: boolean;
+  clipUndo: Array<{ trackId: string; before: ClipGeometry; after: ClipGeometry }>;
+  clipRedo: Array<{ trackId: string; before: ClipGeometry; after: ClipGeometry }>;
+  updateClip: (trackId: string, before: ClipGeometry, after: ClipGeometry) => void;
+  undoClipEdit: () => void;
+  redoClipEdit: () => void;
+  setSnapEnabled: (enabled: boolean) => void;
   
   addTrack: (file: File) => Promise<void>;
   removeTrack: (id: string) => void;

@@ -13,6 +13,7 @@ import {
   Stack,
   Toolbar,
   Typography,
+  Tooltip,
 } from '@mui/material';
 import {
   Album,
@@ -30,6 +31,7 @@ import {
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { StemuxIcon } from './StemuxIcon';
+import MagnetIcon from './MagnetIcon';
 import { usePlaybackTime } from '../hooks/usePlaybackTime';
 import { useAudioStore } from '../hooks/useAudioStore';
 import type { PieceWithStats } from '../types/audio';
@@ -80,7 +82,7 @@ const TopBar = ({
   const [piecesMenuAnchorEl, setPiecesMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [recentPieces, setRecentPieces] = useState<PieceWithStats[]>([]);
   
-  const { getRecentPieces, getCurrentPiece, loadPiece, currentPieceName } = useAudioStore();
+  const { getRecentPieces, getCurrentPiece, loadPiece, currentPieceName, snapEnabled, setSnapEnabled } = useAudioStore();
 
   // Use live playback time hook (updates every 100ms)
   const currentTime = usePlaybackTime();
@@ -227,6 +229,22 @@ const TopBar = ({
         )}
 
         <Box sx={{ flexGrow: 1 }} />
+
+        {/* Magnetism for clip editing (Alt disables it during a drag) */}
+        <Tooltip title={snapEnabled ? t('timeline.snapOn') : t('timeline.snapOff')}>
+          <span>
+            <IconButton
+              color={snapEnabled ? 'primary' : 'inherit'}
+              onClick={() => setSnapEnabled(!snapEnabled)}
+              disabled={!hasLoadedTracks}
+              aria-label={t('timeline.snap')}
+              aria-pressed={snapEnabled}
+              sx={{ mr: 1, opacity: snapEnabled ? 1 : 0.6 }}
+            >
+              <MagnetIcon fontSize="small" />
+            </IconButton>
+          </span>
+        </Tooltip>
 
         {/* Zoom controls */}
         <IconButton
