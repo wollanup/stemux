@@ -16,7 +16,7 @@ const ChipActions = ({ onMenu, onDelete, menuLabel, deleteLabel }: {
   menuLabel: string;
   deleteLabel: string;
 }) => (
-  <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', ml: 0.5, mr: -0.75 }} onPointerDown={stopPropagation}>
+  <Box component="span" sx={{ display: 'flex', alignItems: 'center', ml: 0.5, mr: -0.75 }} onPointerDown={stopPropagation}>
     <IconButton
       size="small"
       aria-label={menuLabel}
@@ -26,7 +26,7 @@ const ChipActions = ({ onMenu, onDelete, menuLabel, deleteLabel }: {
       }}
       sx={{ p: 0.25, color: 'inherit', opacity: 0.7, '&:hover': { opacity: 1 } }}
     >
-      <MoreVert sx={{ fontSize: 16 }} />
+      <MoreVert sx={{ fontSize: 16, display: 'block' }} />
     </IconButton>
     <IconButton
       size="small"
@@ -38,10 +38,16 @@ const ChipActions = ({ onMenu, onDelete, menuLabel, deleteLabel }: {
       }}
       sx={{ p: 0.25, color: 'inherit', opacity: 0.7, '&:hover': { opacity: 1, color: 'error.main' } }}
     >
-      <Close sx={{ fontSize: 16 }} />
+      <Close sx={{ fontSize: 16, display: 'block' }} />
     </IconButton>
   </Box>
 );
+
+/** Leading icon, text, ⋮ and × centered on one axis */
+const chipLayout = {
+  '& .MuiChip-icon': { display: 'flex', alignItems: 'center', ml: '6px', mr: '-2px' },
+  '& .MuiChip-label': { display: 'flex', alignItems: 'center', lineHeight: 1 },
+};
 
 /** Delete / Backspace on a focused chip deletes it */
 const onDeleteKey = (action: () => void) => (e: React.KeyboardEvent) => {
@@ -249,6 +255,7 @@ const MarkersPanel = () => {
               onPointerCancel={handlePointerUp}
               sx={{
                 cursor: 'pointer',
+                ...chipLayout,
                 // Loop ends take the color of their loop
                 ...(isLoopEndpoint && { borderColor: color, '& .MuiChip-icon': { color } }),
                 ...(isInActiveLoop && {
@@ -330,6 +337,7 @@ const MarkersPanel = () => {
                 onClick={() => toggleLoopPlayback(loop.id)}
                 sx={{
                   cursor: 'pointer',
+                  ...chipLayout,
                   // Colored like the loop in the ruler: filled when active, dashed when armed
                   borderColor: color,
                   borderStyle: isArmed ? 'dashed' : 'solid',
