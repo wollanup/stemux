@@ -26,7 +26,7 @@ export type RulerAction =
   | { type: 'moveLoop'; loopId: string; delta: number }
   | { type: 'none' };
 
-/** Grab distance on the line side of a marker, in px */
+/** Grab distance on the line side of a marker, in px (defaults: see rulerLayout) */
 export const MARKER_GRAB_PX = 6;
 /** Width of a marker handle (flag), drawn beside its line */
 export const HANDLE_WIDTH = 18;
@@ -50,15 +50,21 @@ export function loopStartMarkerIds(state: Markers, timeOf?: (id: string) => numb
  * in the strip where loops and handles are drawn. The graduation below only
  * moves the playhead.
  */
-export function hitTest(x: number, inLoopStrip: boolean, state: Markers, pps: number): RulerHit {
+export function hitTest(
+  x: number,
+  inLoopStrip: boolean,
+  state: Markers,
+  pps: number,
+  sizes: { handle: number; grab: number } = { handle: HANDLE_WIDTH, grab: MARKER_GRAB_PX }
+): RulerHit {
   if (!inLoopStrip) return { kind: 'time' };
   const leftHanded = loopStartMarkerIds(state);
   let best: { id: string; time: number; distance: number } | null = null;
   for (const marker of state.markers) {
     const lineX = marker.time * pps;
     const onLeft = leftHanded.has(marker.id);
-    const from = onLeft ? lineX - HANDLE_WIDTH : lineX - MARKER_GRAB_PX;
-    const to = onLeft ? lineX + MARKER_GRAB_PX : lineX + HANDLE_WIDTH;
+    const from = onLeft ? lineX - sizes.handle : lineX - sizes.grab;
+    const to = onLeft ? lineX + sizes.grab : lineX + sizes.handle;
     if (x < from || x > to) continue;
     const distance = Math.abs(lineX - x);
     if (!best || distance < best.distance) best = { id: marker.id, time: marker.time, distance };

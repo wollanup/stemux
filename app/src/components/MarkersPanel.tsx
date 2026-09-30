@@ -1,5 +1,5 @@
-import { alpha, Box, IconButton, Typography, Chip, Menu, MenuItem, ListItemIcon, ListItemText, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button, useTheme } from '@mui/material';
-import { Close, MoreVert, Repeat as LoopIcon, Delete, PlayArrow, Pause, ArrowForward, Login, Check } from '@mui/icons-material';
+import { alpha, Box, ButtonBase, IconButton, Typography, Chip, Menu, MenuItem, ListItemIcon, ListItemText, useTheme } from '@mui/material';
+import { Close, ExpandLess, ExpandMore, MoreVert, Repeat as LoopIcon, Delete, PlayArrow, Pause, ArrowForward, Login, Check } from '@mui/icons-material';
 import { useAudioStore } from '../hooks/useAudioStore';
 import { LOOP_COLORS, loopColor, markerColor } from '../utils/colors';
 import ColorPalette, { ColorDot } from './ColorPalette';
@@ -64,14 +64,14 @@ const MarkersPanel = () => {
   const { loopState, removeMarker, removeLoop, seek, createLoop, setActiveLoop, play, toggleLoopPlayback, armLoop, setLoopColor } = useAudioStore();
   const isPlaying = useAudioStore((s) => s.playbackState.isPlaying);
   const armedLoopId = useAudioStore((s) => s.armedLoopId);
+  const panelOpen = useAudioStore((s) => s.loopsPanelOpen);
+  const setLoopsPanelOpen = useAudioStore((s) => s.setLoopsPanelOpen);
   const [menuAnchor, setMenuAnchor] = useState<{ element: HTMLElement; markerId: string } | null>(null);
   const [loopMenuAnchor, setLoopMenuAnchor] = useState<{ element: HTMLElement; loopId: string } | null>(null);
   const [loopStartMarker, setLoopStartMarker] = useState<string | null>(null);
   const [longPressTimer, setLongPressTimer] = useState<number | null>(null);
-  const [deleteAllDialogOpen, setDeleteAllDialogOpen] = useState(false);
   const [colorAnchor, setColorAnchor] = useState<{ element: HTMLElement; loopId: string } | null>(null);
 
-  if (loopState.markers.length === 0) return null;
 
   const handleMarkerClick = (time: number) => {
     // Disable loop when clicking on a marker (cleaner UX)
@@ -181,15 +181,6 @@ const MarkersPanel = () => {
   const isLoopPlaying = (loopId: string) =>
     isPlaying && loopState.activeLoopId === loopId && loopState.loops.some((l) => l.id === loopId && l.enabled);
 
-  const handleDeleteAll = () => {
-    // Loops first, then markers: undone at once
-    useAudioStore.getState().edit(() => {
-      loopState.loops.forEach(loop => removeLoop(loop.id));
-      loopState.markers.forEach(marker => removeMarker(marker.id));
-    });
-    setDeleteAllDialogOpen(false);
-  };
-
   const loopColorOf = (loopId: string) => {
     const loop = loopState.loops.find((l) => l.id === loopId);
     return loop ? loopColor(loop, loopState.loops) : LOOP_COLORS[0];
@@ -200,8 +191,27 @@ const MarkersPanel = () => {
     return index !== -1 ? index + 1 : '?';
   };
 
+  // Hidden: one thin row with the counts, a click shows the lists again
+  if (!panelOpen) {
+    return (
+      <ButtonBase
+        onClick={() => setLoopsPanelOpen(true)}
+        aria-label={t('markers.showPanel')}
+        aria-expanded={false}
+        data-loops-panel="closed"
+        sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 2, py: 0.5, bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider', justifyContent: 'flex-start' }}
+      >
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+          {t('markers.summary', { markers: loopState.markers.length, loops: loopState.loops.length })}
+        </Typography>
+        <ExpandMore fontSize="small" sx={{ ml: 'auto', color: 'text.secondary' }} />
+      </ButtonBase>
+    );
+  }
+
   return (
     <Box
+      data-loops-panel="open"
       sx={{
         display: 'flex',
         flexDirection: 'column',
@@ -218,6 +228,11 @@ const MarkersPanel = () => {
         <Typography variant="body2" sx={{ color: 'text.secondary', mr: 1 }}>
           {t('markers.markers')}
         </Typography>
+        {loopState.markers.length === 0 && (
+          <Typography variant="body2" sx={{ color: 'text.secondary', fontStyle: 'italic' }}>
+            {t('markers.emptyHint')}
+          </Typography>
+        )}
         {loopState.markers.map((marker, index) => {
           const isInActiveLoop = loopState.loops.find(
             l => l.enabled && (l.startMarkerId === marker.id || l.endMarkerId === marker.id)
@@ -272,14 +287,9 @@ const MarkersPanel = () => {
           );
         })}
         
-        {/* Delete all button */}
-        <IconButton
-          size="small"
-          onClick={() => setDeleteAllDialogOpen(true)}
-          disabled={loopState.markers.length === 0 && loopState.loops.length === 0}
-          sx={{ ml: 'auto' }}
-        >
-          <Close fontSize="small" />
+        {/* Hide the lists: the loop strip becomes thin and read-only */}
+        <IconButton size="small" onClick={() => setLoopsPanelOpen(false)} aria-label={t('markers.hidePanel')} aria-expanded sx={{ ml: 'auto' }}>
+          <ExpandLess fontSize="small" />
         </IconButton>
       </Box>
 
@@ -465,29 +475,6 @@ const MarkersPanel = () => {
         onClose={() => setColorAnchor(null)}
       />
 
-      {/* Delete All Confirmation Dialog */}
-      <Dialog
-        open={deleteAllDialogOpen}
-        onClose={() => setDeleteAllDialogOpen(false)}
-      >
-        <DialogTitle>{t('markers.deleteAllConfirmTitle')}</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            {t('markers.deleteAllConfirmMessage', { 
-              markerCount: loopState.markers.length, 
-              loopCount: loopState.loops.length 
-            })}
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteAllDialogOpen(false)}>
-            {t('markers.deleteAllDialogCancel')}
-          </Button>
-          <Button onClick={handleDeleteAll} color="error" autoFocus>
-            {t('markers.deleteAllDialogConfirm')}
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Box>
   );
 };

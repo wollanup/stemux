@@ -154,3 +154,12 @@ describe('magnetism of ruler gestures', () => {
     expect(loopShift(hit, 0, 44, PPS, 60, snap)).toBeCloseTo(5);
   });
 });
+
+describe('handle sizes', () => {
+  it('wider handles are grabbed further from the line', () => {
+    const state = { markers: [{ id: 'm', time: 10, createdAt: 0 }], loops: [] };
+    expect(hitTest(100 + 25, true, state, PPS).kind).toBe('strip');
+    expect(hitTest(100 + 25, true, state, PPS, { handle: 30, grab: 12 })).toEqual({ kind: 'marker', markerId: 'm', time: 10 });
+    expect(hitTest(100 - 10, true, state, PPS, { handle: 30, grab: 12 }).kind).toBe('marker');
+  });
+});

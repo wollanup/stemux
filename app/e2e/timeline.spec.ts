@@ -72,7 +72,7 @@ test.describe('timeline', () => {
     for (const marker of await page.locator('[data-marker] > div').all()) {
       const box = (await marker.boundingBox())!;
       expect(box.y).toBeGreaterThanOrEqual(rulerNow.y);
-      expect(box.y + box.height).toBeLessThanOrEqual(rulerNow.y + 24);
+      expect(box.y + box.height).toBeLessThanOrEqual(rulerNow.y + 32);
     }
   });
 
@@ -187,6 +187,40 @@ test.describe('timeline', () => {
     const peak = async () => Number((await meter.getAttribute('title'))?.match(/-?\d+\.\d/)?.[0] ?? -Infinity);
     await expect.poll(peak).toBeGreaterThan(-8);
     await expect(meter).toHaveAttribute('title', /Highest peak: -[\d.]+ dB/);
+  });
+
+  test('hiding markers and loops makes the loop strip thin and read-only', async ({ page }) => {
+    await openWithTracks(page, stems);
+    const strip = page.locator('[data-loop-strip]');
+    await expect(strip).toHaveAttribute('data-loop-strip', 'edit');
+    const editHeight = (await strip.boundingBox())!.height;
+
+    // Nothing yet: a hint, and the chevron to hide the panel
+    await expect(page.getByText(/top strip of the ruler/)).toBeVisible();
+    await page.getByRole('button', { name: /Hide markers and loops/ }).click();
+    await expect(page.locator('[data-loops-panel]')).toHaveAttribute('data-loops-panel', 'closed');
+    await expect(strip).toHaveAttribute('data-loop-strip', 'read-only');
+    expect((await strip.boundingBox())!.height).toBeLessThan(editHeight);
+
+    // Read-only: a click or a drag in the strip does nothing
+    let ruler = (await page.getByTestId('time-ruler').boundingBox())!;
+    await page.mouse.click(await rulerX(page, 10), ruler.y + 10);
+    await page.mouse.move(await rulerX(page, 20), ruler.y + 10);
+    await page.mouse.down();
+    await page.mouse.move(await rulerX(page, 30), ruler.y + 10, { steps: 5 });
+    await page.mouse.up();
+    await expect(page.locator('[data-marker]')).toHaveCount(0);
+    // The graduation still moves the playhead
+    await page.mouse.click(await rulerX(page, 15.5), ruler.y + 36);
+    await expect.poll(() => shownTime(page)).toBe(15);
+
+    // Shown again (remembered): editable
+    await page.getByRole('button', { name: /Show markers and loops/ }).click();
+    await page.reload();
+    await expect(page.locator('[data-loop-strip]')).toHaveAttribute('data-loop-strip', 'edit');
+    ruler = (await page.getByTestId('time-ruler').boundingBox())!;
+    await page.mouse.click(await rulerX(page, 10), ruler.y + 12);
+    await expect(page.locator('[data-marker]')).toHaveCount(1);
   });
 
   test('double clicking a loop enables it and plays it from its start', async ({ page }) => {
@@ -404,5 +438,25 @@ test.describe('recording', () => {
     await page.reload();
     await expect(page.locator('[data-clip]')).toHaveCount(4);
     expect(Number(await page.locator('[data-clip]').nth(3).getAttribute('data-clip-start'))).toBeCloseTo(start, 3);
+  });
+});
+
+test.describe('touch screen', () => {
+  test.use({ viewport: { width: 390, height: 800 }, hasTouch: true, isMobile: true });
+
+  test('the editable loop strip is tall, and a tap near a handle hits it instead of adding a marker', async ({ page }) => {
+    await openWithTracks(page, stems);
+    const strip = page.locator('[data-loop-strip="edit"]');
+    expect((await strip.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+
+    let ruler = (await page.getByTestId('time-ruler').boundingBox())!;
+    await page.touchscreen.tap(await rulerX(page, 20), ruler.y + 20);
+    await expect(page.locator('[data-marker]')).toHaveCount(1);
+
+    // A finger 20px beside the line lands on the handle: no second marker
+    ruler = (await page.getByTestId('time-ruler').boundingBox())!;
+    await page.touchscreen.tap((await rulerX(page, 20)) + 20, ruler.y + 20);
+    await page.waitForTimeout(300);
+    await expect(page.locator('[data-marker]')).toHaveCount(1);
   });
 });

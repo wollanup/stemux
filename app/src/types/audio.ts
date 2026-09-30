@@ -188,6 +188,9 @@ export interface AudioStore {
 
   setWaveformStyle: (style: 'modern' | 'classic') => void;
   setWaveformNormalize: (normalize: boolean) => void;
+  /** Markers and loops panel shown: the loop strip is editable (read-only when hidden) */
+  loopsPanelOpen: boolean;
+  setLoopsPanelOpen: (open: boolean) => void;
   
   initAudioContext: () => void;
 
