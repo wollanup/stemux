@@ -325,3 +325,18 @@ describe('AudioEngine playback rate', () => {
     expect(source.startArgs!.when).toBe(stretchNodes[0].schedules.at(-1)!.output);
   });
 });
+
+describe('AudioEngine level meters', () => {
+  it('reads the peak of each channel of a track, after its gain', () => {
+    engine.addTrack('stereo', fakeBuffer(10, 48000, 2));
+    engine.addTrack('mono', fakeBuffer(10, 48000, 1));
+    const [left, right, mono] = ctx.analysers;
+    left.samples = [0.1, -0.5, 0.2];
+    right.samples = [0.25];
+    mono.samples = [-0.8];
+    expect(engine.getTrackPeaks('stereo')).toEqual([0.5, 0.25]);
+    // Mono file: one channel only
+    expect(engine.getTrackPeaks('mono')).toEqual([expect.closeTo(0.8, 5)]);
+    expect(engine.getTrackPeaks('missing')).toBeNull();
+  });
+});

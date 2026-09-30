@@ -18,7 +18,7 @@ test.describe('timeline', () => {
     expect(widths[2] / widths[0]).toBeCloseTo(0.75, 2);
   });
 
-  test('a click on the graduation moves the playhead, a click in the loop strip does not', async ({ page }) => {
+  test('a click on the graduation moves the playhead, a click in the loop strip adds a marker', async ({ page }) => {
     await openWithTracks(page, stems);
     const ruler = (await page.getByTestId('time-ruler').boundingBox())!;
 
@@ -26,8 +26,14 @@ test.describe('timeline', () => {
     await expect.poll(() => shownTime(page)).toBe(20);
 
     await page.mouse.click(await rulerX(page, 40.5), ruler.y + RULER_STRIP_Y);
-    await page.waitForTimeout(300);
+    await expect(page.locator('[data-marker]')).toHaveCount(1);
     expect(await shownTime(page)).toBe(20);
+
+    // A double click on the graduation is just two seeks now (the markers list moved the ruler down)
+    const rulerNow = (await page.getByTestId('time-ruler').boundingBox())!;
+    await page.mouse.dblclick(await rulerX(page, 30.5), rulerNow.y + RULER_GRADUATION_Y);
+    await expect.poll(() => shownTime(page)).toBe(30);
+    await expect(page.locator('[data-marker]')).toHaveCount(1);
   });
 
   test('pressing on the graduation places the playhead, dragging moves it precisely', async ({ page }) => {
@@ -70,6 +76,119 @@ test.describe('timeline', () => {
     }
   });
 
+  test('Ctrl+Z undoes a new loop at once (its two markers too), Ctrl+Shift+Z brings it back', async ({ page }) => {
+    await openWithTracks(page, stems);
+    const ruler = (await page.getByTestId('time-ruler').boundingBox())!;
+
+    await page.mouse.move(await rulerX(page, 10), ruler.y + RULER_STRIP_Y);
+    await page.mouse.down();
+    await page.mouse.move(await rulerX(page, 20), ruler.y + RULER_STRIP_Y, { steps: 5 });
+    await page.mouse.up();
+    await expect(page.locator('[data-marker]')).toHaveCount(2);
+
+    await page.keyboard.press('Control+z');
+    await expect(page.locator('[data-marker]')).toHaveCount(0);
+    await expect(page.locator('[data-loop]')).toHaveCount(0);
+    await page.keyboard.press('Control+Shift+z');
+    await expect(page.locator('[data-marker]')).toHaveCount(2);
+    await expect(page.locator('[data-loop]')).toHaveCount(1);
+  });
+
+  test('the × of a chip deletes the loop or the marker at once, Ctrl+Z brings it back', async ({ page }) => {
+    await openWithTracks(page, stems);
+    const ruler = (await page.getByTestId('time-ruler').boundingBox())!;
+    await page.mouse.move(await rulerX(page, 10), ruler.y + RULER_STRIP_Y);
+    await page.mouse.down();
+    await page.mouse.move(await rulerX(page, 20), ruler.y + RULER_STRIP_Y, { steps: 5 });
+    await page.mouse.up();
+
+    await page.locator('[data-loop-chip]').getByRole('button', { name: 'Delete loop' }).click();
+    await expect(page.locator('[data-loop]')).toHaveCount(0);
+    await expect(page.locator('[data-marker]')).toHaveCount(2);
+
+    await page.locator('[data-marker-chip]').first().getByRole('button', { name: 'Delete marker' }).click();
+    await expect(page.locator('[data-marker]')).toHaveCount(1);
+
+    await page.keyboard.press('Control+z');
+    await page.keyboard.press('Control+z');
+    await expect(page.locator('[data-marker]')).toHaveCount(2);
+    await expect(page.locator('[data-loop]')).toHaveCount(1);
+  });
+
+  test('a loop and a track get a color picked from a palette in their ⋮ menu', async ({ page }) => {
+    await openWithTracks(page, stems);
+    const ruler = (await page.getByTestId('time-ruler').boundingBox())!;
+    await page.mouse.move(await rulerX(page, 10), ruler.y + RULER_STRIP_Y);
+    await page.mouse.down();
+    await page.mouse.move(await rulerX(page, 20), ruler.y + RULER_STRIP_Y, { steps: 5 });
+    await page.mouse.up();
+
+    await page.locator('[data-loop-chip]').getByRole('button', { name: 'Loop options' }).click();
+    await page.getByRole('menuitem', { name: 'Color' }).click();
+    await page.getByRole('option', { name: 'Color 3' }).click();
+    // The loop in the ruler takes it (#EC407A)
+    await expect(page.locator('[data-loop]')).toHaveCSS('border-top-color', 'rgb(236, 64, 122)');
+
+    const row = page.locator('[data-track-row="bass.wav"]');
+    await row.getByRole('button', { name: 'Track options' }).click();
+    await page.getByRole('menuitem', { name: 'Color' }).click();
+    await page.getByRole('option', { name: 'Color 6' }).click();
+    // Colored stripe of the header (#FF6B6B)
+    await expect(row.locator('[data-track-header]')).toHaveCSS('border-left-color', 'rgb(255, 107, 107)');
+
+    await row.getByRole('button', { name: 'Track options' }).click();
+    await page.getByRole('menuitem', { name: 'Delete track' }).click();
+    await page.getByRole('button', { name: 'Delete', exact: true }).click();
+    await expect(page.locator('[data-track-row]')).toHaveCount(2);
+  });
+
+  test('the mouse wheel over a volume slider changes the volume', async ({ page }) => {
+    await openWithTracks(page, stems);
+    const slider = page.locator('[data-track-row="bass.wav"] .MuiSlider-root');
+    const volume = () => slider.locator('input').inputValue().then(Number);
+    const before = await volume();
+    const box = (await slider.boundingBox())!;
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.wheel(0, 200); // down: 4 steps of 2%
+    await expect.poll(volume).toBe(before - 8);
+    await page.mouse.wheel(0, -100);
+    await expect.poll(volume).toBe(before - 4);
+  });
+
+  test('by default, dragging a lane scrolls the timeline without moving clips nor the playhead', async ({ page }) => {
+    await openWithTracks(page, stems);
+    await page.getByRole('button', { name: 'Zoom in' }).click();
+    await page.getByRole('button', { name: 'Zoom in' }).click();
+    const scroller = page.locator('[data-timeline-scroll]');
+    await scroller.evaluate((el) => (el.scrollLeft = 0));
+    const lane = page.locator('[data-track-row="bass.wav"] [data-clip]').locator('..');
+    await page.mouse.move(700, 200);
+    await expect(lane).toHaveCSS('cursor', 'grab');
+
+    const box = (await lane.boundingBox())!;
+    const y = box.y + box.height / 2;
+    await page.mouse.move(900, y);
+    await page.mouse.down();
+    await page.mouse.move(600, y, { steps: 8 });
+    await page.mouse.up();
+
+    expect(await scroller.evaluate((el) => el.scrollLeft)).toBeGreaterThan(250);
+    expect(await page.locator('[data-track-row="bass.wav"] [data-clip]').getAttribute('data-clip-start')).toBe('0');
+    expect(await shownTime(page)).toBe(0);
+  });
+
+  test('each track shows a peak meter in its header, moving while playing', async ({ page }) => {
+    await openWithTracks(page, stems);
+    const meter = page.locator('[data-track-row="bass.wav"] canvas[data-peak-meter]');
+    await expect(meter).toBeVisible();
+    await page.getByRole('button', { name: 'Play', exact: true }).click();
+    await expect(meter).toHaveAttribute('data-drawn', 'live');
+    // The fixture peaks at 0.6 x volume 0.8: about -6 dBFS
+    const peak = async () => Number((await meter.getAttribute('title'))?.match(/-?\d+\.\d/)?.[0] ?? -Infinity);
+    await expect.poll(peak).toBeGreaterThan(-8);
+    await expect(meter).toHaveAttribute('title', /Highest peak: -[\d.]+ dB/);
+  });
+
   test('double clicking a loop enables it and plays it from its start', async ({ page }) => {
     await openWithTracks(page, stems);
     let ruler = (await page.getByTestId('time-ruler').boundingBox())!;
@@ -84,10 +203,11 @@ test.describe('timeline', () => {
     await page.mouse.click(await rulerX(page, 45.5), ruler.y + RULER_GRADUATION_Y);
     await expect.poll(() => shownTime(page)).toBe(45);
 
-    // A single click on the loop does nothing
+    // A single click on the loop does nothing (no marker inside a loop)
     await page.mouse.click(await rulerX(page, 25), ruler.y + RULER_STRIP_Y);
     await page.waitForTimeout(400);
     expect(await shownTime(page)).toBe(45);
+    await expect(page.locator('[data-marker]')).toHaveCount(2);
 
     await page.mouse.dblclick(await rulerX(page, 25), ruler.y + RULER_STRIP_Y);
     await expect(page.getByRole('button', { name: 'Pause', exact: true })).toBeVisible();
@@ -123,12 +243,12 @@ test.describe('timeline', () => {
 
     // Only offered while the loop plays
     const chip = page.getByRole('button', { name: 'Play the loop' });
-    await chip.locator('.MuiChip-deleteIcon').click();
+    await chip.getByRole('button', { name: 'Loop options' }).click();
     await expect(page.getByRole('menuitem', { name: 'Continue past the loop' })).toHaveCount(0);
     await page.keyboard.press('Escape');
 
     await chip.click();
-    await page.getByRole('button', { name: 'Pause the loop' }).locator('.MuiChip-deleteIcon').click();
+    await page.getByRole('button', { name: 'Pause the loop' }).getByRole('button', { name: 'Loop options' }).click();
     await page.getByRole('menuitem', { name: 'Continue past the loop' }).click();
 
     await expect.poll(() => shownTime(page), { timeout: 8000 }).toBeGreaterThanOrEqual(23);
@@ -160,7 +280,7 @@ test.describe('timeline', () => {
   test('the marker line across the tracks follows a handle while it is dragged', async ({ page }) => {
     await openWithTracks(page, stems);
     const ruler = (await page.getByTestId('time-ruler').boundingBox())!;
-    await page.mouse.dblclick(await rulerX(page, 30), ruler.y + RULER_GRADUATION_Y);
+    await page.mouse.click(await rulerX(page, 30), ruler.y + RULER_STRIP_Y);
     await expect(page.locator('[data-marker]')).toHaveCount(1);
 
     const handle = (await page.locator('[data-marker] > div').first().boundingBox())!;
@@ -189,7 +309,7 @@ test.describe('timeline', () => {
     await page.mouse.click(await rulerX(page, 18.5), ruler.y + RULER_GRADUATION_Y);
     await expect.poll(() => shownTime(page)).toBe(18);
 
-    await page.getByRole('button', { name: 'Play the loop' }).locator('.MuiChip-deleteIcon').click();
+    await page.getByRole('button', { name: 'Play the loop' }).getByRole('button', { name: 'Loop options' }).click();
     await page.getByRole('menuitem', { name: 'Loop on entry' }).click();
     await expect(page.locator('[data-loop][data-armed]')).toHaveCount(1);
 
@@ -205,7 +325,7 @@ test.describe('timeline', () => {
   test('a marker handle shows a horizontal arrow and can be dragged', async ({ page }) => {
     await openWithTracks(page, stems);
     const ruler = (await page.getByTestId('time-ruler').boundingBox())!;
-    await page.mouse.dblclick(await rulerX(page, 30), ruler.y + RULER_GRADUATION_Y);
+    await page.mouse.click(await rulerX(page, 30), ruler.y + RULER_STRIP_Y);
     await expect(page.locator('[data-marker]')).toHaveCount(1);
 
     const handle = page.locator('[data-marker] > div').first();

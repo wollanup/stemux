@@ -28,6 +28,16 @@ export class FakeGain extends FakeNode {
   gain = new FakeParam(1);
 }
 
+export class FakeAnalyser extends FakeNode {
+  fftSize = 2048;
+  /** Samples returned by getFloatTimeDomainData */
+  samples: number[] = [];
+  getFloatTimeDomainData(data: Float32Array) {
+    data.fill(0);
+    data.set(this.samples.slice(0, data.length));
+  }
+}
+
 export class FakeBufferSource extends FakeNode {
   buffer: AudioBuffer | null = null;
   onended: (() => void) | null = null;
@@ -60,6 +70,18 @@ export class FakeAudioContext {
 
   createGain() {
     return new FakeGain();
+  }
+
+  analysers: FakeAnalyser[] = [];
+
+  createAnalyser() {
+    const analyser = new FakeAnalyser();
+    this.analysers.push(analyser);
+    return analyser;
+  }
+
+  createChannelSplitter() {
+    return new FakeNode();
   }
 
   createBufferSource() {

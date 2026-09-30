@@ -11,9 +11,11 @@ import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import {useAudioStore} from '../hooks/useAudioStore';
 import {usePlaybackTime} from '../hooks/usePlaybackTime';
 import {useThrottle} from '../hooks/useThrottle';
+import {useWheelAdjust} from '../hooks/useWheelAdjust';
 import PlaybackSpeedDrawer from './PlaybackSpeedDrawer';
 import {useTranslation} from 'react-i18next';
 import {audioEngine} from '../audio/AudioEngine';
+import {formatBarBeat} from '../tempo/tempo';
 
 const StyledFab = styled(Fab)({
   position: 'absolute',
@@ -59,6 +61,7 @@ const BottomControlBar = () => {
   } = useAudioStore();
 
   const currentTime = usePlaybackTime(); // Use lightweight time tracker
+  const barsTempo = useAudioStore((s) => (s.rulerMode === 'bars' ? s.tempo : null));
   
   // Check if any track is armed or recording
   const isAnyTrackArmed = tracks.some((t) => t.isArmed);
@@ -72,6 +75,12 @@ const BottomControlBar = () => {
   const throttledSetMasterVolume = useThrottle((volume: number) => {
     setMasterVolume(volume);
   }, 50);
+
+  // Wheel over the master volume slider: 2% per step
+  const masterWheelRef = useWheelAdjust<HTMLSpanElement>((steps) => {
+    const volume = useAudioStore.getState().masterVolume;
+    setMasterVolume(Math.max(0, Math.min(1, Math.round((volume + steps * 0.02) * 100) / 100)));
+  });
 
   // Sync temp volume with store when it changes externally (adjusted during render, not in an effect)
   const [syncedMasterVolume, setSyncedMasterVolume] = useState(masterVolume);
@@ -463,6 +472,12 @@ const BottomControlBar = () => {
                 {formatTime(playbackState.duration)}
               </Typography>
             </Box>
+            {/* Bar.beat when the ruler counts bars */}
+            {barsTempo && (
+              <Typography variant="body2" color="primary" data-testid="current-bar" sx={{ fontVariantNumeric: 'tabular-nums' }}>
+                {formatBarBeat(currentTime, barsTempo)}
+              </Typography>
+            )}
           </Stack>
         </Stack>
 
@@ -481,6 +496,7 @@ const BottomControlBar = () => {
         >
           <VolumeUpIcon fontSize="small" />
           <Slider
+            ref={masterWheelRef}
             value={tempMasterVolume * 100}
             onChange={(_, value) => {
               const newValue = (value as number) / 100;

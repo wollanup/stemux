@@ -5,6 +5,7 @@ import type { AudioStore } from '../../../types/audio';
 vi.mock('../storage', () => ({ saveTrackSettingsToPiece: vi.fn(async () => {}) }));
 
 const { createLoopActions } = await import('../loops');
+const { createHistoryActions } = await import('../history');
 const { LOOP_COLORS } = await import('../../../utils/colors');
 
 /** Loop 2 is made of a start marker placed AFTER its end marker */
@@ -38,7 +39,10 @@ const makeStore = (isPlaying = false) => {
       calls.push('pause');
       set((s) => ({ playbackState: { ...s.playbackState, isPlaying: false } }));
     },
+    undoStack: [],
+    redoStack: [],
     ...createLoopActions(set, get),
+    ...createHistoryActions(set, get),
   }) as unknown as AudioStore);
   return { store, calls };
 };

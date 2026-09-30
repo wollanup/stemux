@@ -14,12 +14,15 @@ import {
   DialogContentText,
   DialogTitle,
   IconButton,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
   Slider,
   TextField,
   Tooltip,
   Typography,
 } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import HeadsetIcon from '@mui/icons-material/Headset';
@@ -29,13 +32,18 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import MicIcon from '@mui/icons-material/Mic';
 import DownloadIcon from '@mui/icons-material/Download';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import type { DraggableAttributes, DraggableSyntheticListeners } from '@dnd-kit/core';
 import { useTranslation } from 'react-i18next';
 import { useAudioStore } from '../hooks/useAudioStore';
 import { useThrottle } from '../hooks/useThrottle';
+import { useWheelAdjust } from '../hooks/useWheelAdjust';
 import { getMic, subscribeMic } from '../audio/micSession';
 import type { MicRecorder } from '../audio/MicRecorder';
 import type { AudioTrack } from '../types/audio';
+import { TRACK_COLORS } from '../utils/colors';
+import ColorPalette, { ColorDot } from '../components/ColorPalette';
+import PeakMeter, { PEAK_METER_WIDTH } from './PeakMeter';
 
 interface TrackHeaderProps {
   track: AudioTrack;
@@ -44,6 +52,9 @@ interface TrackHeaderProps {
   dimmed: boolean;
   dragHandle: { attributes: DraggableAttributes; listeners: DraggableSyntheticListeners; isDragging: boolean };
 }
+
+/** Gap between the peak meter and the edge of the column: the width handle is there (px) */
+const METER_RIGHT_PX = 8;
 
 /** Input level of the armed track's microphone */
 function LevelMeter() {
@@ -109,7 +120,16 @@ export default function TrackHeader({ track, variant, height, dimmed, dragHandle
   const [editedName, setEditedName] = useState(track.name);
   const [dragVolume, setDragVolume] = useState<number | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
+  const [colorAnchor, setColorAnchor] = useState<HTMLElement | null>(null);
+  const menuButton = useRef<HTMLButtonElement>(null);
   const throttledSetVolume = useThrottle((id: string, volume: number) => setVolume(id, volume), 50);
+
+  // Wheel over the volume slider: 2% per step
+  const volumeWheelRef = useWheelAdjust<HTMLSpanElement>((steps) => {
+    const current = useAudioStore.getState().tracks.find((t) => t.id === track.id);
+    if (current) setVolume(track.id, Math.max(0, Math.min(1, Math.round((current.volume + steps * 0.02) * 100) / 100)));
+  }, !track.isMuted);
 
   const isCollapsed = track.isCollapsed ?? false;
   const isRecording = track.recordingState === 'recording';
@@ -206,8 +226,8 @@ export default function TrackHeader({ track, variant, height, dimmed, dragHandle
       >
         <ExpandMoreIcon fontSize="small" />
       </IconButton>
-      <IconButton size="small" onClick={() => setDeleteDialogOpen(true)} aria-label={t('track.deleteConfirmTitle')}>
-        <CloseIcon fontSize="small" />
+      <IconButton ref={menuButton} size="small" onClick={(e) => setMenuAnchor(e.currentTarget)} aria-label={t('track.options')}>
+        <MoreVertIcon fontSize="small" />
       </IconButton>
     </Box>
   );
@@ -245,6 +265,7 @@ export default function TrackHeader({ track, variant, height, dimmed, dragHandle
         <LevelMeter />
       ) : (
         <Slider
+          ref={volumeWheelRef}
           value={dragVolume ?? track.volume * 100}
           onChange={(_, value) => {
             setDragVolume(value as number);
@@ -312,6 +333,7 @@ export default function TrackHeader({ track, variant, height, dimmed, dragHandle
 
   return (
     <Box
+      data-track-header
       sx={(theme) => ({
         width: '100%',
         height,
@@ -320,7 +342,9 @@ export default function TrackHeader({ track, variant, height, dimmed, dragHandle
         flexDirection: 'column',
         justifyContent: 'center',
         gap: variant === 'column' ? 0 : 0.25,
-        pr: 0.5,
+        position: 'relative',
+        // Column: room for the peak meter, clear of the width handle
+        pr: variant === 'column' ? `${PEAK_METER_WIDTH + METER_RIGHT_PX + 4}px` : 0.5,
         py: variant === 'row' ? 0.5 : 0,
         // Opaque: the playhead and loop overlay pass under the headers
         bgcolor: 'background.paper',
@@ -336,6 +360,44 @@ export default function TrackHeader({ track, variant, height, dimmed, dragHandle
     >
       {nameRow}
       {!isCollapsed && controlsRow}
+      {/* Desktop: peak meter just before the waveform */}
+      {variant === 'column' && (
+        <Box sx={{ position: 'absolute', top: 4, bottom: 4, right: METER_RIGHT_PX }}>
+          <PeakMeter trackId={track.id} />
+        </Box>
+      )}
+
+      <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={() => setMenuAnchor(null)}>
+        <MenuItem
+          onClick={() => {
+            setMenuAnchor(null);
+            setColorAnchor(menuButton.current);
+          }}
+        >
+          <ListItemIcon>
+            <ColorDot color={track.color} />
+          </ListItemIcon>
+          <ListItemText>{t('colors.title')}</ListItemText>
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            setMenuAnchor(null);
+            setDeleteDialogOpen(true);
+          }}
+        >
+          <ListItemIcon>
+            <DeleteIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>{t('track.delete')}</ListItemText>
+        </MenuItem>
+      </Menu>
+      <ColorPalette
+        anchorEl={colorAnchor}
+        colors={TRACK_COLORS}
+        value={track.color}
+        onSelect={(color) => updateTrack(track.id, { color })}
+        onClose={() => setColorAnchor(null)}
+      />
 
       <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
         <DialogTitle>{t('track.deleteConfirmTitle')}</DialogTitle>

@@ -1,6 +1,7 @@
 /**
  * Magnetism: times a clip edge sticks to when dragged close enough.
- * Targets are plain times, so a tempo grid can later be one more source.
+ * Targets are plain times: markers, playhead, other clips, and the bar/beat
+ * lines when the ruler counts bars.
  */
 
 import type { Marker } from '../types/audio';
@@ -13,11 +14,13 @@ export interface SnapSources {
   playhead: number;
   /** Start and end of the other clips */
   clipEdges: number[];
+  /** Bar / beat lines (see gridSnap.ts) */
+  grid?: number[];
 }
 
 /** Every time to snap to, sorted and without duplicates */
-export function snapTargets({ markers, playhead, clipEdges }: SnapSources): number[] {
-  const all = [0, playhead, ...markers.map((m) => m.time), ...clipEdges];
+export function snapTargets({ markers, playhead, clipEdges, grid = [] }: SnapSources): number[] {
+  const all = [0, playhead, ...markers.map((m) => m.time), ...clipEdges, ...grid];
   return Array.from(new Set(all.filter((t) => Number.isFinite(t) && t >= 0))).sort((a, b) => a - b);
 }
 

@@ -1,5 +1,5 @@
 /**
- * Clip edits (move / trim) with undo & redo.
+ * Clip edits (move / trim), undoable (see history.ts).
  * Only the clip window changes: the audio file is never modified.
  */
 
@@ -7,14 +7,8 @@ import type { AudioStore } from '../../types/audio';
 import type { ClipGeometry } from '../../timeline/clipEdit';
 import { logger } from '../../utils/logger';
 
-export interface ClipEdit {
-  trackId: string;
-  before: ClipGeometry;
-  after: ClipGeometry;
-}
-
-const HISTORY_LIMIT = 100;
 const SNAP_KEY = 'timeline-snap';
+const EDIT_MODE_KEY = 'timeline-edit-mode';
 
 export const loadSnapEnabled = () => {
   try {
@@ -32,54 +26,30 @@ const saveSnapEnabled = (enabled: boolean) => {
   }
 };
 
-/** Last edit whose track still exists (tracks deleted since are skipped) */
-const lastEditIndex = (edits: ClipEdit[], trackIds: Set<string>) => {
-  for (let i = edits.length - 1; i >= 0; i--) {
-    if (trackIds.has(edits[i].trackId)) return i;
+/** Edit mode (drag = move/trim clips) is off by default: drag = scroll */
+export const loadEditMode = () => {
+  try {
+    return localStorage.getItem(EDIT_MODE_KEY) === 'true';
+  } catch {
+    return false;
   }
-  return -1;
 };
 
-const toTrackFields = (clip: ClipGeometry) => ({
-  clipOffset: clip.offset,
-  trimStart: clip.trimStart,
-  clipDuration: clip.duration,
-});
-
 export const createClipActions = (set: (partial: Partial<AudioStore> | ((state: AudioStore) => Partial<AudioStore>)) => void, get: () => AudioStore) => ({
-  /** Apply a clip edit and record it for undo */
-  updateClip: (trackId: string, before: ClipGeometry, after: ClipGeometry) => {
+  /** Apply a clip edit (recorded for undo) */
+  updateClip: (trackId: string, clip: ClipGeometry) => {
     if (!get().tracks.some((t) => t.id === trackId)) return;
-    get().updateTrack(trackId, toTrackFields(after));
-    set((state: AudioStore) => ({
-      clipUndo: [...state.clipUndo, { trackId, before, after }].slice(-HISTORY_LIMIT),
-      clipRedo: [],
-    }));
-    logger.debug(`✂️ Clip ${trackId}: at ${after.offset.toFixed(3)}s, from ${after.trimStart.toFixed(3)}s, ${after.duration.toFixed(3)}s long`);
+    get().edit(() => get().updateTrack(trackId, { clipOffset: clip.offset, trimStart: clip.trimStart, clipDuration: clip.duration }));
+    logger.debug(`✂️ Clip ${trackId}: at ${clip.offset.toFixed(3)}s, from ${clip.trimStart.toFixed(3)}s, ${clip.duration.toFixed(3)}s long`);
   },
 
-  undoClipEdit: () => {
-    const { clipUndo, tracks } = get();
-    const index = lastEditIndex(clipUndo, new Set(tracks.map((t) => t.id)));
-    if (index < 0) return;
-    const edit = clipUndo[index];
-    get().updateTrack(edit.trackId, toTrackFields(edit.before));
-    set((state: AudioStore) => ({
-      clipUndo: state.clipUndo.slice(0, index),
-      clipRedo: [...state.clipRedo, edit],
-    }));
-  },
-
-  redoClipEdit: () => {
-    const { clipRedo, tracks } = get();
-    const index = lastEditIndex(clipRedo, new Set(tracks.map((t) => t.id)));
-    if (index < 0) return;
-    const edit = clipRedo[index];
-    get().updateTrack(edit.trackId, toTrackFields(edit.after));
-    set((state: AudioStore) => ({
-      clipRedo: state.clipRedo.slice(0, index),
-      clipUndo: [...state.clipUndo, edit],
-    }));
+  setEditMode: (enabled: boolean) => {
+    set({ editMode: enabled });
+    try {
+      localStorage.setItem(EDIT_MODE_KEY, String(enabled));
+    } catch {
+      // storage unavailable: not remembered
+    }
   },
 
   setSnapEnabled: (enabled: boolean) => {

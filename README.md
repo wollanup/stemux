@@ -18,7 +18,9 @@ A modern, browser-based multi-track audio player designed for musicians who want
 ## ✨ Features
 
 ### 🎛️ **Advanced Track Controls**
-- **Independent Volume Control** - Adjust each track's volume separately, plus master volume
+- **Independent Volume Control** - Adjust each track's volume separately, plus master volume (the mouse wheel works on the sliders)
+- **Level Meters** - A dBFS peak meter per track, right before its waveform (desktop), with peak hold and clip light
+- **Track Colors** - Pick each track's color from a palette (track ⋮ menu)
 - **Smart Solo System** 
   - Short press: Solo one track (mutes all others)
   - Long press: Exclusive solo (unmutes all + solos only selected track)
@@ -26,7 +28,9 @@ A modern, browser-based multi-track audio player designed for musicians who want
   - Short press: Toggle mute for one track
   - Long press: Unmute all tracks at once
 - **Single Timeline** - One time ruler, one playhead and every clip at its place (like an audio editor)
-- **Clip Editing** - Move clips and trim their start/end with the mouse, with snapping to markers, loops and other clips, and undo (Ctrl+Z)
+- **Drag to Scroll** - Dragging the lanes scrolls the timeline; switch to edit mode (top bar) to move and trim clips
+- **Clip Editing** - Move clips and trim their start/end with the mouse, with snapping to markers, loops, other clips and the beats
+- **Undo / Redo** - Ctrl+Z / Ctrl+Shift+Z for markers, loops and clips
 
 ### 🎵 **Multi-Piece Management**
 - **Create Multiple Projects** - Organize your work into separate pieces/songs
@@ -38,9 +42,16 @@ A modern, browser-based multi-track audio player designed for musicians who want
 
 ### 🔁 **Loop System**
 - **Visual Timeline** - See your playback position in real-time
-- **Easy Loop Creation** - Drag on the time ruler to create a loop, drag its edges to adjust it
+- **Easy Loop Creation** - Drag on the time ruler to create a loop, drag its edges to adjust it, click to add a marker
+- **Loop Colors** - Pick each loop's color from a palette; delete loops and markers with one click
 - **Auto-Repeat** - Automatically loops back for focused practice on difficult sections
 - **Smart Skip** - Return to loop start (or track start if no loop active)
+
+### 🥁 **Tempo & Bars**
+- **Tempo per Piece** - Type it, tap it, or let Stemux detect it from the tracks
+- **Time Signature & Bar 1** - 4/4, 3/4, 6/8...; place bar 1 at the playhead
+- **Ruler in Bars** - Bar numbers, beat grid across the tracks, position as bar.beat
+- **Snap to the Grid** - Markers, loops and clips stick to the beats
 
 ### ⚡ **Playback Features**
 - **Variable Speed** - 0.25x to 4.0x playback (perfect for learning complex parts)
@@ -152,7 +163,7 @@ Organize your work into separate pieces (songs/projects):
 5. **Delete Old Work** - Remove pieces you no longer need
 
 **Desktop:** See current piece name in top bar  
-**Mobile:** First item in dropdown shows current piece
+**Mobile:** Manage pieces from the menu (⋮); open a piece with its *Open* button
 
 ### Track Controls
 
@@ -166,18 +177,26 @@ Organize your work into separate pieces (songs/projects):
 
 Perfect for practicing difficult sections:
 
-1. **Open Loop Panel** - Click the 🔁 button (top-right)
-2. **Set Loop Start** - Play to desired start point, click "Mark Loop Start"
-3. **Set Loop End** - Continue playing, click "Mark Loop End"
-4. **Practice** - Loop automatically plays the section repeatedly
-5. **Toggle/Clear** - Enable/disable or clear the loop anytime
+1. **Create a Loop** - Drag in the top strip of the time ruler (a click there adds a marker)
+2. **Adjust It** - Drag its handles, or drag the loop itself to move it
+3. **Practice** - Double click the loop (or click its chip) to play it repeatedly
+4. **Manage** - Chips above the timeline: × deletes, ⋮ for color, "loop on entry"...
+
+### Tempo & Bars
+
+1. **Open the Tempo Panel** - Click the ♪ button in the top bar
+2. **Set the Tempo** - Type the BPM, tap along, or click *Detect* (steady tempos; ÷2 / ×2 fix octave mistakes)
+3. **Signature & Bar 1** - Choose the time signature and where bar 1 starts
+4. **Ruler** - Switch between time and bars; in bars mode markers, loops and clips snap to the beats (Alt: freely)
 
 ### Keyboard Shortcuts
 
 | Key | Action |
 |-----|--------|
 | `SPACE` | Play / Pause |
-| *(more coming soon!)* | |
+| `Ctrl + Z` / `Ctrl + Shift + Z` | Undo / redo (markers, loops, clips) |
+| `Ctrl + wheel` | Zoom around the mouse |
+| `Alt` (while dragging) | Ignore snapping |
 
 ### Tips & Tricks
 

@@ -3,6 +3,10 @@
     "noTracksMessage": "Déposez vos fichiers audio ci-dessus pour commencer",
     "noTracksTitle": "Aucune piste chargée"
   },
+  "colors": {
+    "color": "Couleur {{number}}",
+    "title": "Couleur"
+  },
   "controls": {
     "forward5": "Avancer de 5 secondes (maintenir pour continu)",
     "masterVolume": "Volume général",
@@ -21,16 +25,18 @@
         "uploadTitle": "1. Charger vos pistes"
       },
       "clips": {
-        "moveDesc": "À la souris, glissez le corps d'un clip pour le placer ailleurs sur la timeline (un simple clic déplace seulement la lecture).",
+        "moveDesc": "En mode édition, faites glisser le corps d’un clip pour le placer ailleurs sur la timeline (un simple clic déplace seulement la tête de lecture).",
         "moveTitle": "Déplacer",
-        "snapDesc": "Avec l'aimant de la barre du haut, les bords des clips se collent aux repères, boucles, à la tête de lecture et aux autres clips. Maintenez Alt pendant le glisser pour placer librement.",
+        "scrollDesc": "Par défaut (main dans la barre du haut), glisser une piste à la souris fait défiler la timeline. Cliquez sur la main pour passer en édition des clips (flèches) ; glisser hors d’un clip fait toujours défiler.",
+        "scrollTitle": "Défiler en glissant",
+        "snapDesc": "Avec l’aimant de la barre du haut, les bords des clips s’aimantent aux repères, aux boucles, à la tête de lecture, aux autres clips, et aux temps quand la règle compte en mesures. Maintenez Alt pendant le glissement pour placer librement.",
         "snapTitle": "Magnétisme",
         "title": "Clips",
         "trimDesc": "Survolez le début ou la fin d'un clip (bordure épaisse, flèche ↔) et glissez. Le fichier n'est jamais modifié : on peut toujours retrouver ce qui a été coupé.",
         "trimTitle": "Raccourcir / rallonger"
       },
       "keyboard": {
-        "altSnap": "Pendant un glisser de clip : ignorer le magnétisme",
+        "altSnap": "Pendant un glissement : ignorer le magnétisme",
         "altWheel": "Maj + Molette - Défilement horizontal (si zoomé)",
         "arrowLeft": "← - Reculer de 5 secondes (maintenir pour continu)",
         "arrowRight": "→ - Avancer de 5 secondes (maintenir pour continu)",
@@ -40,14 +46,14 @@
         "redo": "Rétablir",
         "space": "ESPACE - Lecture/Pause",
         "title": "Raccourcis clavier",
-        "undo": "Annuler la dernière modification de clip"
+        "undo": "Annuler (repères, boucles, clips)"
       },
       "loops": {
         "activeDesc": "Double-cliquez (ou double-tapez) sur une boucle dans la bande du haut pour l'activer et la lire depuis son début. Vous pouvez aussi l'activer ou la désactiver avec sa puce dans la liste au-dessus de la timeline.",
         "activeTitle": "Activer une boucle",
-        "editDesc": "Graduation (en bas) : appuyez pour placer la lecture, glissez pour l'ajuster précisément ; double-clic (ou double-tap) : ajouter un repère. Bande des boucles (en haut) : glissez pour créer une boucle (activée tout de suite), glissez une poignée pour déplacer un repère. Plus besoin de mode édition.",
+        "editDesc": "Graduation (en bas) : appuyez pour placer la tête de lecture, glissez pour l’ajuster précisément. Bande des boucles (en haut) : cliquez pour ajouter un repère, glissez pour créer une boucle (activée aussitôt), glissez une poignée pour déplacer un repère, glissez une boucle pour la déplacer. En mode mesures, repères et boucles s’aimantent aux temps (Alt : librement).",
         "editTitle": "Sur la règle de temps",
-        "manageDesc": "Les repères et boucles apparaissent sous forme de chips cliquables. Clic sur un repère : aller à cette position. Clic sur une boucle : l'activer. Menu 3 points (⋮) : définir comme début/fin de boucle ou supprimer. Appui long sur un repère : créer une boucle.",
+        "manageDesc": "Repères et boucles apparaissent en pastilles au-dessus de la timeline. Clic sur un repère : y aller. Clic sur une boucle : la lire. × supprime directement (Ctrl+Z pour annuler). Menu d’une boucle (⋮) : couleur, boucler à l’entrée, continuer après la boucle. Menu d’un repère (⋮) : début/fin de boucle. Appui long sur un repère : créer une boucle.",
         "manageTitle": "Gérer les repères et boucles",
         "openDesc": "Les repères (numérotés) et les boucles s'affichent sur la règle de temps, en haut. La boucle active est aussi surlignée sur toutes les pistes.",
         "openTitle": "Visualisation",
@@ -57,6 +63,17 @@
         "description": "Organisez votre travail en créant plusieurs morceaux. Chaque morceau garde ses pistes, ses boucles et ses réglages séparément. Cliquez sur \"Stemux ▼\" en haut pour accéder au menu : créer, renommer, supprimer ou basculer entre vos morceaux.",
         "title": "Gestion des morceaux"
       },
+      "tempo": {
+        "barsDesc": "La règle peut compter en secondes ou en mesures (numéros de mesure, traits des temps, lignes légères sur les pistes) ; la barre du bas affiche alors la position en mesure.temps.",
+        "barsTitle": "Règle en mesures",
+        "detectDesc": "Analyse les pistes audibles (coupez celles qui brouillent la pulsation) pour trouver le tempo et la mesure 1. Fonctionne pour les tempos réguliers ; si le résultat est la moitié ou le double, utilisez ÷2 / ×2.",
+        "detectTitle": "Détection automatique",
+        "setDesc": "Le bouton note de la barre du haut ouvre le panneau tempo : saisissez le BPM (ou -/+, ÷2, ×2), choisissez la signature et où commence la mesure 1 (Ici = à la tête de lecture, flèches pour l’ajuster). Enregistré avec le morceau.",
+        "setTitle": "Tempo du morceau",
+        "tapDesc": "Tapez sur le temps. Pendant la lecture, commencez sur le 1er temps d’une mesure : la grille s’aligne sur vos taps.",
+        "tapTitle": "Tap tempo",
+        "title": "Tempo et mesures"
+      },
       "tips": {
         "tip1": "Cliquez sur les noms de pistes pour les renommer",
         "tip2": "Les fichiers sont sauvegardés dans votre navigateur - pas besoin d'internet après le chargement",
@@ -64,6 +81,10 @@
         "title": "Astuces"
       },
       "tracks": {
+        "menuDesc": "Choisir la couleur de la piste dans une palette, ou supprimer la piste.",
+        "menuTitle": "Menu de la piste (⋮)",
+        "meterDesc": "Sur grand écran, un vu-mètre juste avant chaque forme d’onde montre son niveau en dBFS (vert, jaune dès -12 dB, rouge dès -3 dB) avec une ligne de crête. Le voyant du haut passe au rouge si la piste a atteint 0 dB ; survolez-le pour la crête max, cliquez pour la remettre à zéro.",
+        "meterTitle": "Vu-mètre",
         "muteLong": "Appui long : Réactiver toutes les pistes",
         "muteShort": "Appui court : Couper/réactiver cette piste",
         "muteTitle": "Bouton Muet (icône volume)",
@@ -71,7 +92,7 @@
         "soloShort": "Appui court : Solo sur cette piste (coupe toutes les autres)",
         "soloTitle": "Bouton Solo (icône casque)",
         "title": "Contrôles des pistes",
-        "volumeDesc": "Chaque piste a son propre curseur de volume. Il y a aussi un volume général dans la barre du bas.",
+        "volumeDesc": "Chaque piste a son curseur de volume, et la barre du bas le volume général. La molette sur un curseur le règle aussi.",
         "volumeTitle": "Volume de piste"
       },
       "welcome": {
@@ -87,14 +108,16 @@
   "markers": {
     "cancelLoopStart": "Annuler début de boucle",
     "continueAfterLoop": "Continuer après la boucle",
-    "deleteAllConfirmMessage": "Cette action supprimera définitivement tous les repères ({{markerCount}}) et toutes les boucles ({{loopCount}}). Cette action est irréversible.",
+    "deleteAllConfirmMessage": "Cette action supprimera tous les repères ({{markerCount}}) et toutes les boucles ({{loopCount}}). Ctrl+Z permet de les récupérer.",
     "deleteAllConfirmTitle": "Supprimer tous les repères et boucles ?",
     "deleteAllDialogCancel": "Annuler",
     "deleteAllDialogConfirm": "Supprimer tout",
     "deleteLoop": "Supprimer la boucle",
     "deleteMarker": "Supprimer le repère",
+    "loopMenu": "Options de la boucle",
     "loopOnEntry": "Boucler à l'entrée",
     "loops": "Boucles:",
+    "markerMenu": "Options du repère",
     "markers": "Repères:",
     "pauseLoop": "Mettre la boucle en pause",
     "playLoop": "Lire la boucle",
@@ -136,6 +159,7 @@
     "globalStats": "Statistiques globales",
     "newPiece": "Nouveau morceau",
     "noPieces": "Aucun autre morceau",
+    "open": "Ouvrir",
     "recentPieces": "Morceaux récents",
     "title": "Gérer les morceaux",
     "totalSize": "Stockage total utilisé",
@@ -209,22 +233,56 @@
     "slower": "Plus lent",
     "title": "Vitesse de lecture"
   },
+  "tempo": {
+    "barOne": "La mesure 1 commence à",
+    "barOneHere": "Ici",
+    "barOneHereHint": "La mesure 1 commence à la tête de lecture",
+    "beatsPerBar": "Temps par mesure",
+    "beatUnit": "Unité de temps",
+    "bpm": "Tempo en battements par minute",
+    "detect": "Détecter",
+    "detected": "Détecté : {{bpm}} BPM",
+    "detectedUnsure": "Détecté : {{bpm}} BPM (incertain : vérifiez, essayez ÷2 / ×2)",
+    "detectFailed": "Aucune pulsation régulière trouvée",
+    "detectHint": "Analyse les pistes audibles pour trouver le tempo et la mesure 1 (tempos réguliers)",
+    "double": "Doubler le tempo",
+    "earlier": "Avancer la mesure 1",
+    "faster": "1 BPM plus rapide",
+    "half": "Diviser le tempo par 2",
+    "later": "Reculer la mesure 1",
+    "remove": "Supprimer le tempo",
+    "ruler": "Règle",
+    "rulerBars": "Mesures",
+    "rulerTime": "Temps",
+    "signature": "Signature",
+    "slower": "1 BPM plus lent",
+    "tap": "Tap",
+    "tapHint": "Tapez sur le temps (pendant la lecture, commencez sur le 1er temps d’une mesure : la grille suit vos taps)",
+    "title": "Tempo"
+  },
   "timeline": {
+    "editMode": "Éditer les clips",
+    "editModeOff": "Glisser pour faire défiler la timeline (cliquer pour éditer les clips : les déplacer et les rogner)",
+    "editModeOn": "Édition des clips : glisser un clip pour le déplacer, ses bords pour le rogner (cliquer pour revenir au défilement)",
     "snap": "Magnétisme",
     "snapOff": "Magnétisme désactivé",
-    "snapOn": "Magnétisme activé : les clips se collent aux repères, boucles, tête de lecture et autres clips (maintenir Alt pour l'ignorer)"
+    "snapOn": "Magnétisme activé : les clips s’aimantent aux repères, aux boucles, à la tête de lecture et aux autres clips ; en mode mesures, clips, repères et boucles s’aimantent aussi aux temps (Alt pour l’ignorer)"
   },
   "track": {
     "addRecordableTrack": "Ajouter piste d'enregistrement",
     "cancelButton": "Annuler",
     "collapse": "Réduire",
     "count": "{{current}}/{{max}} pistes",
+    "delete": "Supprimer la piste",
     "deleteConfirmButton": "Supprimer",
     "deleteConfirmMessage": "Êtes-vous sûr de vouloir supprimer cette piste ? Cette action est irréversible.",
     "deleteConfirmTitle": "Supprimer la piste ?",
     "expand": "Agrandir",
     "importAudioTrack": "Importer piste audio",
+    "meter": "Vu-mètre",
     "mute": "Muet (appui long : tout réactiver)",
+    "options": "Options de la piste",
+    "peak": "Crête max : {{value}} (cliquer pour remettre à zéro)",
     "resizeHeaders": "Glisser pour changer la largeur (double-clic : taille par défaut)",
     "resizeHeight": "Glisser pour changer la hauteur (double-clic : taille par défaut)",
     "solo": "Solo (appui long : solo exclusif)"

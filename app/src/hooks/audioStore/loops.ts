@@ -23,7 +23,7 @@ const saveLoopState = (state: AudioStore, loopState: LoopState, what: string) =>
     .catch(err => console.error(`Failed to save ${what}:`, err));
 };
 
-export const createLoopActions = (set: (partial: Partial<AudioStore> | ((state: AudioStore) => Partial<AudioStore>)) => void, get: () => AudioStore) => ({
+const createActions = (set: (partial: Partial<AudioStore> | ((state: AudioStore) => Partial<AudioStore>)) => void, get: () => AudioStore) => ({
   addMarker: (time: number, label?: string) => {
     const { loopState, playbackState, currentPieceId, tracks, masterVolume } = get();
 
@@ -253,6 +253,15 @@ export const createLoopActions = (set: (partial: Partial<AudioStore> | ((state: 
     }
   },
 
+  /** Not undoable: colors are a preference, not an edit */
+  setLoopColor: (id: string, color: string) => {
+    const { loopState } = get();
+    if (!loopState.loops.some(l => l.id === id)) return;
+    const newLoopState = { ...loopState, loops: loopState.loops.map(l => (l.id === id ? { ...l, color } : l)) };
+    set({ loopState: newLoopState });
+    saveLoopState(get(), newLoopState, 'loop color');
+  },
+
   toggleLoopById: (id: string) => {
     const { loopState, seek, currentPieceId, tracks, playbackState, masterVolume } = get();
     const loop = loopState.loops.find(l => l.id === id);
@@ -390,3 +399,17 @@ export const createLoopActions = (set: (partial: Partial<AudioStore> | ((state: 
     saveLoopState(get(), newLoopState, 'armed loop');
   },
 });
+
+/** Edits of markers and loops are recorded for undo (see history.ts) */
+const UNDOABLE = ['addMarker', 'removeMarker', 'updateMarkerTime', 'moveLoop', 'createLoop', 'removeLoop'] as const;
+
+export const createLoopActions = (set: (partial: Partial<AudioStore> | ((state: AudioStore) => Partial<AudioStore>)) => void, get: () => AudioStore) => {
+  const actions = createActions(set, get);
+  const undoable = Object.fromEntries(
+    UNDOABLE.map((name) => {
+      const action = actions[name] as (...args: unknown[]) => unknown;
+      return [name, (...args: unknown[]) => get().edit(() => action(...args))];
+    })
+  ) as Pick<typeof actions, (typeof UNDOABLE)[number]>;
+  return { ...actions, ...undoable };
+};

@@ -1,4 +1,5 @@
 import type { ClipGeometry } from '../timeline/clipEdit';
+import type { HistoryEntry } from '../hooks/audioStore/history';
 
 export interface AudioTrack {
   id: string;
@@ -53,6 +54,17 @@ export interface LoopState {
   activeLoopId: string | null;
 }
 
+/** Constant tempo of a piece (see tempo/tempo.ts) */
+export interface Tempo {
+  /** Beats per minute, a beat being the unit of the signature */
+  bpm: number;
+  /** Time signature: beats per bar / beat unit (4/4, 3/4, 6/8...) */
+  beatsPerBar: number;
+  beatUnit: number;
+  /** Time of the first beat of bar 1 (seconds) */
+  offset: number;
+}
+
 // Piece (morceau) types
 export interface PieceSettings {
   trackSettings: Array<{
@@ -76,6 +88,7 @@ export interface PieceSettings {
   };
   playbackRate: number;
   masterVolume: number;
+  tempo?: Tempo | null; // Missing on pieces saved before tempo existed
 }
 
 export interface Piece {
@@ -112,12 +125,25 @@ export interface AudioStore {
 
   // Clip editing
   snapEnabled: boolean;
-  clipUndo: Array<{ trackId: string; before: ClipGeometry; after: ClipGeometry }>;
-  clipRedo: Array<{ trackId: string; before: ClipGeometry; after: ClipGeometry }>;
-  updateClip: (trackId: string, before: ClipGeometry, after: ClipGeometry) => void;
-  undoClipEdit: () => void;
-  redoClipEdit: () => void;
+  /** Drag on a lane: move/trim clips (true) or scroll the timeline (false) */
+  editMode: boolean;
+  setEditMode: (enabled: boolean) => void;
+  updateClip: (trackId: string, clip: ClipGeometry) => void;
   setSnapEnabled: (enabled: boolean) => void;
+
+  // Tempo grid of the piece (null: none) and ruler display
+  tempo: Tempo | null;
+  setTempo: (tempo: Tempo | null) => void;
+  rulerMode: 'time' | 'bars';
+  setRulerMode: (mode: 'time' | 'bars') => void;
+
+  // Undo / redo of markers, loops and clips
+  undoStack: HistoryEntry[];
+  redoStack: HistoryEntry[];
+  /** Run an edit (or several at once) and record it for undo */
+  edit: <T>(fn: () => T) => T;
+  undo: () => void;
+  redo: () => void;
   
   addTrack: (file: File) => Promise<void>;
   removeTrack: (id: string) => void;
@@ -152,6 +178,7 @@ export interface AudioStore {
   moveLoop: (id: string, delta: number) => void;
   createLoop: (startMarkerId: string, endMarkerId: string) => string;
   removeLoop: (id: string) => void;
+  setLoopColor: (id: string, color: string) => void;
   toggleLoopById: (id: string) => void;
   setActiveLoop: (id: string | null) => void;
   playLoop: (id: string) => void;

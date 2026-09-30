@@ -3,7 +3,7 @@
  * Handles piece settings persistence and orphaned data cleanup
  */
 
-import type { AudioTrack, PieceSettings } from '../../types/audio';
+import type { AudioTrack, PieceSettings, Tempo } from '../../types/audio';
 import {
   savePieceSettings,
   getAllAudioFiles,
@@ -12,6 +12,12 @@ import {
   getPieceSettings,
 } from '../../utils/indexedDB';
 import { logger } from '../../utils/logger';
+
+/** Tempo of the current piece, saved along with the rest (the store registers it) */
+let tempoSource: () => Tempo | null = () => null;
+export const setTempoSource = (source: () => Tempo | null) => {
+  tempoSource = source;
+};
 
 /**
  * Save track settings to piece settings in IndexedDB
@@ -46,6 +52,7 @@ export const saveTrackSettingsToPiece = async (
     },
     playbackRate,
     masterVolume,
+    tempo: tempoSource(),
   };
   await savePieceSettings(pieceId, settings);
 };

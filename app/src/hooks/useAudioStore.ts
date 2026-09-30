@@ -32,7 +32,10 @@ import { createLoopActions } from './audioStore/loops';
 import { createRecordingActions } from './audioStore/recording';
 import { createPieceActions } from './audioStore/pieces';
 import { createSettingsActions } from './audioStore/settings';
-import { createClipActions, loadSnapEnabled } from './audioStore/clips';
+import { createClipActions, loadEditMode, loadSnapEnabled } from './audioStore/clips';
+import { createHistoryActions } from './audioStore/history';
+import { createTempoActions, loadRulerMode } from './audioStore/tempo';
+import { setTempoSource } from './audioStore/storage';
 
 // Re-export for backwards compatibility with existing code
 export { loadTrackSettings } from './audioStore/shared';
@@ -66,8 +69,13 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
 
   // Clip editing
   snapEnabled: loadSnapEnabled(),
-  clipUndo: [],
-  clipRedo: [],
+  editMode: loadEditMode(),
+  undoStack: [],
+  redoStack: [],
+
+  // Tempo
+  tempo: null,
+  rulerMode: loadRulerMode(),
 
   // Compose all action modules
   ...createPlaybackActions(set, get),
@@ -77,7 +85,12 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
   ...createPieceActions(set, get),
   ...createSettingsActions(set),
   ...createClipActions(set, get),
+  ...createHistoryActions(set, get),
+  ...createTempoActions(set, get),
 }));
+
+// The tempo is saved with the other settings of the piece
+setTempoSource(() => useAudioStore.getState().tempo);
 
 // Function to restore tracks from IndexedDB on app init
 export const restoreTracks = async () => {

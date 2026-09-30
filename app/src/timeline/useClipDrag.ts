@@ -1,9 +1,9 @@
 /**
  * Mouse editing of a clip in its lane:
  * - edges: trim (horizontal arrow cursor, thicker border)
- * - body: move (grab cursor)
+ * - body: move (move cursor; the hand is for scrolling)
  * - click without moving: seek, like anywhere on the lane
- * Touch keeps scrolling the timeline (no clip editing yet).
+ * Only in edit mode. Touch keeps scrolling the timeline (no clip editing yet).
  */
 
 import { useRef, useState } from 'react';
@@ -12,6 +12,7 @@ import { audioEngine } from '../audio/AudioEngine';
 import { clipZone, editClip, sameGeometry, type ClipGeometry, type ClipZone } from './clipEdit';
 import { snapTargets, snapThreshold } from './snapping';
 import { setSnapGuide } from './snapGuide';
+import { gridTargets } from './gridSnap';
 
 /** Pointer movement before a press becomes a drag (px) */
 const DRAG_START_PX = 3;
@@ -55,15 +56,17 @@ export function useClipDrag({ trackId, geometry, sourceDuration, pxPerSec, disab
 
   const isMouse = (e: React.PointerEvent) => e.pointerType === 'mouse' || e.pointerType === 'pen';
 
+  /** Returns true when the press grabbed the clip */
   const onPointerDown = (e: React.PointerEvent<HTMLElement>) => {
-    if (!isMouse(e) || e.button !== 0 || !geometry) return;
+    if (!isMouse(e) || e.button !== 0 || !geometry) return false;
     const zone = zoneAt(laneX(e));
-    if (!zone) return;
+    if (!zone) return false;
     // No text selection nor native drag & drop (they would cancel the gesture)
     e.preventDefault();
     window.getSelection()?.removeAllRanges();
     e.currentTarget.setPointerCapture(e.pointerId);
     drag.current = { pointerId: e.pointerId, zone, startX: laneX(e), original: geometry, started: false };
+    return true;
   };
 
   const onPointerMove = (e: React.PointerEvent<HTMLElement>) => {
@@ -91,6 +94,7 @@ export function useClipDrag({ trackId, geometry, sourceDuration, pxPerSec, disab
             markers: state.loopState.markers,
             playhead: audioEngine.getCurrentTime(),
             clipEdges: audioEngine.getClipEdges(trackId),
+            grid: gridTargets(0, state.playbackState.duration + sourceDuration, pxPerSec),
           })
         : [],
       snapThreshold: snapThreshold(pxPerSec),
@@ -106,7 +110,7 @@ export function useClipDrag({ trackId, geometry, sourceDuration, pxPerSec, disab
     setDragZone(null);
     const edited = previewRef.current;
     if (commit && current?.started && edited && !sameGeometry(edited, current.original)) {
-      useAudioStore.getState().updateClip(trackId, current.original, edited);
+      useAudioStore.getState().updateClip(trackId, edited);
     }
     setPreview(null);
     return current;
@@ -134,7 +138,7 @@ export function useClipDrag({ trackId, geometry, sourceDuration, pxPerSec, disab
   };
 
   const zone = dragZone ?? hoverZone;
-  const cursor = dragZone === 'body' ? 'grabbing' : zone === 'body' ? 'grab' : zone ? 'ew-resize' : 'pointer';
+  const cursor = zone === 'body' ? 'move' : zone ? 'ew-resize' : null;
 
   return {
     /** Geometry to draw (the preview while dragging) */

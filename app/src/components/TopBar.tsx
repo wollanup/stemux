@@ -28,10 +28,13 @@ import {
   ZoomIn,
   ZoomOut,
   KeyboardArrowDown,
+  OpenWith,
+  PanTool,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { StemuxIcon } from './StemuxIcon';
 import MagnetIcon from './MagnetIcon';
+import TempoPanel from './TempoPanel';
 import { usePlaybackTime } from '../hooks/usePlaybackTime';
 import { useAudioStore } from '../hooks/useAudioStore';
 import type { PieceWithStats } from '../types/audio';
@@ -82,7 +85,7 @@ const TopBar = ({
   const [piecesMenuAnchorEl, setPiecesMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [recentPieces, setRecentPieces] = useState<PieceWithStats[]>([]);
   
-  const { getRecentPieces, getCurrentPiece, loadPiece, currentPieceName, snapEnabled, setSnapEnabled } = useAudioStore();
+  const { getRecentPieces, getCurrentPiece, loadPiece, currentPieceName, snapEnabled, setSnapEnabled, editMode, setEditMode } = useAudioStore();
 
   // Use live playback time hook (updates every 100ms)
   const currentTime = usePlaybackTime();
@@ -119,68 +122,12 @@ const TopBar = ({
           <StemuxIcon size={28} />
         </Box>
         
-        {/* Mobile: Title with pieces menu */}
-        {isMobile && currentPieceName ? (
-          <>
-            <Button
-              color="inherit"
-              onClick={handleOpenPiecesMenu}
-              endIcon={<KeyboardArrowDown />}
-              sx={{ 
-                textTransform: 'none',
-                p: 0.5,
-              }}
-            >
-              <Typography variant="body1" component="span">
-                Stemux
-              </Typography>
-            </Button>
-            <Menu
-              anchorEl={piecesMenuAnchorEl}
-              open={Boolean(piecesMenuAnchorEl)}
-              onClose={() => setPiecesMenuAnchorEl(null)}
-              anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-              transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-            >
-              {/* Current piece name (mobile only) */}
-              <MenuItem disabled>
-                <ListItemText 
-                  primary={currentPieceName}
-                  slotProps={{ primary: { sx: { fontWeight: 'bold' } } }}
-                />
-              </MenuItem>
-              
-              <MenuItem
-                onClick={() => {
-                  setPiecesMenuAnchorEl(null);
-                  onOpenPiecesManager();
-                }}
-              >
-                <ListItemIcon>
-                  <Settings fontSize="small" />
-                </ListItemIcon>
-                <ListItemText>{t('menu.pieces')}</ListItemText>
-              </MenuItem>
-              
-              {recentPieces.length > 0 && <MenuItem disabled sx={{ opacity: 0.6 }}>
-                <ListItemText
-                  primary={t('pieces.recentPieces')}
-                  slotProps={{ primary: { variant: 'caption', color: 'text.secondary' } }}
-                />
-              </MenuItem>}
-              
-              {recentPieces.map((piece) => (
-                <MenuItem key={piece.id} onClick={() => handleLoadPiece(piece.id)}>
-                  <ListItemText primary={piece.name} />
-                </MenuItem>
-              ))}
-            </Menu>
-          </>
-        ) : !isMobile ? (
+        {/* Mobile: no title, pieces are managed from the menu */}
+        {!isMobile && (
           <Typography variant="body1" component="div">
             Stemux
           </Typography>
-        ) : null}
+        )}
 
         {/* Desktop: Piece name with menu */}
         {!isMobile && currentPieceName && (
@@ -229,6 +176,24 @@ const TopBar = ({
         )}
 
         <Box sx={{ flexGrow: 1 }} />
+
+        <TempoPanel disabled={!hasLoadedTracks} compact={isMobile} />
+
+        {/* Drag on the lanes: scroll (hand, default) or edit clips (move arrows) */}
+        <Tooltip title={editMode ? t('timeline.editModeOn') : t('timeline.editModeOff')}>
+          <span>
+            <IconButton
+              color={editMode ? 'primary' : 'inherit'}
+              onClick={() => setEditMode(!editMode)}
+              disabled={!hasLoadedTracks}
+              aria-label={t('timeline.editMode')}
+              aria-pressed={editMode}
+              sx={{ mr: 0.5 }}
+            >
+              {editMode ? <OpenWith fontSize="small" /> : <PanTool fontSize="small" />}
+            </IconButton>
+          </span>
+        </Tooltip>
 
         {/* Magnetism for clip editing (Alt disables it during a drag) */}
         <Tooltip title={snapEnabled ? t('timeline.snapOn') : t('timeline.snapOff')}>
