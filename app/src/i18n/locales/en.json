@@ -120,14 +120,15 @@
     "loopMenu": "Loop options",
     "loopOnEntry": "Loop on entry",
     "loops": "Loops:",
+    "loopsTitle": "Loops",
     "markerMenu": "Marker options",
     "markers": "Markers:",
+    "markersTitle": "Markers",
     "pauseLoop": "Pause the loop",
     "playLoop": "Play the loop",
     "setLoopEnd": "Set as loop end",
     "setLoopStart": "Set as loop start",
-    "showPanel": "Show markers and loops (to edit them in the loop strip)",
-    "summary": "Markers ({{markers}}) · Loops ({{loops}})"
+    "showPanel": "Show markers and loops (to edit them in the loop strip)"
   },
   "menu": {
     "deleteAllConfirmButton": "Delete All",
