@@ -20,6 +20,8 @@ import { getView, setView, setZoomAnchor, takeZoomAnchor } from './viewStore';
 import { zoomBy } from './zoomActions';
 import { clampHeaderWidth, HEADER_WIDTH_DEFAULT, loadHeaderWidth, RULER_HEIGHT, saveHeaderWidth } from './layout';
 import ResizeHandle from './ResizeHandle';
+import TimelineScrollbar from './TimelineScrollbar';
+import { scrollbarColors } from './scrollbarColors';
 import { useTranslation } from 'react-i18next';
 import { MAX_ZOOM } from './zoom';
 
@@ -216,6 +218,7 @@ export default function Timeline() {
   };
 
   const hasSolo = tracks.some((t) => t.isSolo);
+  const scrollbar = scrollbarColors(theme);
 
   // Active loop and markers, drawn across all lanes
   const activeLoop = loopState.loops.find((l) => l.id === loopState.activeLoopId && l.enabled);
@@ -226,6 +229,7 @@ export default function Timeline() {
     <Box
       ref={scrollRef}
       onScroll={onScroll}
+      id="timeline-scroll"
       data-timeline-scroll
       data-px-per-sec={pps}
       sx={{
@@ -236,6 +240,18 @@ export default function Timeline() {
         touchAction: 'pan-x pan-y',
         overscrollBehavior: 'contain',
         bgcolor: alpha(theme.palette.text.primary, theme.palette.mode === 'dark' ? 0.02 : 0.03),
+        // Native horizontal scrollbar replaced by TimelineScrollbar; vertical one styled alike
+        '&::-webkit-scrollbar': { width: 10, height: 0 },
+        '&::-webkit-scrollbar-track': { bgcolor: scrollbar.track },
+        '&::-webkit-scrollbar-thumb': {
+          bgcolor: scrollbar.thumb,
+          borderRadius: 5,
+          border: '2px solid transparent',
+          backgroundClip: 'padding-box',
+          '&:hover': { bgcolor: scrollbar.thumbHover },
+        },
+        // No per-axis styling (Firefox): hide both, the wheel still scrolls vertically
+        '@supports not selector(::-webkit-scrollbar)': { scrollbarWidth: 'none' },
       }}
     >
       <Box sx={{ position: 'relative', width: headerWidth + width, minWidth: '100%' }}>
@@ -273,9 +289,9 @@ export default function Timeline() {
                   bottom: 0,
                   left: Math.min(loopStart, loopEnd) * pps,
                   width: Math.abs(loopEnd - loopStart) * pps,
-                  bgcolor: alpha(theme.palette.primary.main, 0.08),
-                  borderLeft: `1px solid ${alpha(theme.palette.primary.main, 0.6)}`,
-                  borderRight: `1px solid ${alpha(theme.palette.primary.main, 0.6)}`,
+                  bgcolor: alpha(theme.palette.warning.main, 0.08),
+                  borderLeft: `1px solid ${alpha(theme.palette.warning.main, 0.6)}`,
+                  borderRight: `1px solid ${alpha(theme.palette.warning.main, 0.6)}`,
                 }}
               />
             )}
@@ -303,6 +319,8 @@ export default function Timeline() {
             </SortableContext>
           </DndContext>
         </Box>
+
+        <TimelineScrollbar scrollRef={scrollRef} headerWidth={headerWidth} containerWidth={containerWidth} contentWidth={width} />
 
         {/* Add tracks, always visible whatever the horizontal scroll */}
         <Box sx={{ position: 'sticky', left: 0, width: containerWidth || '100%', py: 3 }}>

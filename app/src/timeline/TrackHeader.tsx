@@ -330,7 +330,8 @@ export default function TrackHeader({ track, variant, height, dimmed, dragHandle
         borderLeft: `4px solid ${track.isMuted ? theme.palette.action.disabled : track.color}`,
         borderRight: variant === 'column' ? `1px solid ${theme.palette.divider}` : 'none',
         borderBottom: `1px solid ${theme.palette.divider}`,
-        opacity: dimmed ? 0.6 : 1,
+        // Dim the content only: the background must stay opaque
+        '& > *': { opacity: dimmed ? 0.6 : 1 },
       })}
     >
       {nameRow}

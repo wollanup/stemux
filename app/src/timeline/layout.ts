@@ -16,6 +16,10 @@ export const LANE_HEIGHT_MIN = 64;
 export const LANE_HEIGHT_MAX = 400;
 export const COLLAPSED_LANE_HEIGHT = 32;
 
+/** Horizontal scrollbar, kept above the play button that overlaps the timeline bottom */
+export const SCROLLBAR_HEIGHT = 12;
+export const SCROLLBAR_BOTTOM_GAP = 34;
+
 const clamp = (value: number, min: number, max: number) => Math.round(Math.max(min, Math.min(max, value)));
 
 export const clampHeaderWidth = (width: number) => clamp(width, HEADER_WIDTH_MIN, HEADER_WIDTH_MAX);

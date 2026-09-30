@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Drawer,
   Box,
@@ -26,10 +26,12 @@ const PlaybackSpeedDrawer = ({ open, currentRate, onClose, onRateChange }: Playb
   const { t } = useTranslation();
   const [customRate, setCustomRate] = useState(currentRate);
 
-  // Sync with current rate when it changes
-  useEffect(() => {
+  // Sync with current rate when it changes (adjusted during render, not in an effect)
+  const [syncedRate, setSyncedRate] = useState(currentRate);
+  if (currentRate !== syncedRate) {
+    setSyncedRate(currentRate);
     setCustomRate(currentRate);
-  }, [currentRate]);
+  }
 
   const handlePresetClick = (rate: number) => {
     onRateChange(rate);

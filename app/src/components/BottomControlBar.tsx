@@ -73,10 +73,12 @@ const BottomControlBar = () => {
     setMasterVolume(volume);
   }, 50);
 
-  // Sync temp volume with store when it changes externally
-  useEffect(() => {
+  // Sync temp volume with store when it changes externally (adjusted during render, not in an effect)
+  const [syncedMasterVolume, setSyncedMasterVolume] = useState(masterVolume);
+  if (masterVolume !== syncedMasterVolume) {
+    setSyncedMasterVolume(masterVolume);
     setTempMasterVolume(masterVolume);
-  }, [masterVolume]);
+  }
 
   useEffect(() => {
     const seekIntervalRef = { current: null as number | null };

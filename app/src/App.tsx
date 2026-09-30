@@ -68,15 +68,15 @@ function App() {
     const hasLoadedTracks = tracks.length > 0;
 
     // Show recording guide on first arm
-    useEffect(() => {
+    useEffect(() => useAudioStore.subscribe((state) => {
         const hasSeenGuide = localStorage.getItem('hasSeenRecordingGuide') === 'true';
-        const hasArmedTrack = tracks.some(t => t.isArmed);
-        
+        const hasArmedTrack = state.tracks.some(t => t.isArmed);
+
         if (!hasSeenGuide && hasArmedTrack) {
             setRecordingGuideOpen(true);
             localStorage.setItem('hasSeenRecordingGuide', 'true');
         }
-    }, [tracks]);
+    }), []);
 
     // Detect system theme preference
     const systemPrefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)');

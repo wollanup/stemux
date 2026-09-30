@@ -74,6 +74,7 @@
   },
   "markers": {
     "cancelLoopStart": "Cancel loop start",
+    "continueAfterLoop": "Continue past the loop",
     "deleteAllConfirmMessage": "This action will permanently delete all markers ({{markerCount}}) and all loops ({{loopCount}}). This action cannot be undone.",
     "deleteAllConfirmTitle": "Delete all markers and loops?",
     "deleteAllDialogCancel": "Cancel",

@@ -74,6 +74,7 @@
   },
   "markers": {
     "cancelLoopStart": "Annuler début de boucle",
+    "continueAfterLoop": "Continuer après la boucle",
     "deleteAllConfirmMessage": "Cette action supprimera définitivement tous les repères ({{markerCount}}) et toutes les boucles ({{loopCount}}). Cette action est irréversible.",
     "deleteAllConfirmTitle": "Supprimer tous les repères et boucles ?",
     "deleteAllDialogCancel": "Annuler",
