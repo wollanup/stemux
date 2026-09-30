@@ -1,4 +1,5 @@
 import type { ClipGeometry } from '../timeline/clipEdit';
+import type { HistoryEntry } from '../hooks/audioStore/history';
 
 export interface AudioTrack {
   id: string;
@@ -112,12 +113,16 @@ export interface AudioStore {
 
   // Clip editing
   snapEnabled: boolean;
-  clipUndo: Array<{ trackId: string; before: ClipGeometry; after: ClipGeometry }>;
-  clipRedo: Array<{ trackId: string; before: ClipGeometry; after: ClipGeometry }>;
-  updateClip: (trackId: string, before: ClipGeometry, after: ClipGeometry) => void;
-  undoClipEdit: () => void;
-  redoClipEdit: () => void;
+  updateClip: (trackId: string, clip: ClipGeometry) => void;
   setSnapEnabled: (enabled: boolean) => void;
+
+  // Undo / redo of markers, loops and clips
+  undoStack: HistoryEntry[];
+  redoStack: HistoryEntry[];
+  /** Run an edit (or several at once) and record it for undo */
+  edit: <T>(fn: () => T) => T;
+  undo: () => void;
+  redo: () => void;
   
   addTrack: (file: File) => Promise<void>;
   removeTrack: (id: string) => void;

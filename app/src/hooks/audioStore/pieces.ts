@@ -114,8 +114,8 @@ export const createPieceActions = (set: (partial: Partial<AudioStore> | ((state:
       currentPieceId: id,
       currentPieceName: piece.name,
       // Undo history belongs to the piece being edited
-      clipUndo: [],
-      clipRedo: [],
+      undoStack: [],
+      redoStack: [],
     });
 
     saveCurrentPieceId(id);

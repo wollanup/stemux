@@ -208,7 +208,7 @@ export default function Timeline() {
     };
   }, [headerWidth]);
 
-  // Undo / redo clip edits
+  // Undo / redo of markers, loops and clips
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (!(e.ctrlKey || e.metaKey)) return;
@@ -217,10 +217,10 @@ export default function Timeline() {
       const key = e.key.toLowerCase();
       if (key === 'z' && !e.shiftKey) {
         e.preventDefault();
-        useAudioStore.getState().undoClipEdit();
+        useAudioStore.getState().undo();
       } else if ((key === 'z' && e.shiftKey) || key === 'y') {
         e.preventDefault();
-        useAudioStore.getState().redoClipEdit();
+        useAudioStore.getState().redo();
       }
     };
     window.addEventListener('keydown', onKeyDown);

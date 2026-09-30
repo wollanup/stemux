@@ -70,6 +70,24 @@ test.describe('timeline', () => {
     }
   });
 
+  test('Ctrl+Z undoes a new loop at once (its two markers too), Ctrl+Shift+Z brings it back', async ({ page }) => {
+    await openWithTracks(page, stems);
+    const ruler = (await page.getByTestId('time-ruler').boundingBox())!;
+
+    await page.mouse.move(await rulerX(page, 10), ruler.y + RULER_STRIP_Y);
+    await page.mouse.down();
+    await page.mouse.move(await rulerX(page, 20), ruler.y + RULER_STRIP_Y, { steps: 5 });
+    await page.mouse.up();
+    await expect(page.locator('[data-marker]')).toHaveCount(2);
+
+    await page.keyboard.press('Control+z');
+    await expect(page.locator('[data-marker]')).toHaveCount(0);
+    await expect(page.locator('[data-loop]')).toHaveCount(0);
+    await page.keyboard.press('Control+Shift+z');
+    await expect(page.locator('[data-marker]')).toHaveCount(2);
+    await expect(page.locator('[data-loop]')).toHaveCount(1);
+  });
+
   test('double clicking a loop enables it and plays it from its start', async ({ page }) => {
     await openWithTracks(page, stems);
     let ruler = (await page.getByTestId('time-ruler').boundingBox())!;

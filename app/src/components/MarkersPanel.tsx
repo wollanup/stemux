@@ -129,10 +129,11 @@ const MarkersPanel = () => {
     isPlaying && loopState.activeLoopId === loopId && loopState.loops.some((l) => l.id === loopId && l.enabled);
 
   const handleDeleteAll = () => {
-    // Remove all loops first
-    loopState.loops.forEach(loop => removeLoop(loop.id));
-    // Then remove all markers
-    loopState.markers.forEach(marker => removeMarker(marker.id));
+    // Loops first, then markers: undone at once
+    useAudioStore.getState().edit(() => {
+      loopState.loops.forEach(loop => removeLoop(loop.id));
+      loopState.markers.forEach(marker => removeMarker(marker.id));
+    });
     setDeleteAllDialogOpen(false);
   };
 

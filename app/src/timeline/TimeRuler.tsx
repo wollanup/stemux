@@ -173,12 +173,13 @@ export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: Ti
         break;
       }
       case 'createLoop': {
-        const startId = store.addMarker(action.start);
-        const endId = store.addMarker(action.end);
-        if (startId && endId) {
-          const loopId = useAudioStore.getState().createLoop(startId, endId);
-          if (loopId) useAudioStore.getState().setActiveLoop(loopId);
-        }
+        // Two markers and the loop: undone at once
+        const loopId = store.edit(() => {
+          const startId = store.addMarker(action.start);
+          const endId = store.addMarker(action.end);
+          return startId && endId ? useAudioStore.getState().createLoop(startId, endId) : '';
+        });
+        if (loopId) useAudioStore.getState().setActiveLoop(loopId);
         break;
       }
       case 'moveMarker':

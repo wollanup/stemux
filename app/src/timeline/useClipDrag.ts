@@ -106,7 +106,7 @@ export function useClipDrag({ trackId, geometry, sourceDuration, pxPerSec, disab
     setDragZone(null);
     const edited = previewRef.current;
     if (commit && current?.started && edited && !sameGeometry(edited, current.original)) {
-      useAudioStore.getState().updateClip(trackId, current.original, edited);
+      useAudioStore.getState().updateClip(trackId, edited);
     }
     setPreview(null);
     return current;
