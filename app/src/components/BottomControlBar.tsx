@@ -472,9 +472,15 @@ const BottomControlBar = () => {
                 {formatTime(playbackState.duration)}
               </Typography>
             </Box>
-            {/* Bar.beat when the ruler counts bars */}
+            {/* Bar.beat when the ruler counts bars (not on mobile: the bar is full) */}
             {barsTempo && (
-              <Typography variant="body2" color="primary" data-testid="current-bar" sx={{ fontVariantNumeric: 'tabular-nums' }}>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                data-testid="current-bar"
+                // Desktop only, discreet, like the time next to it
+                sx={{ display: { xs: 'none', sm: 'block' }, fontVariantNumeric: 'tabular-nums', lineHeight: 'inherit' }}
+              >
                 {formatBarBeat(currentTime, barsTempo)}
               </Typography>
             )}

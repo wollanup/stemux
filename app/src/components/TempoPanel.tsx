@@ -39,12 +39,22 @@ const formatSeconds = (seconds: number) => {
   return `${m}:${s.toFixed(2).padStart(5, '0')}`;
 };
 
-export default function TempoPanel({ disabled, compact }: { disabled: boolean; compact: boolean }) {
+interface TempoPanelProps {
+  disabled: boolean;
+  compact: boolean;
+  /** Opened from elsewhere (mobile menu): no button of its own, the panel shows next to this element */
+  anchorEl?: HTMLElement | null;
+  onClose?: () => void;
+}
+
+export default function TempoPanel({ disabled, compact, anchorEl, onClose }: TempoPanelProps) {
   const { t } = useTranslation();
   const tempo = useAudioStore((s) => s.tempo);
   const rulerMode = useAudioStore((s) => s.rulerMode);
   const { setTempo, setRulerMode } = useAudioStore();
-  const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+  const [ownAnchor, setAnchor] = useState<HTMLElement | null>(null);
+  const controlled = anchorEl !== undefined;
+  const anchor = controlled ? anchorEl : ownAnchor;
   const [bpmText, setBpmText] = useState<string | null>(null);
   const [detecting, setDetecting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -102,27 +112,30 @@ export default function TempoPanel({ disabled, compact }: { disabled: boolean; c
 
   return (
     <>
-      <Tooltip title={t('tempo.title')}>
-        <span>
-          <Button
-            color={tempo ? 'primary' : 'inherit'}
-            onClick={(e) => setAnchor(e.currentTarget)}
-            disabled={disabled}
-            startIcon={<MusicNote />}
-            aria-label={t('tempo.title')}
-            data-tempo-button
-            sx={{ textTransform: 'none', minWidth: 0, mr: 0.5, whiteSpace: 'nowrap', '& .MuiButton-startIcon': compact && !label ? { m: 0 } : {} }}
-          >
-            {label}
-          </Button>
-        </span>
-      </Tooltip>
+      {!controlled && (
+        <Tooltip title={t('tempo.title')}>
+          <span>
+            <Button
+              color={tempo ? 'primary' : 'inherit'}
+              onClick={(e) => setAnchor(e.currentTarget)}
+              disabled={disabled}
+              startIcon={<MusicNote />}
+              aria-label={t('tempo.title')}
+              data-tempo-button
+              sx={{ textTransform: 'none', minWidth: 0, mr: 0.5, whiteSpace: 'nowrap', '& .MuiButton-startIcon': compact && !label ? { m: 0 } : {} }}
+            >
+              {label}
+            </Button>
+          </span>
+        </Tooltip>
+      )}
       <Popover
         open={Boolean(anchor)}
         anchorEl={anchor}
         onClose={() => {
           commitBpm();
           setAnchor(null);
+          onClose?.();
         }}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
         transformOrigin={{ vertical: 'top', horizontal: 'center' }}
