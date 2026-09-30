@@ -6,6 +6,51 @@ import { useState } from 'react';
 import {logger} from '../utils/logger';
 import { useTranslation } from 'react-i18next';
 
+const stopPropagation = (e: React.SyntheticEvent) => e.stopPropagation();
+
+/** Chip buttons: menu (⋮) and delete (×), without triggering the chip itself */
+const ChipActions = ({ onMenu, onDelete, menuLabel, deleteLabel }: {
+  onMenu: (e: React.MouseEvent<HTMLElement>) => void;
+  onDelete: () => void;
+  menuLabel: string;
+  deleteLabel: string;
+}) => (
+  <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', ml: 0.5, mr: -0.75 }} onPointerDown={stopPropagation}>
+    <IconButton
+      size="small"
+      aria-label={menuLabel}
+      onClick={(e) => {
+        e.stopPropagation();
+        onMenu(e);
+      }}
+      sx={{ p: 0.25, color: 'inherit', opacity: 0.7, '&:hover': { opacity: 1 } }}
+    >
+      <MoreVert sx={{ fontSize: 16 }} />
+    </IconButton>
+    <IconButton
+      size="small"
+      aria-label={deleteLabel}
+      data-delete-chip
+      onClick={(e) => {
+        e.stopPropagation();
+        onDelete();
+      }}
+      sx={{ p: 0.25, color: 'inherit', opacity: 0.7, '&:hover': { opacity: 1, color: 'error.main' } }}
+    >
+      <Close sx={{ fontSize: 16 }} />
+    </IconButton>
+  </Box>
+);
+
+/** Delete / Backspace on a focused chip deletes it */
+const onDeleteKey = (action: () => void) => (e: React.KeyboardEvent) => {
+  if (e.target !== e.currentTarget) return;
+  if (e.key === 'Delete' || e.key === 'Backspace') {
+    e.preventDefault();
+    action();
+  }
+};
+
 const MarkersPanel = () => {
   const { t } = useTranslation();
   const theme = useTheme();
@@ -175,16 +220,26 @@ const MarkersPanel = () => {
           return (
             <Chip
               key={marker.id}
-              label={`${index + 1} - ${formatTime(marker.time)}`}
+              label={
+                <>
+                  <span>{`${index + 1} - ${formatTime(marker.time)}`}</span>
+                  <ChipActions
+                    menuLabel={t('markers.markerMenu')}
+                    deleteLabel={t('markers.deleteMarker')}
+                    onMenu={(e) => handleMenuClick(e, marker.id)}
+                    onDelete={() => handleDelete(marker.id)}
+                  />
+                </>
+              }
               size="small"
+              data-marker-chip={marker.id}
+              onKeyDown={onDeleteKey(() => handleDelete(marker.id))}
               icon={<PlayArrow fontSize="small" />}
               variant={isLoopEndpoint ? 'outlined' : 'filled'}
               onClick={() => handleMarkerClick(marker.time)}
               onPointerDown={(e) => handlePointerDown(e, marker.id)}
               onPointerUp={handlePointerUp}
               onPointerCancel={handlePointerUp}
-              onDelete={(e) => handleMenuClick(e as React.MouseEvent<HTMLElement>, marker.id)}
-              deleteIcon={<MoreVert fontSize="small" />}
               sx={{
                 cursor: 'pointer',
                 // Loop ends take the color of their loop
@@ -192,7 +247,7 @@ const MarkersPanel = () => {
                 ...(isInActiveLoop && {
                   bgcolor: color,
                   color: theme.palette.getContrastText(color),
-                  '& .MuiChip-icon, & .MuiChip-deleteIcon': { color: 'inherit' },
+                  '& .MuiChip-icon': { color: 'inherit' },
                 }),
                 ...(isLoopStartSelection && { bgcolor: 'warning.main', color: 'warning.contrastText' }),
                 '&:hover': {
@@ -231,8 +286,19 @@ const MarkersPanel = () => {
             return (
               <Chip
                 key={loop.id}
-                label={`${startNum} → ${endNum}`}
+                label={
+                  <>
+                    <span>{`${startNum} → ${endNum}`}</span>
+                    <ChipActions
+                      menuLabel={t('markers.loopMenu')}
+                      deleteLabel={t('markers.deleteLoop')}
+                      onMenu={(e) => handleLoopMenuClick(e, loop.id)}
+                      onDelete={() => removeLoop(loop.id)}
+                    />
+                  </>
+                }
                 size="small"
+                onKeyDown={onDeleteKey(() => removeLoop(loop.id))}
                 icon={
                   isPlayingLoop ? (
                     // Playing: equalizer bars bounce; hovering shows what a click does (pause)
@@ -255,8 +321,6 @@ const MarkersPanel = () => {
                 data-armed={isArmed || undefined}
                 aria-label={isPlayingLoop ? t('markers.pauseLoop') : t('markers.playLoop')}
                 onClick={() => toggleLoopPlayback(loop.id)}
-                onDelete={(e) => handleLoopMenuClick(e as React.MouseEvent<HTMLElement>, loop.id)}
-                deleteIcon={<MoreVert fontSize="small" />}
                 sx={{
                   cursor: 'pointer',
                   // Colored like the loop in the ruler: filled when active, dashed when armed
@@ -266,7 +330,6 @@ const MarkersPanel = () => {
                   ...(isActive && {
                     bgcolor: color,
                     color: theme.palette.getContrastText(color),
-                    '& .MuiChip-deleteIcon': { color: alpha(theme.palette.getContrastText(color), 0.7) },
                   }),
                   '&:hover': {
                     bgcolor: isActive ? alpha(color, 0.8) : alpha(color, 0.12),

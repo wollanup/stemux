@@ -88,6 +88,27 @@ test.describe('timeline', () => {
     await expect(page.locator('[data-loop]')).toHaveCount(1);
   });
 
+  test('the × of a chip deletes the loop or the marker at once, Ctrl+Z brings it back', async ({ page }) => {
+    await openWithTracks(page, stems);
+    const ruler = (await page.getByTestId('time-ruler').boundingBox())!;
+    await page.mouse.move(await rulerX(page, 10), ruler.y + RULER_STRIP_Y);
+    await page.mouse.down();
+    await page.mouse.move(await rulerX(page, 20), ruler.y + RULER_STRIP_Y, { steps: 5 });
+    await page.mouse.up();
+
+    await page.locator('[data-loop-chip]').getByRole('button', { name: 'Delete loop' }).click();
+    await expect(page.locator('[data-loop]')).toHaveCount(0);
+    await expect(page.locator('[data-marker]')).toHaveCount(2);
+
+    await page.locator('[data-marker-chip]').first().getByRole('button', { name: 'Delete marker' }).click();
+    await expect(page.locator('[data-marker]')).toHaveCount(1);
+
+    await page.keyboard.press('Control+z');
+    await page.keyboard.press('Control+z');
+    await expect(page.locator('[data-marker]')).toHaveCount(2);
+    await expect(page.locator('[data-loop]')).toHaveCount(1);
+  });
+
   test('double clicking a loop enables it and plays it from its start', async ({ page }) => {
     await openWithTracks(page, stems);
     let ruler = (await page.getByTestId('time-ruler').boundingBox())!;
@@ -141,12 +162,12 @@ test.describe('timeline', () => {
 
     // Only offered while the loop plays
     const chip = page.getByRole('button', { name: 'Play the loop' });
-    await chip.locator('.MuiChip-deleteIcon').click();
+    await chip.getByRole('button', { name: 'Loop options' }).click();
     await expect(page.getByRole('menuitem', { name: 'Continue past the loop' })).toHaveCount(0);
     await page.keyboard.press('Escape');
 
     await chip.click();
-    await page.getByRole('button', { name: 'Pause the loop' }).locator('.MuiChip-deleteIcon').click();
+    await page.getByRole('button', { name: 'Pause the loop' }).getByRole('button', { name: 'Loop options' }).click();
     await page.getByRole('menuitem', { name: 'Continue past the loop' }).click();
 
     await expect.poll(() => shownTime(page), { timeout: 8000 }).toBeGreaterThanOrEqual(23);
@@ -207,7 +228,7 @@ test.describe('timeline', () => {
     await page.mouse.click(await rulerX(page, 18.5), ruler.y + RULER_GRADUATION_Y);
     await expect.poll(() => shownTime(page)).toBe(18);
 
-    await page.getByRole('button', { name: 'Play the loop' }).locator('.MuiChip-deleteIcon').click();
+    await page.getByRole('button', { name: 'Play the loop' }).getByRole('button', { name: 'Loop options' }).click();
     await page.getByRole('menuitem', { name: 'Loop on entry' }).click();
     await expect(page.locator('[data-loop][data-armed]')).toHaveCount(1);
 
