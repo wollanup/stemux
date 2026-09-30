@@ -87,15 +87,26 @@ export function scrubTime(x: number, pps: number, duration: number): number {
   return Math.max(0, Math.min(duration, x / pps));
 }
 
-/** Shift of a dragged loop, in seconds: it stays within the piece */
-export function loopShift(hit: Extract<RulerHit, { kind: 'loop' }>, downX: number, x: number, pps: number, duration: number): number {
-  return Math.max(-hit.start, Math.min(duration - hit.end, (x - downX) / pps));
+type Snap = (time: number) => number;
+const noSnap: Snap = (time) => time;
+
+/**
+ * Shift of a dragged loop, in seconds: it stays within the piece. With
+ * magnetism, the edge closest to a grid line sticks to it.
+ */
+export function loopShift(hit: Extract<RulerHit, { kind: 'loop' }>, downX: number, x: number, pps: number, duration: number, snap: Snap = noSnap): number {
+  const clamp = (shift: number) => Math.max(-hit.start, Math.min(duration - hit.end, shift));
+  const shift = clamp((x - downX) / pps);
+  const byStart = snap(hit.start + shift) - (hit.start + shift);
+  const byEnd = snap(hit.end + shift) - (hit.end + shift);
+  const correction = byStart === 0 ? byEnd : byEnd === 0 || Math.abs(byStart) <= Math.abs(byEnd) ? byStart : byEnd;
+  return clamp(shift + correction);
 }
 
-/** Action to perform when the pointer is released */
-export function resolveGesture(hit: RulerHit, downX: number, upX: number, pps: number, duration: number): RulerAction {
+/** Action to perform when the pointer is released (`snap`: magnetism of markers and loops) */
+export function resolveGesture(hit: RulerHit, downX: number, upX: number, pps: number, duration: number, snap: Snap = noSnap): RulerAction {
   const moved = Math.abs(upX - downX) >= DRAG_THRESHOLD_PX;
-  const clampTime = (x: number) => Math.max(0, Math.min(duration, x / pps));
+  const clampTime = (x: number) => Math.max(0, Math.min(duration, snap(Math.max(0, Math.min(duration, x / pps)))));
 
   if (hit.kind === 'time') {
     // The playhead followed the pointer: it ends where the pointer is released
@@ -113,7 +124,7 @@ export function resolveGesture(hit: RulerHit, downX: number, upX: number, pps: n
 
   // Dragging a loop moves it
   if (hit.kind === 'loop') {
-    const delta = loopShift(hit, downX, upX, pps, duration);
+    const delta = loopShift(hit, downX, upX, pps, duration, snap);
     return delta === 0 ? { type: 'none' } : { type: 'moveLoop', loopId: hit.loopId, delta };
   }
 

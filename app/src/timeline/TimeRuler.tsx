@@ -16,6 +16,7 @@ import { cursorFor, DRAG_THRESHOLD_PX, HANDLE_WIDTH, hitTest, loopShift, loopSta
 import { applyMarkerPreview, setMarkerPreview, useMarkerPreview, type MarkerPreview } from './markerPreview';
 import { LOOP_STRIP_HEIGHT, RULER_HEIGHT } from './layout';
 import { gridTicks } from '../tempo/tempo';
+import { snapToGrid } from './gridSnap';
 
 interface TimeRulerProps {
   width: number;
@@ -29,7 +30,12 @@ interface Drag {
   hit: RulerHit;
   downX: number;
   x: number;
+  /** Alt held: no magnetism */
+  alt: boolean;
 }
+
+/** Magnetism of markers and loops to the tempo grid during a drag */
+const snapFor = (drag: Pick<Drag, 'alt'>, pxPerSec: number) => (time: number) => snapToGrid(time, pxPerSec, drag.alt);
 
 const DOUBLE_TAP_MS = 350;
 
@@ -99,11 +105,12 @@ function Graduation() {
 const dragPreview = (drag: Drag, loopState: LoopState, pxPerSec: number, duration: number): MarkerPreview => {
   if (Math.abs(drag.x - drag.downX) < DRAG_THRESHOLD_PX) return null;
   const { hit } = drag;
-  if (hit.kind === 'marker') return { [hit.markerId]: Math.max(0, Math.min(duration, drag.x / pxPerSec)) };
+  const snap = snapFor(drag, pxPerSec);
+  if (hit.kind === 'marker') return { [hit.markerId]: Math.max(0, Math.min(duration, snap(Math.max(0, Math.min(duration, drag.x / pxPerSec))))) };
   if (hit.kind !== 'loop') return null;
   const loop = loopState.loops.find((l) => l.id === hit.loopId);
   if (!loop) return null;
-  const shift = loopShift(hit, drag.downX, drag.x, pxPerSec, duration);
+  const shift = loopShift(hit, drag.downX, drag.x, pxPerSec, duration, snap);
   const moved: Record<string, number> = {};
   for (const m of loopState.markers) {
     if (m.id === loop.startMarkerId || m.id === loop.endMarkerId) moved[m.id] = m.time + shift;
@@ -135,7 +142,7 @@ export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: Ti
     const x = contentX(e);
     const hit = hitAt(e);
     e.currentTarget.setPointerCapture(e.pointerId);
-    setDrag({ pointerId: e.pointerId, hit, downX: x, x });
+    setDrag({ pointerId: e.pointerId, hit, downX: x, x, alt: e.altKey });
     // Graduation: the playhead jumps under the pointer right away
     if (hit.kind === 'time') useAudioStore.getState().seek(scrubTime(x, pxPerSec, duration));
   };
@@ -149,7 +156,7 @@ export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: Ti
     }
     if (drag.pointerId !== e.pointerId) return;
     const x = contentX(e);
-    const next = { ...drag, x };
+    const next = { ...drag, x, alt: e.altKey };
     setDrag(next);
     setMarkerPreview(dragPreview(next, loopState, pxPerSec, duration));
     // ...and follows it for precise placement until the button is released
@@ -162,7 +169,7 @@ export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: Ti
     setDrag(null);
     setMarkerPreview(null);
     const store = useAudioStore.getState();
-    const action = resolveGesture(drag.hit, drag.downX, x, pxPerSec, duration);
+    const action = resolveGesture(drag.hit, drag.downX, x, pxPerSec, duration, snapFor({ alt: e.altKey }, pxPerSec));
 
     switch (action.type) {
       case 'none': {
@@ -207,10 +214,12 @@ export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: Ti
   const markerTime = (id: string) => markers.find((m) => m.id === id)?.time;
   // Earliest marker of each loop, with the one being dragged at its new place
   const loopStartIds = loopStartMarkerIds(loopState, markerTime);
-  const newLoop =
-    drag && drag.hit.kind === 'strip' && Math.abs(drag.x - drag.downX) >= 4
-      ? { left: Math.min(drag.x, drag.downX), width: Math.abs(drag.x - drag.downX) }
+  // Loop being drawn, its ends stuck to the grid like the loop it will create
+  const newLoopEnds =
+    drag && drag.hit.kind === 'strip' && Math.abs(drag.x - drag.downX) >= DRAG_THRESHOLD_PX
+      ? [drag.downX, drag.x].map((x) => snapFor(drag, pxPerSec)(Math.max(0, Math.min(duration, x / pxPerSec))) * pxPerSec)
       : null;
+  const newLoop = newLoopEnds ? { left: Math.min(...newLoopEnds), width: Math.abs(newLoopEnds[1] - newLoopEnds[0]) } : null;
 
   const newLoopColor = nextColor(LOOP_COLORS, loopState.loops.map((l) => loopColor(l, loopState.loops)));
 
@@ -296,6 +305,7 @@ export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: Ti
           <Box
             key={marker.id}
             data-marker={marker.id}
+            data-time={marker.time}
             sx={{ position: 'absolute', top: 0, bottom: 0, left: marker.time * pxPerSec - 1, width: 2, bgcolor: color, pointerEvents: 'none' }}
           >
             {/* Handle: fills the loop strip (not the graduation), easy to grab */}

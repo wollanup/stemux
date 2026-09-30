@@ -12,6 +12,7 @@ import { audioEngine } from '../audio/AudioEngine';
 import { clipZone, editClip, sameGeometry, type ClipGeometry, type ClipZone } from './clipEdit';
 import { snapTargets, snapThreshold } from './snapping';
 import { setSnapGuide } from './snapGuide';
+import { gridTargets } from './gridSnap';
 
 /** Pointer movement before a press becomes a drag (px) */
 const DRAG_START_PX = 3;
@@ -93,6 +94,7 @@ export function useClipDrag({ trackId, geometry, sourceDuration, pxPerSec, disab
             markers: state.loopState.markers,
             playhead: audioEngine.getCurrentTime(),
             clipEdges: audioEngine.getClipEdges(trackId),
+            grid: gridTargets(0, state.playbackState.duration + sourceDuration, pxPerSec),
           })
         : [],
       snapThreshold: snapThreshold(pxPerSec),

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { openWithTracks, wavFile } from './helpers';
+import { openWithTracks, pxPerSecond, rulerX, wavFile } from './helpers';
 
 // The fixtures click every half second: 120 BPM
 const stems = [wavFile('bass.wav', 30, 110), wavFile('drums.wav', 30, 220)];
@@ -52,5 +52,32 @@ test.describe('tempo', () => {
     const value = Number(await page.getByRole('textbox', { name: 'Tempo in beats per minute' }).inputValue());
     expect(value).toBeGreaterThan(145);
     expect(value).toBeLessThan(155);
+  });
+
+  test('in bars mode, new markers stick to the beats (not with Alt)', async ({ page }) => {
+    await openWithTracks(page, stems);
+    await page.getByRole('button', { name: 'Tempo' }).click();
+    await page.getByRole('button', { name: 'Detect' }).click();
+    await expect(page.locator('[data-tempo-message]')).toHaveText(/120 BPM/);
+    await page.keyboard.press('Escape');
+    await expect(page.locator('[data-tempo-panel]')).toHaveCount(0);
+
+    const markerTimes = async () =>
+      (await page.locator('[data-marker]').evaluateAll((flags) => flags.map((f) => Number(f.getAttribute('data-time')))))
+        .map((t) => Math.round(t * 100) / 100)
+        .sort((a, b) => a - b);
+
+    // 5px after the beat at 10s: sticks to it
+    let ruler = (await page.getByTestId('time-ruler').boundingBox())!;
+    const pps = await pxPerSecond(page);
+    await page.mouse.click((await rulerX(page, 10)) + 5, ruler.y + 12);
+    await expect.poll(markerTimes).toEqual([10]);
+
+    // With Alt, it stays where it was clicked
+    ruler = (await page.getByTestId('time-ruler').boundingBox())!;
+    await page.keyboard.down('Alt');
+    await page.mouse.click((await rulerX(page, 20)) + 5, ruler.y + 12);
+    await page.keyboard.up('Alt');
+    await expect.poll(markerTimes).toEqual([10, Math.round((20 + 5 / pps) * 100) / 100]);
   });
 });

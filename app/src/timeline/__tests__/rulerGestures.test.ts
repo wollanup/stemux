@@ -134,3 +134,23 @@ describe('zoom presets', () => {
     expect(zoomOutFrom(10, 6.3)).toBe(0);
   });
 });
+
+describe('magnetism of ruler gestures', () => {
+  // Grid every 10s, reached within 1.5s
+  const snap = (t: number) => (Math.abs(t - Math.round(t / 10) * 10) <= 1.5 ? Math.round(t / 10) * 10 : t);
+
+  it('snaps new markers, moved markers and new loops', () => {
+    expect(resolveGesture({ kind: 'strip' }, 211, 211, PPS, 60, snap)).toEqual({ type: 'addMarker', time: 20 });
+    expect(resolveGesture({ kind: 'strip' }, 250, 250, PPS, 60, snap)).toEqual({ type: 'addMarker', time: 25 });
+    expect(resolveGesture({ kind: 'marker', markerId: 'm', time: 5 }, 50, 391, PPS, 60, snap)).toEqual({ type: 'moveMarker', markerId: 'm', time: 40 });
+    expect(resolveGesture({ kind: 'strip' }, 88, 312, PPS, 60, snap)).toEqual({ type: 'createLoop', start: 10, end: 30 });
+  });
+
+  it('moves a loop so that its closest edge sticks to the grid', () => {
+    const hit = { kind: 'loop' as const, loopId: 'l', start: 12, end: 25 };
+    // +7.2s: start at 19.2 (0.8 from 20), end at 32.2 (2.2 from 30): the start sticks
+    expect(loopShift(hit, 0, 72, PPS, 60, snap)).toBeCloseTo(8);
+    // +4.4s: start 16.4 (too far), end 29.4 (0.6 from 30): the end sticks
+    expect(loopShift(hit, 0, 44, PPS, 60, snap)).toBeCloseTo(5);
+  });
+});

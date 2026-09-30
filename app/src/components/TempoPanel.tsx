@@ -173,8 +173,9 @@ export default function TempoPanel({ disabled, compact }: { disabled: boolean; c
                 <Button
                   variant="outlined"
                   startIcon={detecting ? <CircularProgress size={16} /> : <AutoAwesome />}
-                  onClick={onDetect}
-                  disabled={detecting}
+                  // Not disabled while busy: it would lose the focus, and Escape would no longer close the panel
+                  onClick={() => !detecting && onDetect()}
+                  aria-busy={detecting}
                   sx={{ flex: 1 }}
                 >
                   {t('tempo.detect')}
