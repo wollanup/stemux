@@ -10,7 +10,7 @@ import {
   Chip,
   useMediaQuery,
 } from '@mui/material';
-import { Close, Headset, VolumeUp, Loop, Speed, OpenWith, SwapHoriz } from '@mui/icons-material';
+import { Close, Headset, VolumeUp, Loop, Speed, OpenWith, SwapHoriz, PanTool, MoreVert, GraphicEq, MusicNote, TouchApp, AutoAwesome, Straighten } from '@mui/icons-material';
 import MagnetIcon from './MagnetIcon';
 import { useTranslation } from 'react-i18next';
 
@@ -164,12 +164,15 @@ const HelpModal = ({ open, onClose }: HelpModalProps) => {
             title={t('help.sections.tracks.volumeTitle')}
             description={t('help.sections.tracks.volumeDesc')}
           />
+          <ControlItem icon={<GraphicEq />} title={t('help.sections.tracks.meterTitle')} description={t('help.sections.tracks.meterDesc')} />
+          <ControlItem icon={<MoreVert />} title={t('help.sections.tracks.menuTitle')} description={t('help.sections.tracks.menuDesc')} />
         </Section>
 
         <Divider sx={{ my: 3 }} />
 
         {/* Clips */}
         <Section title={t('help.sections.clips.title')}>
+          <ControlItem icon={<PanTool />} title={t('help.sections.clips.scrollTitle')} description={t('help.sections.clips.scrollDesc')} />
           <ControlItem icon={<OpenWith />} title={t('help.sections.clips.moveTitle')} description={t('help.sections.clips.moveDesc')} />
           <ControlItem icon={<SwapHoriz />} title={t('help.sections.clips.trimTitle')} description={t('help.sections.clips.trimDesc')} />
           <ControlItem icon={<MagnetIcon />} title={t('help.sections.clips.snapTitle')} description={t('help.sections.clips.snapDesc')} />
@@ -205,6 +208,16 @@ const HelpModal = ({ open, onClose }: HelpModalProps) => {
           <Typography variant="body2" color="text.secondary">
             {t('help.sections.loops.activeDesc')}
           </Typography>
+        </Section>
+
+        <Divider sx={{ my: 3 }} />
+
+        {/* Tempo */}
+        <Section title={t('help.sections.tempo.title')}>
+          <ControlItem icon={<MusicNote />} title={t('help.sections.tempo.setTitle')} description={t('help.sections.tempo.setDesc')} />
+          <ControlItem icon={<TouchApp />} title={t('help.sections.tempo.tapTitle')} description={t('help.sections.tempo.tapDesc')} />
+          <ControlItem icon={<AutoAwesome />} title={t('help.sections.tempo.detectTitle')} description={t('help.sections.tempo.detectDesc')} />
+          <ControlItem icon={<Straighten />} title={t('help.sections.tempo.barsTitle')} description={t('help.sections.tempo.barsDesc')} />
         </Section>
 
         <Divider sx={{ my: 3 }} />
