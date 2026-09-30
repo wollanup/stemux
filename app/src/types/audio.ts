@@ -113,6 +113,9 @@ export interface AudioStore {
 
   // Clip editing
   snapEnabled: boolean;
+  /** Drag on a lane: move/trim clips (true) or scroll the timeline (false) */
+  editMode: boolean;
+  setEditMode: (enabled: boolean) => void;
   updateClip: (trackId: string, clip: ClipGeometry) => void;
   setSnapEnabled: (enabled: boolean) => void;
 

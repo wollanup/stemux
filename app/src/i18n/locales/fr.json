@@ -217,6 +217,9 @@
     "title": "Vitesse de lecture"
   },
   "timeline": {
+    "editMode": "Éditer les clips",
+    "editModeOff": "Glisser pour faire défiler la timeline (cliquer pour éditer les clips : les déplacer et les rogner)",
+    "editModeOn": "Édition des clips : glisser un clip pour le déplacer, ses bords pour le rogner (cliquer pour revenir au défilement)",
     "snap": "Magnétisme",
     "snapOff": "Magnétisme désactivé",
     "snapOn": "Magnétisme activé : les clips se collent aux repères, boucles, tête de lecture et autres clips (maintenir Alt pour l'ignorer)"

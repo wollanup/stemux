@@ -1,7 +1,8 @@
 /**
  * One track on the timeline: its clip drawn at its position, empty lane
- * elsewhere. Clicking the lane moves the playhead; with the mouse, the clip
- * can be moved (body) and trimmed (edges).
+ * elsewhere. Clicking the lane moves the playhead; dragging it with the mouse
+ * scrolls the timeline, except on a clip in edit mode, where the clip is moved
+ * (body) or trimmed (edges).
  */
 
 import { useEffect, useRef, useState } from 'react';
@@ -16,6 +17,7 @@ import { LivePeaks, type PeakSource } from './peaks';
 import { getView } from './viewStore';
 import { clipOf, type useTrackAudio } from './useTrackAudio';
 import { useClipDrag } from './useClipDrag';
+import { useLanePan } from './useLanePan';
 import type { ClipGeometry, ClipZone } from './clipEdit';
 
 interface TrackLaneProps {
@@ -94,6 +96,7 @@ export default function TrackLane({ track, audio, width, height, pxPerSec, dimme
   const { t } = useTranslation();
   const theme = useTheme();
   const { seek, waveformStyle, waveformNormalize } = useAudioStore();
+  const editMode = useAudioStore((s) => s.editMode);
   const isRecording = track.recordingState === 'recording';
   const liveTake = useLiveTake(isRecording);
   const liveClipRef = useRef<HTMLDivElement>(null);
@@ -123,12 +126,15 @@ export default function TrackLane({ track, audio, width, height, pxPerSec, dimme
     geometry,
     sourceDuration: audio?.duration ?? 0,
     pxPerSec,
-    disabled: isRecording || track.isArmed === true,
+    disabled: !editMode || isRecording || track.isArmed === true,
   });
+  const pan = useLanePan();
   const shown = clipDrag.shown;
 
   const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (clipDrag.consumeClick()) return;
+    // Both are asked: each forgets its own gesture
+    const dragged = clipDrag.consumeClick();
+    if (pan.consumeClick() || dragged) return;
     const rect = e.currentTarget.getBoundingClientRect();
     seek(Math.max(0, (e.clientX - rect.left) / pxPerSec));
   };
@@ -162,7 +168,22 @@ export default function TrackLane({ track, audio, width, height, pxPerSec, dimme
   return (
     <Box
       onClick={handleClick}
-      {...clipDrag.handlers}
+      onPointerDown={(e) => {
+        if (!clipDrag.handlers.onPointerDown(e)) pan.handlers.onPointerDown(e);
+      }}
+      onPointerMove={(e) => {
+        clipDrag.handlers.onPointerMove(e);
+        pan.handlers.onPointerMove(e);
+      }}
+      onPointerUp={(e) => {
+        clipDrag.handlers.onPointerUp(e);
+        pan.handlers.onPointerUp(e);
+      }}
+      onPointerCancel={(e) => {
+        clipDrag.handlers.onPointerCancel();
+        pan.handlers.onPointerCancel(e);
+      }}
+      onPointerLeave={clipDrag.handlers.onPointerLeave}
       sx={{
         position: 'relative',
         '@media (hover: hover)': {
@@ -171,7 +192,7 @@ export default function TrackLane({ track, audio, width, height, pxPerSec, dimme
         width,
         height,
         flexShrink: 0,
-        cursor: clipDrag.cursor,
+        cursor: pan.panning ? 'grabbing' : (clipDrag.cursor ?? 'grab'),
         userSelect: 'none',
         bgcolor: track.isArmed ? alpha(theme.palette.error.main, 0.06) : 'transparent',
         borderBottom: `1px solid ${theme.palette.divider}`,

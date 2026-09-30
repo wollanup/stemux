@@ -32,7 +32,7 @@ import { createLoopActions } from './audioStore/loops';
 import { createRecordingActions } from './audioStore/recording';
 import { createPieceActions } from './audioStore/pieces';
 import { createSettingsActions } from './audioStore/settings';
-import { createClipActions, loadSnapEnabled } from './audioStore/clips';
+import { createClipActions, loadEditMode, loadSnapEnabled } from './audioStore/clips';
 import { createHistoryActions } from './audioStore/history';
 
 // Re-export for backwards compatibility with existing code
@@ -67,6 +67,7 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
 
   // Clip editing
   snapEnabled: loadSnapEnabled(),
+  editMode: loadEditMode(),
   undoStack: [],
   redoStack: [],
 

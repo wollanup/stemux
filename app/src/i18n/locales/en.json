@@ -215,6 +215,9 @@
     "title": "Playback Speed"
   },
   "timeline": {
+    "editMode": "Edit clips",
+    "editModeOff": "Drag to scroll the timeline (click to edit clips instead: move and trim them)",
+    "editModeOn": "Edit clips: drag a clip to move it, its edges to trim it (click to drag-scroll instead)",
     "snap": "Snapping",
     "snapOff": "Snapping off",
     "snapOn": "Snapping on: clips stick to markers, loops, the playhead and other clips (hold Alt to ignore it)"

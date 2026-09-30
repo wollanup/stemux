@@ -155,6 +155,28 @@ test.describe('timeline', () => {
     await expect.poll(volume).toBe(before - 4);
   });
 
+  test('by default, dragging a lane scrolls the timeline without moving clips nor the playhead', async ({ page }) => {
+    await openWithTracks(page, stems);
+    await page.getByRole('button', { name: 'Zoom in' }).click();
+    await page.getByRole('button', { name: 'Zoom in' }).click();
+    const scroller = page.locator('[data-timeline-scroll]');
+    await scroller.evaluate((el) => (el.scrollLeft = 0));
+    const lane = page.locator('[data-track-row="bass.wav"] [data-clip]').locator('..');
+    await page.mouse.move(700, 200);
+    await expect(lane).toHaveCSS('cursor', 'grab');
+
+    const box = (await lane.boundingBox())!;
+    const y = box.y + box.height / 2;
+    await page.mouse.move(900, y);
+    await page.mouse.down();
+    await page.mouse.move(600, y, { steps: 8 });
+    await page.mouse.up();
+
+    expect(await scroller.evaluate((el) => el.scrollLeft)).toBeGreaterThan(250);
+    expect(await page.locator('[data-track-row="bass.wav"] [data-clip]').getAttribute('data-clip-start')).toBe('0');
+    expect(await shownTime(page)).toBe(0);
+  });
+
   test('double clicking a loop enables it and plays it from its start', async ({ page }) => {
     await openWithTracks(page, stems);
     let ruler = (await page.getByTestId('time-ruler').boundingBox())!;

@@ -28,6 +28,8 @@ import {
   ZoomIn,
   ZoomOut,
   KeyboardArrowDown,
+  OpenWith,
+  PanTool,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { StemuxIcon } from './StemuxIcon';
@@ -82,7 +84,7 @@ const TopBar = ({
   const [piecesMenuAnchorEl, setPiecesMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [recentPieces, setRecentPieces] = useState<PieceWithStats[]>([]);
   
-  const { getRecentPieces, getCurrentPiece, loadPiece, currentPieceName, snapEnabled, setSnapEnabled } = useAudioStore();
+  const { getRecentPieces, getCurrentPiece, loadPiece, currentPieceName, snapEnabled, setSnapEnabled, editMode, setEditMode } = useAudioStore();
 
   // Use live playback time hook (updates every 100ms)
   const currentTime = usePlaybackTime();
@@ -173,6 +175,22 @@ const TopBar = ({
         )}
 
         <Box sx={{ flexGrow: 1 }} />
+
+        {/* Drag on the lanes: scroll (hand, default) or edit clips (move arrows) */}
+        <Tooltip title={editMode ? t('timeline.editModeOn') : t('timeline.editModeOff')}>
+          <span>
+            <IconButton
+              color={editMode ? 'primary' : 'inherit'}
+              onClick={() => setEditMode(!editMode)}
+              disabled={!hasLoadedTracks}
+              aria-label={t('timeline.editMode')}
+              aria-pressed={editMode}
+              sx={{ mr: 0.5 }}
+            >
+              {editMode ? <OpenWith fontSize="small" /> : <PanTool fontSize="small" />}
+            </IconButton>
+          </span>
+        </Tooltip>
 
         {/* Magnetism for clip editing (Alt disables it during a drag) */}
         <Tooltip title={snapEnabled ? t('timeline.snapOn') : t('timeline.snapOff')}>

@@ -1,9 +1,9 @@
 /**
  * Mouse editing of a clip in its lane:
  * - edges: trim (horizontal arrow cursor, thicker border)
- * - body: move (grab cursor)
+ * - body: move (move cursor; the hand is for scrolling)
  * - click without moving: seek, like anywhere on the lane
- * Touch keeps scrolling the timeline (no clip editing yet).
+ * Only in edit mode. Touch keeps scrolling the timeline (no clip editing yet).
  */
 
 import { useRef, useState } from 'react';
@@ -55,15 +55,17 @@ export function useClipDrag({ trackId, geometry, sourceDuration, pxPerSec, disab
 
   const isMouse = (e: React.PointerEvent) => e.pointerType === 'mouse' || e.pointerType === 'pen';
 
+  /** Returns true when the press grabbed the clip */
   const onPointerDown = (e: React.PointerEvent<HTMLElement>) => {
-    if (!isMouse(e) || e.button !== 0 || !geometry) return;
+    if (!isMouse(e) || e.button !== 0 || !geometry) return false;
     const zone = zoneAt(laneX(e));
-    if (!zone) return;
+    if (!zone) return false;
     // No text selection nor native drag & drop (they would cancel the gesture)
     e.preventDefault();
     window.getSelection()?.removeAllRanges();
     e.currentTarget.setPointerCapture(e.pointerId);
     drag.current = { pointerId: e.pointerId, zone, startX: laneX(e), original: geometry, started: false };
+    return true;
   };
 
   const onPointerMove = (e: React.PointerEvent<HTMLElement>) => {
@@ -134,7 +136,7 @@ export function useClipDrag({ trackId, geometry, sourceDuration, pxPerSec, disab
   };
 
   const zone = dragZone ?? hoverZone;
-  const cursor = dragZone === 'body' ? 'grabbing' : zone === 'body' ? 'grab' : zone ? 'ew-resize' : 'pointer';
+  const cursor = zone === 'body' ? 'move' : zone ? 'ew-resize' : null;
 
   return {
     /** Geometry to draw (the preview while dragging) */

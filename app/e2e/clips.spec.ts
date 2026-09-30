@@ -27,6 +27,9 @@ async function clipBox(page: Page) {
 test.describe('clip editing', () => {
   test.beforeEach(async ({ page }) => {
     await openWithTracks(page, stems);
+    // Dragging a lane scrolls by default: switch to editing clips
+    await page.getByRole('button', { name: 'Edit clips' }).click();
+    await expect(page.getByRole('button', { name: 'Edit clips' })).toHaveAttribute('aria-pressed', 'true');
   });
 
   test('an edge shows a thick border and a horizontal arrow, and trims the clip', async ({ page }) => {
@@ -54,7 +57,7 @@ test.describe('clip editing', () => {
     const box = await clipBox(page);
     const lane = page.locator('[data-track-row="other.wav"] [data-clip]').locator('..');
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-    await expect(lane).toHaveCSS('cursor', 'grab');
+    await expect(lane).toHaveCSS('cursor', 'move');
 
     await drag(page, { x: box.x + box.width / 2, y: box.y + box.height / 2 }, 12 * pps);
     expect(await otherClip(page)).toEqual([12, 0, 40]);
