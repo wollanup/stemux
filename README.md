@@ -26,6 +26,7 @@ A modern, browser-based multi-track audio player designed for musicians who want
   - Short press: Toggle mute for one track
   - Long press: Unmute all tracks at once
 - **Single Timeline** - One time ruler, one playhead and every clip at its place (like an audio editor)
+- **Clip Editing** - Move clips and trim their start/end with the mouse, with snapping to markers, loops and other clips, and undo (Ctrl+Z)
 
 ### 🎵 **Multi-Piece Management**
 - **Create Multiple Projects** - Organize your work into separate pieces/songs

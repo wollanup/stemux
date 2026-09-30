@@ -20,15 +20,27 @@
         "uploadDesc": "Glissez-déposez des fichiers audio (MP3, WAV, OGG, etc.) ou cliquez sur la zone de téléchargement. Vos pistes sont stockées localement dans votre navigateur.",
         "uploadTitle": "1. Charger vos pistes"
       },
+      "clips": {
+        "moveDesc": "À la souris, glissez le corps d'un clip pour le placer ailleurs sur la timeline (un simple clic déplace seulement la lecture).",
+        "moveTitle": "Déplacer",
+        "snapDesc": "Avec l'aimant de la barre du haut, les bords des clips se collent aux repères, boucles, à la tête de lecture et aux autres clips. Maintenez Alt pendant le glisser pour placer librement.",
+        "snapTitle": "Magnétisme",
+        "title": "Clips",
+        "trimDesc": "Survolez le début ou la fin d'un clip (bordure épaisse, flèche ↔) et glissez. Le fichier n'est jamais modifié : on peut toujours retrouver ce qui a été coupé.",
+        "trimTitle": "Raccourcir / rallonger"
+      },
       "keyboard": {
+        "altSnap": "Pendant un glisser de clip : ignorer le magnétisme",
         "altWheel": "Maj + Molette - Défilement horizontal (si zoomé)",
         "arrowLeft": "← - Reculer de 5 secondes (maintenir pour continu)",
         "arrowRight": "→ - Avancer de 5 secondes (maintenir pour continu)",
         "ctrlLeft": "Ctrl + ← - Retour au début",
         "ctrlWheel": "Ctrl + Molette - Zoom avant/arrière autour de la souris (pincer sur mobile)",
         "more": "D'autres raccourcis arrivent bientôt !",
+        "redo": "Rétablir",
         "space": "ESPACE - Lecture/Pause",
-        "title": "Raccourcis clavier"
+        "title": "Raccourcis clavier",
+        "undo": "Annuler la dernière modification de clip"
       },
       "loops": {
         "activeDesc": "Double-cliquez (ou double-tapez) sur une boucle dans la bande du haut pour l'activer et la lire depuis son début. Vous pouvez aussi l'activer ou la désactiver avec sa puce dans la liste au-dessus de la timeline.",
@@ -41,10 +53,13 @@
         "openTitle": "Visualisation",
         "title": "Repères et boucles"
       },
+      "pieces": {
+        "description": "Organisez votre travail en créant plusieurs morceaux. Chaque morceau garde ses pistes, ses boucles et ses réglages séparément. Cliquez sur \"Stemux ▼\" en haut pour accéder au menu : créer, renommer, supprimer ou basculer entre vos morceaux.",
+        "title": "Gestion des morceaux"
+      },
       "tips": {
         "tip1": "Cliquez sur les noms de pistes pour les renommer",
         "tip2": "Les fichiers sont sauvegardés dans votre navigateur - pas besoin d'internet après le chargement",
-        "tip3": "Utilisez le bouton de retour pour revenir au début de la boucle (ou de la piste si pas de boucle)",
         "tip4": "Combinez solo et boucle pour vous concentrer sur des instruments spécifiques dans des sections précises",
         "title": "Astuces"
       },
@@ -62,10 +77,6 @@
       "welcome": {
         "description": "Stemux est un lecteur audio multi-pistes conçu pour les musiciens qui souhaitent s'exercer avec des stems isolées. Chargez vos pistes, contrôlez les volumes indépendamment et créez des boucles pour une pratique ciblée.",
         "title": "Bienvenue sur Stemux !"
-      },
-      "pieces": {
-        "title": "Gestion des morceaux",
-        "description": "Organisez votre travail en créant plusieurs morceaux. Chaque morceau garde ses pistes, ses boucles et ses réglages séparément. Cliquez sur \"Stemux ▼\" en haut pour accéder au menu : créer, renommer, supprimer ou basculer entre vos morceaux."
       }
     },
     "title": "Guide d'utilisation"
@@ -75,29 +86,27 @@
   },
   "markers": {
     "cancelLoopStart": "Annuler début de boucle",
+    "continueAfterLoop": "Continuer après la boucle",
     "deleteAllConfirmMessage": "Cette action supprimera définitivement tous les repères ({{markerCount}}) et toutes les boucles ({{loopCount}}). Cette action est irréversible.",
     "deleteAllConfirmTitle": "Supprimer tous les repères et boucles ?",
     "deleteAllDialogCancel": "Annuler",
     "deleteAllDialogConfirm": "Supprimer tout",
     "deleteLoop": "Supprimer la boucle",
     "deleteMarker": "Supprimer le repère",
+    "loopOnEntry": "Boucler à l'entrée",
     "loops": "Boucles:",
     "markers": "Repères:",
-    "setLoopEnd": "Définir comme fin de boucle",
-    "setLoopStart": "Définir comme début de boucle",
-    "playLoop": "Lire la boucle",
     "pauseLoop": "Mettre la boucle en pause",
-    "continueAfterLoop": "Continuer après la boucle",
-    "loopOnEntry": "Boucler à l'entrée"
+    "playLoop": "Lire la boucle",
+    "setLoopEnd": "Définir comme fin de boucle",
+    "setLoopStart": "Définir comme début de boucle"
   },
   "menu": {
-    "darkMode": "Mode sombre",
     "deleteAllConfirmButton": "Tout supprimer",
     "deleteAllConfirmMessage": "Êtes-vous sûr de vouloir supprimer toutes les pistes ? Cette action est irréversible.",
     "deleteAllConfirmTitle": "Supprimer toutes les pistes ?",
     "deleteAllTracks": "Supprimer toutes les pistes",
     "interface": "Interface",
-    "lightMode": "Mode clair",
     "pieces": "Gérer les morceaux",
     "refresh": "Recharger l'application",
     "theme": "Thème",
@@ -111,56 +120,85 @@
     "title": "Menu"
   },
   "pieces": {
-    "title": "Gérer les morceaux",
-    "recentPieces": "Morceaux récents",
-    "currentPiece": "Morceau actuel",
-    "newPiece": "Nouveau morceau",
-    "noPieces": "Aucun autre morceau",
-    "duration": "Durée",
-    "tracks": "{{count}} piste",
-    "tracks_other": "{{count}} pistes",
-    "size": "Taille",
-    "delete": "Supprimer",
-    "deleteConfirmTitle": "Supprimer le morceau ?",
-    "deleteConfirmMessage": "Ceci supprimera définitivement le morceau \"{{name}}\" et toutes ses pistes ({{count}}). Cette action est irréversible.",
-    "deleteConfirmButton": "Supprimer",
     "cancelButton": "Annuler",
     "closeButton": "Fermer",
-    "globalStats": "Statistiques globales",
-    "totalSize": "Stockage total utilisé",
+    "currentPiece": "Morceau actuel",
+    "delete": "Supprimer",
     "deleteAll": "Tout supprimer",
-    "deleteAllConfirmTitle": "Supprimer tous les morceaux ?",
-    "deleteAllConfirmMessage": "Ceci supprimera définitivement TOUS les morceaux et leurs pistes. Cette action est irréversible.",
     "deleteAllConfirmButton": "Tout supprimer",
-    "renameDialogTitle": "Renommer le morceau",
-    "renameDialogLabel": "Nom du morceau",
-    "renameDialogCancel": "Annuler",
-    "renameDialogSave": "Enregistrer"
+    "deleteAllConfirmMessage": "Ceci supprimera définitivement TOUS les morceaux et leurs pistes. Cette action est irréversible.",
+    "deleteAllConfirmTitle": "Supprimer tous les morceaux ?",
+    "deleteConfirmButton": "Supprimer",
+    "deleteConfirmMessage_one": "Ceci supprimera définitivement le morceau \"{{name}}\" et toutes ses pistes ({{count}}). Cette action est irréversible.",
+    "deleteConfirmMessage_many": "Ceci supprimera définitivement le morceau \"{{name}}\" et toutes ses pistes ({{count}}). Cette action est irréversible.",
+    "deleteConfirmMessage_other": "Ceci supprimera définitivement le morceau \"{{name}}\" et toutes ses pistes ({{count}}). Cette action est irréversible.",
+    "deleteConfirmTitle": "Supprimer le morceau ?",
+    "globalStats": "Statistiques globales",
+    "newPiece": "Nouveau morceau",
+    "noPieces": "Aucun autre morceau",
+    "recentPieces": "Morceaux récents",
+    "title": "Gérer les morceaux",
+    "totalSize": "Stockage total utilisé",
+    "tracks_one": "{{count}} piste",
+    "tracks_many": "{{count}} pistes",
+    "tracks_other": "{{count}} pistes"
   },
   "pwa": {
     "reload": "Recharger",
     "updateAvailable": "Nouvelle version disponible ! Cliquez pour recharger."
   },
+  "recording": {
+    "armToRecord": "Armez la piste pour enregistrer",
+    "armTrack": "Armer pour enregistrement",
+    "clearRecording": "Effacer l'enregistrement",
+    "clearRecordingFirst": "Effacez d'abord l'enregistrement pour armer",
+    "downloadRecording": "Télécharger l'enregistrement",
+    "errors": {
+      "checkPermissions": "Vérifiez que :\n1. Votre appareil autorise Chrome à accéder au micro (Paramètres → Apps → Chrome)\n2. Ce site a la permission d'utiliser le micro",
+      "microphoneInUse": "Le microphone est déjà utilisé par une autre application.",
+      "noMicrophone": "Aucun microphone détecté. Veuillez connecter un microphone.",
+      "permissionDenied": "Permission microphone refusée. Veuillez autoriser l'accès pour enregistrer.",
+      "unknown": "Échec de l'enregistrement"
+    },
+    "normalSpeedRequired": "Remettez la vitesse à 1x pour enregistrer",
+    "pauseRecording": "Pause (enregistrement en cours)",
+    "readyToRecord": "Prêt à enregistrer - Appuyez sur REC",
+    "startRecording": "Démarrer l'enregistrement"
+  },
+  "recordingGuide": {
+    "footer": "Ce message ne s'affichera qu'une fois. Vous pouvez le réafficher depuis le menu d'aide.",
+    "intro": "Pour enregistrer avec votre microphone, deux autorisations sont nécessaires.",
+    "step1Description": "Votre appareil (Android/iOS) doit autoriser Chrome/Safari à accéder au microphone. Vérifiez dans Paramètres → Applications → Chrome → Autorisations.",
+    "step1Title": "1. Autorisation de l'appareil",
+    "step2Description": "Ce site doit avoir votre permission d'utiliser le micro. Une popup apparaîtra, cliquez sur 'Autoriser'.",
+    "step2Title": "2. Autorisation du site",
+    "step3Description": "Armez une piste (bouton REC), puis appuyez sur Play pour enregistrer.",
+    "step3Title": "3. C'est prêt !",
+    "stepsTitle": "Étapes à suivre :",
+    "title": "Guide d'enregistrement",
+    "troubleshoot": "En cas de problème : vérifiez que Chrome a bien accès au micro dans les paramètres de votre téléphone.",
+    "understood": "J'ai compris"
+  },
   "settings": {
-    "title": "Paramètres d'interface",
-    "waveformStyle": {
-      "title": "Waveform moderne",
-      "description": "Utiliser des barres arrondies au lieu des lignes classiques"
-    },
-    "normalize": {
-      "title": "Normaliser les waveforms",
-      "description": "Ajuster automatiquement les niveaux pour un affichage visuel cohérent"
-    },
     "latency": {
-      "title": "Compensation de latence (enregistrement)",
       "auto": "Auto",
       "autoDescription": "Estimation du navigateur : {{ms}} ms (sortie seulement, souvent sous-estimée). Mesurez-la pour un calage précis.",
-      "manualDescription": "Décalage retiré de chaque prise : aller-retour sortie casque + entrée micro.",
-      "calibrationHelp": "Mesure : placez le micro devant le casque ou les enceintes (ou reliez une sortie de la carte son à une entrée), baissez un peu le volume, puis lancez. Quelques clics vont être joués.",
       "calibrate": "Mesurer la latence",
       "calibrating": "Mesure en cours…",
       "calibrationDone": "Latence mesurée : {{ms}} ms",
-      "calibrationFailed": "Clics non détectés ou mesure instable. Rapprochez le micro, montez le volume ou utilisez un câble de bouclage, puis réessayez."
+      "calibrationFailed": "Clics non détectés ou mesure instable. Rapprochez le micro, montez le volume ou utilisez un câble de bouclage, puis réessayez.",
+      "calibrationHelp": "Mesure : placez le micro devant le casque ou les enceintes (ou reliez une sortie de la carte son à une entrée), baissez un peu le volume, puis lancez. Quelques clics vont être joués.",
+      "manualDescription": "Décalage retiré de chaque prise : aller-retour sortie casque + entrée micro.",
+      "title": "Compensation de latence (enregistrement)"
+    },
+    "normalize": {
+      "description": "Ajuster automatiquement les niveaux pour un affichage visuel cohérent",
+      "title": "Normaliser les waveforms"
+    },
+    "title": "Paramètres d'interface",
+    "waveformStyle": {
+      "description": "Utiliser des barres arrondies au lieu des lignes classiques",
+      "title": "Waveform moderne"
     }
   },
   "speed": {
@@ -171,69 +209,31 @@
     "slower": "Plus lent",
     "title": "Vitesse de lecture"
   },
+  "timeline": {
+    "snap": "Magnétisme",
+    "snapOff": "Magnétisme désactivé",
+    "snapOn": "Magnétisme activé : les clips se collent aux repères, boucles, tête de lecture et autres clips (maintenir Alt pour l'ignorer)"
+  },
   "track": {
+    "addRecordableTrack": "Ajouter piste d'enregistrement",
     "cancelButton": "Annuler",
     "collapse": "Réduire",
+    "count": "{{current}}/{{max}} pistes",
     "deleteConfirmButton": "Supprimer",
     "deleteConfirmMessage": "Êtes-vous sûr de vouloir supprimer cette piste ? Cette action est irréversible.",
     "deleteConfirmTitle": "Supprimer la piste ?",
     "expand": "Agrandir",
-    "importing": "Import du fichier en cours...",
-    "loading": "Chargement...",
-    "addAudioTrack": "Ajouter piste audio",
     "importAudioTrack": "Importer piste audio",
-    "addRecordableTrack": "Ajouter piste d'enregistrement",
-    "count": "{{current}}/{{max}} pistes",
-    "solo": "Solo (appui long : solo exclusif)",
     "mute": "Muet (appui long : tout réactiver)",
+    "resizeHeaders": "Glisser pour changer la largeur (double-clic : taille par défaut)",
     "resizeHeight": "Glisser pour changer la hauteur (double-clic : taille par défaut)",
-    "resizeHeaders": "Glisser pour changer la largeur (double-clic : taille par défaut)"
-  },
-  "recordingGuide": {
-    "title": "Guide d'enregistrement",
-    "intro": "Pour enregistrer avec votre microphone, deux autorisations sont nécessaires.",
-    "stepsTitle": "Étapes à suivre :",
-    "step1Title": "1. Autorisation de l'appareil",
-    "step1Description": "Votre appareil (Android/iOS) doit autoriser Chrome/Safari à accéder au microphone. Vérifiez dans Paramètres → Applications → Chrome → Autorisations.",
-    "step2Title": "2. Autorisation du site",
-    "step2Description": "Ce site doit avoir votre permission d'utiliser le micro. Une popup apparaîtra, cliquez sur 'Autoriser'.",
-    "step3Title": "3. C'est prêt !",
-    "step3Description": "Armez une piste (bouton REC), puis appuyez sur Play pour enregistrer.",
-    "troubleshoot": "En cas de problème : vérifiez que Chrome a bien accès au micro dans les paramètres de votre téléphone.",
-    "footer": "Ce message ne s'affichera qu'une fois. Vous pouvez le réafficher depuis le menu d'aide.",
-    "understood": "J'ai compris"
-  },
-  "recording": {
-    "title": "Enregistrement",
-    "armTrack": "Armer pour enregistrement",
-    "readyToRecord": "Prêt à enregistrer - Appuyez sur REC",
-    "armToRecord": "Armez la piste pour enregistrer",
-    "recording": "Enregistrement en cours",
-    "stopped": "Arrêté",
-    "notSupported": "L'enregistrement n'est pas supporté par votre navigateur",
-    "loopsDisabled": "Les boucles sont désactivées pendant l'enregistrement",
-    "loopsDisabledDuringRec": "Boucles désactivées (mode enregistrement)",
-    "startRecording": "Démarrer l'enregistrement",
-    "pauseRecording": "Pause (enregistrement en cours)",
-    "clearRecording": "Effacer l'enregistrement",
-    "downloadRecording": "Télécharger l'enregistrement",
-    "clearRecordingFirst": "Effacez d'abord l'enregistrement pour armer",
-    "errors": {
-      "permissionDenied": "Permission microphone refusée. Veuillez autoriser l'accès pour enregistrer.",
-      "checkPermissions": "Vérifiez que :\n1. Votre appareil autorise Chrome à accéder au micro (Paramètres → Apps → Chrome)\n2. Ce site a la permission d'utiliser le micro",
-      "noMicrophone": "Aucun microphone détecté. Veuillez connecter un microphone.",
-      "microphoneInUse": "Le microphone est déjà utilisé par une autre application.",
-      "maxTracksReached": "Limite de 8 pistes atteinte",
-      "alreadyArmed": "Une autre piste est déjà armée",
-      "unknown": "Échec de l'enregistrement"
-    },
-    "normalSpeedRequired": "Remettez la vitesse à 1x pour enregistrer"
+    "solo": "Solo (appui long : solo exclusif)"
   },
   "units": {
     "bytes": "o",
+    "gb": "Go",
     "kb": "Ko",
-    "mb": "Mo",
-    "gb": "Go"
+    "mb": "Mo"
   },
   "upload": {
     "description": "Déposez des fichiers audio ici ou cliquez pour sélectionner",

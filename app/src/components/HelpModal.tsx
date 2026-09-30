@@ -10,7 +10,8 @@ import {
   Chip,
   useMediaQuery,
 } from '@mui/material';
-import { Close, Headset, VolumeUp, Loop, Speed } from '@mui/icons-material';
+import { Close, Headset, VolumeUp, Loop, Speed, OpenWith, SwapHoriz } from '@mui/icons-material';
+import MagnetIcon from './MagnetIcon';
 import { useTranslation } from 'react-i18next';
 
 interface HelpModalProps {
@@ -167,6 +168,15 @@ const HelpModal = ({ open, onClose }: HelpModalProps) => {
 
         <Divider sx={{ my: 3 }} />
 
+        {/* Clips */}
+        <Section title={t('help.sections.clips.title')}>
+          <ControlItem icon={<OpenWith />} title={t('help.sections.clips.moveTitle')} description={t('help.sections.clips.moveDesc')} />
+          <ControlItem icon={<SwapHoriz />} title={t('help.sections.clips.trimTitle')} description={t('help.sections.clips.trimDesc')} />
+          <ControlItem icon={<MagnetIcon />} title={t('help.sections.clips.snapTitle')} description={t('help.sections.clips.snapDesc')} />
+        </Section>
+
+        <Divider sx={{ my: 3 }} />
+
         {/* Loop System */}
         <Section title={t('help.sections.loops.title')}>
           <ControlItem
@@ -233,9 +243,27 @@ const HelpModal = ({ open, onClose }: HelpModalProps) => {
               </Typography>
             </Stack>
             <Stack direction="row" spacing={1} alignItems="center">
-              <Chip label="Alt + 🖱️" size="small" />
+              <Chip label="Shift + 🖱️" size="small" />
               <Typography variant="body2">
                 {t('help.sections.keyboard.altWheel')}
+              </Typography>
+            </Stack>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Chip label="Ctrl + Z" size="small" />
+              <Typography variant="body2">
+                {t('help.sections.keyboard.undo')}
+              </Typography>
+            </Stack>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Chip label="Ctrl + Shift + Z" size="small" />
+              <Typography variant="body2">
+                {t('help.sections.keyboard.redo')}
+              </Typography>
+            </Stack>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Chip label="Alt" size="small" />
+              <Typography variant="body2">
+                {t('help.sections.keyboard.altSnap')}
               </Typography>
             </Stack>
           </Stack>

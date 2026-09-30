@@ -24,6 +24,7 @@ import TimelineScrollbar from './TimelineScrollbar';
 import { scrollbarColors } from './scrollbarColors';
 import { useTranslation } from 'react-i18next';
 import { MAX_ZOOM } from './zoom';
+import { useSnapGuide } from './snapGuide';
 import { applyMarkerPreview, useMarkerPreview } from './markerPreview';
 import { loopColor, markerColor } from '../utils/colors';
 
@@ -71,6 +72,7 @@ export default function Timeline() {
   const markerPreview = useMarkerPreview();
   const reorderTracks = useAudioStore((s) => s.reorderTracks);
 
+  const snapGuide = useSnapGuide();
   const scrollRef = useRef<HTMLDivElement>(null);
   const rulerPlayheadRef = useRef<HTMLDivElement>(null);
   const lanePlayheadRef = useRef<HTMLDivElement>(null);
@@ -206,6 +208,25 @@ export default function Timeline() {
     };
   }, [headerWidth]);
 
+  // Undo / redo clip edits
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      const target = e.target as HTMLElement | null;
+      if (target?.closest('input, textarea, [contenteditable="true"]')) return;
+      const key = e.key.toLowerCase();
+      if (key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        useAudioStore.getState().undoClipEdit();
+      } else if ((key === 'z' && e.shiftKey) || key === 'y') {
+        e.preventDefault();
+        useAudioStore.getState().redoClipEdit();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
+
   // Track reordering
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -308,6 +329,12 @@ export default function Timeline() {
               />
             ))}
             <Box ref={lanePlayheadRef} sx={{ position: 'absolute', top: 0, bottom: 0, left: -1, width: 2, bgcolor: 'primary.light', willChange: 'transform' }} />
+            {snapGuide !== null && (
+              <Box
+                data-snap-guide={snapGuide}
+                sx={{ position: 'absolute', top: 0, bottom: 0, left: snapGuide * pps - 1, width: 2, bgcolor: 'warning.light', boxShadow: `0 0 6px ${theme.palette.warning.light}` }}
+              />
+            )}
           </Box>
 
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
