@@ -15,6 +15,7 @@ import {useWheelAdjust} from '../hooks/useWheelAdjust';
 import PlaybackSpeedDrawer from './PlaybackSpeedDrawer';
 import {useTranslation} from 'react-i18next';
 import {audioEngine} from '../audio/AudioEngine';
+import {formatBarBeat} from '../tempo/tempo';
 
 const StyledFab = styled(Fab)({
   position: 'absolute',
@@ -60,6 +61,7 @@ const BottomControlBar = () => {
   } = useAudioStore();
 
   const currentTime = usePlaybackTime(); // Use lightweight time tracker
+  const barsTempo = useAudioStore((s) => (s.rulerMode === 'bars' ? s.tempo : null));
   
   // Check if any track is armed or recording
   const isAnyTrackArmed = tracks.some((t) => t.isArmed);
@@ -470,6 +472,12 @@ const BottomControlBar = () => {
                 {formatTime(playbackState.duration)}
               </Typography>
             </Box>
+            {/* Bar.beat when the ruler counts bars */}
+            {barsTempo && (
+              <Typography variant="body2" color="primary" data-testid="current-bar" sx={{ fontVariantNumeric: 'tabular-nums' }}>
+                {formatBarBeat(currentTime, barsTempo)}
+              </Typography>
+            )}
           </Stack>
         </Stack>
 

@@ -111,6 +111,7 @@ export const createPieceActions = (set: (partial: Partial<AudioStore> | ((state:
         playbackRate: settings.playbackRate,
       },
       masterVolume: settings.masterVolume,
+      tempo: settings.tempo ?? null,
       currentPieceId: id,
       currentPieceName: piece.name,
       // Undo history belongs to the piece being edited
@@ -153,6 +154,7 @@ export const createPieceActions = (set: (partial: Partial<AudioStore> | ((state:
           playbackRate: 1.0,
         },
         masterVolume: 1.0,
+        tempo: null,
         currentPieceId: null,
         currentPieceName: '',
       });
@@ -268,6 +270,7 @@ export const createPieceActions = (set: (partial: Partial<AudioStore> | ((state:
         playbackRate: 1.0,
       },
       masterVolume: 1.0,
+      tempo: null,
       currentPieceId: null,
       currentPieceName: '',
     });

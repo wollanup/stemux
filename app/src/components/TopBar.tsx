@@ -34,6 +34,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { StemuxIcon } from './StemuxIcon';
 import MagnetIcon from './MagnetIcon';
+import TempoPanel from './TempoPanel';
 import { usePlaybackTime } from '../hooks/usePlaybackTime';
 import { useAudioStore } from '../hooks/useAudioStore';
 import type { PieceWithStats } from '../types/audio';
@@ -175,6 +176,8 @@ const TopBar = ({
         )}
 
         <Box sx={{ flexGrow: 1 }} />
+
+        <TempoPanel disabled={!hasLoadedTracks} compact={isMobile} />
 
         {/* Drag on the lanes: scroll (hand, default) or edit clips (move arrows) */}
         <Tooltip title={editMode ? t('timeline.editModeOn') : t('timeline.editModeOff')}>

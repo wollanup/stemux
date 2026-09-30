@@ -15,6 +15,7 @@ import { getView, subscribeView } from './viewStore';
 import { cursorFor, DRAG_THRESHOLD_PX, HANDLE_WIDTH, hitTest, loopShift, loopStartMarkerIds, resolveGesture, scrubTime, type RulerHit } from './rulerGestures';
 import { applyMarkerPreview, setMarkerPreview, useMarkerPreview, type MarkerPreview } from './markerPreview';
 import { LOOP_STRIP_HEIGHT, RULER_HEIGHT } from './layout';
+import { gridTicks } from '../tempo/tempo';
 
 interface TimeRulerProps {
   width: number;
@@ -32,11 +33,13 @@ interface Drag {
 
 const DOUBLE_TAP_MS = 350;
 
-/** Graduation, drawn for the visible part only */
+/** Graduation, drawn for the visible part only: seconds, or bars when the ruler counts bars */
 function Graduation() {
   const theme = useTheme();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const height = RULER_HEIGHT - LOOP_STRIP_HEIGHT;
+  const tempo = useAudioStore((s) => s.tempo);
+  const bars = useAudioStore((s) => s.rulerMode === 'bars') && tempo !== null;
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
@@ -52,11 +55,28 @@ function Graduation() {
     if (!g) return;
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     g.clearRect(0, 0, width, height);
-
-    const { major } = tickSpacing(pxPerSec);
     g.font = `11px ${theme.typography.fontFamily}`;
     g.textBaseline = 'top';
-    for (const tick of ticks(scrollLeft / pxPerSec, (scrollLeft + width) / pxPerSec, pxPerSec)) {
+    const from = scrollLeft / pxPerSec;
+    const to = (scrollLeft + width) / pxPerSec;
+
+    if (bars && tempo) {
+      // Bars: a long line and its number on each bar, short ticks on beats
+      for (const tick of gridTicks(from, to, pxPerSec, tempo)) {
+        const x = Math.round(tick.time * pxPerSec - scrollLeft) + 0.5;
+        const isBar = tick.bar !== undefined;
+        g.fillStyle = isBar && tick.label ? theme.palette.text.secondary : theme.palette.divider;
+        g.fillRect(x, isBar ? (tick.label ? 0 : height / 2) : height - 6, 1, isBar ? height : 6);
+        if (tick.label) {
+          g.fillStyle = theme.palette.text.secondary;
+          g.fillText(String(tick.bar), x + 4, 4);
+        }
+      }
+      return;
+    }
+
+    const { major } = tickSpacing(pxPerSec);
+    for (const tick of ticks(from, to, pxPerSec)) {
       const x = Math.round(tick.time * pxPerSec - scrollLeft) + 0.5;
       g.fillStyle = tick.major ? theme.palette.text.secondary : theme.palette.divider;
       g.fillRect(x, tick.major ? 0 : height - 6, 1, tick.major ? height : 6);
@@ -65,14 +85,14 @@ function Graduation() {
         g.fillText(formatTimeLabel(tick.time, major), x + 4, 4);
       }
     }
-  }, [theme, height]);
+  }, [theme, height, bars, tempo]);
 
   useEffect(() => {
     draw();
     return subscribeView(draw);
   }, [draw]);
 
-  return <canvas ref={canvasRef} style={{ position: 'absolute', top: LOOP_STRIP_HEIGHT, height, pointerEvents: 'none' }} />;
+  return <canvas ref={canvasRef} data-graduation={bars ? 'bars' : 'time'} style={{ position: 'absolute', top: LOOP_STRIP_HEIGHT, height, pointerEvents: 'none' }} />;
 }
 
 /** New times of the markers moved by a drag (a handle, or both ends of a loop) */

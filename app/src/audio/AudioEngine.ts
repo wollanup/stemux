@@ -192,6 +192,11 @@ export class AudioEngine {
     return { splitter, analysers, data: new Float32Array(2048) };
   }
 
+  /** Decoded audio of a track (for analysis) */
+  getTrackBuffer(id: string): AudioBuffer | null {
+    return this.tracks.get(id)?.buffer ?? null;
+  }
+
   /**
    * Peak level (1 = 0 dBFS) of what a track plays right now, after its
    * volume, mute and solo: one value per channel of its file (1 or 2).

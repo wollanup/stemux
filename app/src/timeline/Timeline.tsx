@@ -21,6 +21,7 @@ import { zoomBy } from './zoomActions';
 import { clampHeaderWidth, HEADER_WIDTH_DEFAULT, loadHeaderWidth, RULER_HEIGHT, saveHeaderWidth } from './layout';
 import ResizeHandle from './ResizeHandle';
 import TimelineScrollbar from './TimelineScrollbar';
+import GridLines from './GridLines';
 import { scrollbarColors } from './scrollbarColors';
 import { useTranslation } from 'react-i18next';
 import { MAX_ZOOM } from './zoom';
@@ -306,6 +307,7 @@ export default function Timeline() {
         <Box sx={{ position: 'relative' }}>
           {/* Overlay across all lanes: played area, active loop, markers, playhead */}
           <Box sx={{ position: 'absolute', top: 0, bottom: 0, left: headerWidth, width, zIndex: 2, pointerEvents: 'none', overflow: 'hidden' }}>
+            <GridLines />
             <Box ref={playedRef} sx={{ position: 'absolute', top: 0, bottom: 0, left: 0, bgcolor: alpha(theme.palette.background.default, 0.35) }} />
             {activeLoopColor && loopStart !== undefined && loopEnd !== undefined && (
               <Box

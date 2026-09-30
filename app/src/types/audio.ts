@@ -54,6 +54,17 @@ export interface LoopState {
   activeLoopId: string | null;
 }
 
+/** Constant tempo of a piece (see tempo/tempo.ts) */
+export interface Tempo {
+  /** Beats per minute, a beat being the unit of the signature */
+  bpm: number;
+  /** Time signature: beats per bar / beat unit (4/4, 3/4, 6/8...) */
+  beatsPerBar: number;
+  beatUnit: number;
+  /** Time of the first beat of bar 1 (seconds) */
+  offset: number;
+}
+
 // Piece (morceau) types
 export interface PieceSettings {
   trackSettings: Array<{
@@ -77,6 +88,7 @@ export interface PieceSettings {
   };
   playbackRate: number;
   masterVolume: number;
+  tempo?: Tempo | null; // Missing on pieces saved before tempo existed
 }
 
 export interface Piece {
@@ -118,6 +130,12 @@ export interface AudioStore {
   setEditMode: (enabled: boolean) => void;
   updateClip: (trackId: string, clip: ClipGeometry) => void;
   setSnapEnabled: (enabled: boolean) => void;
+
+  // Tempo grid of the piece (null: none) and ruler display
+  tempo: Tempo | null;
+  setTempo: (tempo: Tempo | null) => void;
+  rulerMode: 'time' | 'bars';
+  setRulerMode: (mode: 'time' | 'bars') => void;
 
   // Undo / redo of markers, loops and clips
   undoStack: HistoryEntry[];
