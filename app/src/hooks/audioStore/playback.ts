@@ -8,7 +8,7 @@
 import type { AudioStore } from '../../types/audio';
 import { logger } from '../../utils/logger';
 import { audioEngine } from '../../audio/AudioEngine';
-import { normalizePitch } from '../../audio/pitch';
+import { normalizePitchShift, samePitchShift, type PitchShift } from '../../audio/pitch';
 import { saveTrackSettingsToPiece } from './storage';
 
 export const createPlaybackActions = (set: (partial: Partial<AudioStore> | ((state: AudioStore) => Partial<AudioStore>)) => void, get: () => AudioStore) => ({
@@ -158,9 +158,9 @@ export const createPlaybackActions = (set: (partial: Partial<AudioStore> | ((sta
    * Transpose the piece. Timing is unchanged (the stretch nodes compensate
    * their latency), so unlike speed changes recording stays possible.
    */
-  setPitch: (semitones: number) => {
-    const pitch = normalizePitch(semitones);
-    if (pitch === get().pitch) return;
+  setPitch: (shift: PitchShift) => {
+    const pitch = normalizePitchShift(shift);
+    if (samePitchShift(pitch, get().pitch)) return;
 
     // The engine follows pitch (see useAudioStore)
     set({ pitch });

@@ -19,7 +19,7 @@ const makeStore = () => {
     loopState: { markers: [], loops: [], activeLoopId: null },
     playbackState: { isPlaying: false, currentTime: 0, duration: 180, playbackRate: 1 },
     masterVolume: 1,
-    pitch: 0,
+    pitch: { semitones: 0, cents: 0 },
     ...createPlaybackActions(set, get),
   }) as unknown as AudioStore);
   setPitchSource(() => store.getState().pitch);
@@ -31,14 +31,14 @@ describe('pitch shift', () => {
 
   it('is saved with the piece', async () => {
     const store = makeStore();
-    store.getState().setPitch(-1.5);
-    expect(store.getState().pitch).toBe(-1.5);
-    await vi.waitFor(() => expect((db.settings.get('p') as PieceSettings).pitch).toBe(-1.5));
+    store.getState().setPitch({ semitones: 2, cents: 50 });
+    expect(store.getState().pitch).toEqual({ semitones: 2, cents: 50 });
+    await vi.waitFor(() => expect((db.settings.get('p') as PieceSettings).pitch).toEqual({ semitones: 2, cents: 50 }));
   });
 
   it('is kept within an octave either way', () => {
     const store = makeStore();
-    store.getState().setPitch(-40);
-    expect(store.getState().pitch).toBe(-12);
+    store.getState().setPitch({ semitones: -40, cents: 80 });
+    expect(store.getState().pitch).toEqual({ semitones: -12, cents: 50 });
   });
 });

@@ -25,6 +25,7 @@ import {
   COLORS,
 } from './audioStore/shared';
 import { audioEngine } from '../audio/AudioEngine';
+import { NO_PITCH_SHIFT, pitchShiftSemitones } from '../audio/pitch';
 import { setPlaybackTime } from './usePlaybackTime';
 import { createPlaybackActions } from './audioStore/playback';
 import { createTrackActions } from './audioStore/tracks';
@@ -54,7 +55,7 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
     ...loadLoopV2State(),
   },
   masterVolume: loadMasterVolume(),
-  pitch: 0,
+  pitch: NO_PITCH_SHIFT,
   zoomLevel: 0,
   waveformStyle: loadWaveformStyle() as 'modern' | 'classic',
   waveformNormalize: loadWaveformNormalize(),
@@ -207,13 +208,13 @@ useAudioStore.subscribe((state, prev) => {
     void audioEngine.setPlaybackRate(state.playbackState.playbackRate);
   }
   if (state.pitch !== prev.pitch) {
-    void audioEngine.setPitch(state.pitch);
+    void audioEngine.setPitch(pitchShiftSemitones(state.pitch));
   }
 });
 syncEngineMix(useAudioStore.getState());
 syncEngineLoop(useAudioStore.getState());
 void audioEngine.setPlaybackRate(useAudioStore.getState().playbackState.playbackRate);
-void audioEngine.setPitch(useAudioStore.getState().pitch);
+void audioEngine.setPitch(pitchShiftSemitones(useAudioStore.getState().pitch));
 
 audioEngine.on('timeupdate', () => {
   const time = audioEngine.getCurrentTime();

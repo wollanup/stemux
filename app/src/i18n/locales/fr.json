@@ -178,7 +178,7 @@
     "centsDown": "{{step}} cents plus bas",
     "centsInput": "Accord fin en cents",
     "centsUp": "{{step}} cents plus haut",
-    "hint": "100 cents = 1 demi-ton. Le tempo ne change pas.",
+    "hint": "Accord fin de −50 à +50 cents (100 cents = 1 demi-ton). Le tempo ne change pas.",
     "reset": "Hauteur d'origine",
     "semitoneDown": "Un demi-ton plus bas",
     "semitones": "demi-tons",

@@ -4,6 +4,7 @@
  */
 
 import type { AudioTrack, PieceSettings, Tempo } from '../../types/audio';
+import { NO_PITCH_SHIFT, type PitchShift } from '../../audio/pitch';
 import {
   savePieceSettings,
   getAllAudioFiles,
@@ -19,9 +20,9 @@ export const setTempoSource = (source: () => Tempo | null) => {
   tempoSource = source;
 };
 
-/** Pitch shift of the current piece (semitones), saved the same way */
-let pitchSource: () => number = () => 0;
-export const setPitchSource = (source: () => number) => {
+/** Pitch shift of the current piece, saved the same way */
+let pitchSource: () => PitchShift = () => NO_PITCH_SHIFT;
+export const setPitchSource = (source: () => PitchShift) => {
   pitchSource = source;
 };
 

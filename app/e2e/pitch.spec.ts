@@ -17,9 +17,18 @@ test.describe('pitch', () => {
     await cents.press('Enter');
     await expect(button).toHaveText('+2 −30¢');
 
-    // Past half a semitone, cents roll over into the nearest semitone
+    // Cents step up to +50 and stop there, the semitones stay as set
+    await cents.fill('45');
+    await cents.press('Enter');
+    await page.getByRole('button', { name: '5 cents higher' }).click();
+    await expect(button).toHaveText('+2 +50¢');
+    await expect(page.getByRole('button', { name: '5 cents higher' })).toBeDisabled();
     await cents.fill('70');
     await cents.press('Enter');
+    await expect(button).toHaveText('+2 +50¢');
+    await cents.fill('-30');
+    await cents.press('Enter');
+    await page.getByRole('button', { name: 'One semitone higher' }).click();
     await expect(button).toHaveText('+3 −30¢');
 
     // Plays while transposed

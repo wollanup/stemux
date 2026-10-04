@@ -23,6 +23,7 @@ import {
 } from '../../utils/indexedDB';
 import { saveCurrentPieceId } from './shared';
 import { cleanOrphanedData } from './storage';
+import { NO_PITCH_SHIFT, toPitchShift } from '../../audio/pitch';
 
 export const createPieceActions = (set: (partial: Partial<AudioStore> | ((state: AudioStore) => Partial<AudioStore>)) => void, get: () => AudioStore) => ({
   createPiece: async (name: string): Promise<string> => {
@@ -112,7 +113,7 @@ export const createPieceActions = (set: (partial: Partial<AudioStore> | ((state:
       },
       masterVolume: settings.masterVolume,
       tempo: settings.tempo ?? null,
-      pitch: settings.pitch ?? 0,
+      pitch: toPitchShift(settings.pitch),
       currentPieceId: id,
       currentPieceName: piece.name,
       // Undo history belongs to the piece being edited
@@ -156,7 +157,7 @@ export const createPieceActions = (set: (partial: Partial<AudioStore> | ((state:
         },
         masterVolume: 1.0,
         tempo: null,
-        pitch: 0,
+        pitch: NO_PITCH_SHIFT,
         currentPieceId: null,
         currentPieceName: '',
       });
@@ -273,7 +274,7 @@ export const createPieceActions = (set: (partial: Partial<AudioStore> | ((state:
       },
       masterVolume: 1.0,
       tempo: null,
-      pitch: 0,
+      pitch: NO_PITCH_SHIFT,
       currentPieceId: null,
       currentPieceName: '',
     });
