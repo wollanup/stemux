@@ -13,6 +13,9 @@
  * (bit-transparent). Otherwise voices are Signalsmith Stretch worklet nodes,
  * which change speed and pitch independently and are scheduled on the same
  * clock, so sync is preserved.
+ *
+ * A take recorded on a transposed piece is already in the new key: it is only
+ * shifted by the difference between the current pitch and its own.
  */
 
 import SignalsmithStretch, { type StretchNode } from 'signalsmith-stretch';
@@ -75,6 +78,8 @@ export class AudioEngine {
   private tracks = new Map<string, EngineTrack>();
   private gains = new Map<string, number>();
   private reverbSends = new Map<string, number>();
+  /** Pitch shift (semitones) a track was recorded at, 0 for imported files */
+  private pitchOffsets = new Map<string, number>();
   /** Shared reverb: every track sends to the same convolver (created on first use) */
   private reverbBus: GainNode | null = null;
   private decodeCache = new WeakMap<Blob, Promise<AudioBuffer>>();
@@ -84,6 +89,8 @@ export class AudioEngine {
   /** Applied speed and pitch shift (semitones) */
   private rate = 1;
   private semitones = 0;
+  /** Voices are stretch nodes (see `needsStretch`) */
+  private stretchMode = false;
   /** Latest requested ones: applied once the stretch nodes are ready */
   private voiceTarget = { rate: 1, semitones: 0 };
   private voiceGeneration = 0;
@@ -190,6 +197,7 @@ export class AudioEngine {
     } else if (this.stretched) {
       void this.ensureStretch(track);
     }
+    this.checkVoiceMode();
     this.emit('durationchange');
   }
 
@@ -239,6 +247,7 @@ export class AudioEngine {
     track.meter.splitter.disconnect();
     this.destroyStretch(track);
     this.tracks.delete(id);
+    this.checkVoiceMode();
     this.emit('durationchange');
   }
 
@@ -426,17 +435,45 @@ export class AudioEngine {
     return this.setVoice({ semitones: normalizePitch(semitones) });
   }
 
+  /**
+   * Pitch shift (semitones) the take of a track was recorded at: the track
+   * is shifted by the current pitch minus this one.
+   */
+  setTrackPitchOffset(id: string, semitones: number) {
+    const value = normalizePitch(semitones);
+    if ((this.pitchOffsets.get(id) ?? 0) === value) return;
+    this.pitchOffsets.set(id, value);
+    const track = this.tracks.get(id);
+    if (!track) return;
+    if (this.checkVoiceMode()) return;
+    // Same kind of voices: only this track is retuned
+    if (this.stretchMode && this.playing && this.ctx && track.stretchActive) {
+      const when = this.ctx.currentTime + STRETCH_LEAD;
+      this.stopVoice(track, when);
+      this.startVoice(track, when);
+    }
+  }
+
+  /** Switches every voice when a track change needs (or no longer needs) stretch nodes */
+  private checkVoiceMode(): boolean {
+    const { rate, semitones } = this.voiceTarget;
+    if (this.needsStretch(rate, semitones) === this.stretchMode) return false;
+    void this.setVoice({});
+    return true;
+  }
+
   /** Speed and pitch changes: every track switches on the same clock time */
   private async setVoice(change: { rate?: number; semitones?: number }) {
     this.voiceTarget = { ...this.voiceTarget, ...change };
     const { rate, semitones } = this.voiceTarget;
     const generation = ++this.voiceGeneration;
-    if (rate !== 1 || semitones !== 0) {
+    if (this.needsStretch(rate, semitones)) {
       // Prepare every stretch node BEFORE switching, so all tracks switch together
       await Promise.all(Array.from(this.tracks.values()).map((t) => this.ensureStretch(t)));
       if (generation !== this.voiceGeneration) return;
     }
-    if (rate === this.rate && semitones === this.semitones) return;
+    const stretch = this.needsStretch(rate, semitones);
+    if (rate === this.rate && semitones === this.semitones && stretch === this.stretchMode) return;
 
     const wasStretched = this.stretched;
     if (this.playing && this.ctx) {
@@ -445,10 +482,12 @@ export class AudioEngine {
       this.tracks.forEach((t) => this.stopVoice(t, when));
       this.rate = rate;
       this.semitones = semitones;
+      this.stretchMode = stretch;
       this.restartAt(pos, when);
     } else {
       this.rate = rate;
       this.semitones = semitones;
+      this.stretchMode = stretch;
     }
 
     if (wasStretched && !this.stretched) {
@@ -478,7 +517,21 @@ export class AudioEngine {
 
   /** Voices are stretch nodes (speed or pitch changed), plain buffer sources otherwise */
   private get stretched() {
-    return this.rate !== 1 || this.semitones !== 0;
+    return this.stretchMode;
+  }
+
+  /** Pitch shift of one track: the global one minus the one its take was recorded at */
+  private trackSemitones(track: EngineTrack, semitones = this.semitones) {
+    return semitones - (this.pitchOffsets.get(track.id) ?? 0);
+  }
+
+  /** Every track is plain (bit-transparent) only at 1x with no track shifted */
+  private needsStretch(rate: number, semitones: number) {
+    if (rate !== 1) return true;
+    for (const track of this.tracks.values()) {
+      if (this.trackSemitones(track, semitones) !== 0) return true;
+    }
+    return false;
   }
 
   private lead() {
@@ -523,13 +576,13 @@ export class AudioEngine {
     }
     track.stretch.connect(track.gain);
     // Negative input positions are rendered as silence by the stretch node
-    void track.stretch.schedule({ active: true, output: when, input: pos - track.offset, ...this.stretchVoice() });
+    void track.stretch.schedule({ active: true, output: when, input: pos - track.offset, ...this.stretchVoice(track) });
     track.stretchActive = true;
   }
 
-  /** Speed and pitch given to the stretch nodes */
-  private stretchVoice() {
-    return { rate: this.rate, semitones: this.semitones };
+  /** Speed and pitch given to the stretch node of a track */
+  private stretchVoice(track: EngineTrack) {
+    return { rate: this.rate, semitones: this.trackSemitones(track) };
   }
 
   private stopVoice(track: EngineTrack, when: number) {
@@ -640,7 +693,7 @@ export class AudioEngine {
         });
         this.startVoice(track, when, loopStart);
       } else if (track.stretch) {
-        void track.stretch.schedule({ active: true, output: when, input: loopStart - track.offset, ...this.stretchVoice() });
+        void track.stretch.schedule({ active: true, output: when, input: loopStart - track.offset, ...this.stretchVoice(track) });
         track.stretchActive = true;
       }
     });

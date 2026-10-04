@@ -22,6 +22,8 @@ export interface AudioTrack {
   recordedBlob?: Blob; // Recorded audio data
   recordingState?: 'idle' | 'armed' | 'recording' | 'stopped';
   recordingStartOffset?: number; // Piece position (seconds) of the first recorded sample
+  recordingPitch?: number; // Pitch shift (semitones) when the take in progress started
+  recordedPitch?: number; // Pitch shift (semitones) the take was recorded at (undefined: none)
   clipOffset?: number; // Position of the clip on the timeline (seconds), 0 = start of the piece
   trimStart?: number; // Seconds of the file skipped at the start of the clip
   clipDuration?: number; // Seconds of the file played (undefined: until its end)
@@ -82,6 +84,7 @@ export interface PieceSettings {
     isCollapsed?: boolean;
     height?: number;
     isRecordable?: boolean; // Track is a recording track
+    recordedPitch?: number;
     clipOffset?: number; // Position of the clip on the timeline (seconds)
     trimStart?: number;
     clipDuration?: number;
@@ -168,7 +171,7 @@ export interface AudioStore {
   toggleRecordArm: (trackId: string) => void;
   startRecording: (trackId: string, ctxTime: number) => Promise<void>;
   stopRecording: (trackId: string) => Promise<void>;
-  saveRecording: (trackId: string, blob: Blob, clipOffset?: number) => Promise<void>;
+  saveRecording: (trackId: string, blob: Blob, clipOffset?: number, recordedPitch?: number) => Promise<void>;
   clearRecording: (trackId: string) => Promise<void>;
   
   play: () => void;

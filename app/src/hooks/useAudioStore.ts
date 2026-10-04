@@ -182,6 +182,7 @@ const syncEngineMix = (state: AudioStore) => {
   state.tracks.forEach((t) => {
     const muted = t.isMuted || (hasSoloedTracks && !t.isSolo);
     audioEngine.setTrackGain(t.id, muted ? 0 : t.volume);
+    audioEngine.setTrackPitchOffset(t.id, t.recordedPitch ?? 0);
     audioEngine.setTrackReverb(t.id, t.reverbEnabled === false ? 0 : (t.reverb ?? 0));
   });
   audioEngine.setMasterVolume(state.masterVolume);

@@ -50,6 +50,7 @@ export const saveTrackSettingsToPiece = async (
       isCollapsed: t.isCollapsed,
       height: t.height,
       isRecordable: t.isRecordable,
+      recordedPitch: t.recordedPitch,
       clipOffset: t.clipOffset,
       trimStart: t.trimStart,
       clipDuration: t.clipDuration,

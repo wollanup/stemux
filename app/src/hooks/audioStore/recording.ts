@@ -17,6 +17,7 @@ import { audioEngine } from '../../audio/AudioEngine';
 import { openMic, closeMic, getMic, trackStop } from '../../audio/micSession';
 import { getRecordingLatency } from '../../audio/latency';
 import { buildTake } from '../../utils/audioUtils';
+import { normalizePitch, pitchShiftSemitones } from '../../audio/pitch';
 import i18n from '../../i18n/config';
 
 const getMicErrorMessage = (error: Error) => {
@@ -159,6 +160,8 @@ export const createRecordingActions = (set: (partial: Partial<AudioStore> | ((st
     const startTime = Math.max(ctxTime, ctx.currentTime + 0.02);
     if (!get().playbackState.isPlaying || !audioEngine.isPlaying()) return;
     const recordingStartOffset = audioEngine.positionAt(startTime);
+    // Played in the key heard now: it must not be shifted again at this pitch
+    const recordingPitch = normalizePitch(pitchShiftSemitones(get().pitch));
     recorder.start(startTime);
 
     logger.log(`⏱️ Recording starts at ctx=${startTime.toFixed(6)}s = piece position ${recordingStartOffset.toFixed(6)}s`);
@@ -166,7 +169,7 @@ export const createRecordingActions = (set: (partial: Partial<AudioStore> | ((st
     set((state: AudioStore) => ({
       tracks: state.tracks.map((t) =>
         t.id === trackId
-          ? { ...t, recordingState: 'recording' as const, recordingStartOffset }
+          ? { ...t, recordingState: 'recording' as const, recordingStartOffset, recordingPitch }
           : t
       ),
     }));
@@ -208,11 +211,11 @@ export const createRecordingActions = (set: (partial: Partial<AudioStore> | ((st
     logger.log(`  - Take placed at: ${timelineOffset.toFixed(6)}s`);
 
     const { blob, clipOffset } = buildTake(take.samples, take.sampleRate, timelineOffset);
-    await get().saveRecording(trackId, blob, clipOffset);
+    await get().saveRecording(trackId, blob, clipOffset, track.recordingPitch || undefined);
   },
 
   // Called when the take has been assembled
-  saveRecording: async (trackId: string, blob: Blob, clipOffset = 0) => {
+  saveRecording: async (trackId: string, blob: Blob, clipOffset = 0, recordedPitch?: number) => {
     const { currentPieceId, loopState, playbackState, masterVolume, tracks } = get();
 
     const track = tracks.find(t => t.id === trackId);
@@ -241,7 +244,7 @@ export const createRecordingActions = (set: (partial: Partial<AudioStore> | ((st
         // Save piece settings with updated track
         const updatedTracks = get().tracks.map((t) =>
           t.id === trackId
-            ? { ...t, recordedBlob: blob, file, clipOffset, trimStart: undefined, clipDuration: undefined, recordingState: 'stopped' as const }
+            ? { ...t, recordedBlob: blob, file, clipOffset, trimStart: undefined, clipDuration: undefined, recordedPitch, recordingState: 'stopped' as const }
             : t
         );
 
@@ -260,7 +263,7 @@ export const createRecordingActions = (set: (partial: Partial<AudioStore> | ((st
       set((state: AudioStore) => ({
         tracks: state.tracks.map((t) =>
           t.id === trackId
-            ? { ...t, recordedBlob: blob, file, clipOffset, trimStart: undefined, clipDuration: undefined, recordingState: 'stopped' as const }
+            ? { ...t, recordedBlob: blob, file, clipOffset, trimStart: undefined, clipDuration: undefined, recordedPitch, recordingState: 'stopped' as const }
             : t
         ),
       }));
@@ -295,7 +298,7 @@ export const createRecordingActions = (set: (partial: Partial<AudioStore> | ((st
         // Save piece settings (track remains but without file)
         const updatedTracks = tracks.map((t) =>
           t.id === trackId
-            ? { ...t, recordedBlob: undefined, file: undefined, clipOffset: undefined, trimStart: undefined, clipDuration: undefined, recordingState: 'idle' as const }
+            ? { ...t, recordedBlob: undefined, file: undefined, clipOffset: undefined, trimStart: undefined, clipDuration: undefined, recordedPitch: undefined, recordingState: 'idle' as const }
             : t
         );
 
@@ -314,7 +317,7 @@ export const createRecordingActions = (set: (partial: Partial<AudioStore> | ((st
       set((state: AudioStore) => ({
         tracks: state.tracks.map((t) =>
           t.id === trackId
-            ? { ...t, recordedBlob: undefined, file: undefined, clipOffset: undefined, trimStart: undefined, clipDuration: undefined, recordingState: 'idle' as const }
+            ? { ...t, recordedBlob: undefined, file: undefined, clipOffset: undefined, trimStart: undefined, clipDuration: undefined, recordedPitch: undefined, recordingState: 'idle' as const }
             : t
         ),
       }));
