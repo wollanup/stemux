@@ -110,7 +110,7 @@ const PitchMenu = ({ disabled }: { disabled: boolean }) => {
           }
         }}
       >
-        <Stack gap="sm" data-pitch-panel>
+        <Stack gap="sm" w={280} maw="calc(100vw - 32px)" data-pitch-panel>
           <Group justify="space-between">
             <Text fw={600}>{t('pitch.title')}</Text>
             {compact && shifted && <Text size="sm">{formatPitch(pitch)}</Text>}
