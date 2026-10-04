@@ -213,13 +213,18 @@ export default function Timeline() {
     };
   }, [headerWidth]);
 
-  // Undo / redo of markers, loops and clips
+  // Undo / redo of markers, loops, clips and the last take; R arms a recording track
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (!(e.ctrlKey || e.metaKey)) return;
       const target = e.target as HTMLElement | null;
       if (target?.closest('input, textarea, [contenteditable="true"]')) return;
       const key = e.key.toLowerCase();
+      if (key === 'r' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.repeat) {
+        e.preventDefault();
+        void useAudioStore.getState().armNextRecording();
+        return;
+      }
+      if (!(e.ctrlKey || e.metaKey)) return;
       if (key === 'z' && !e.shiftKey) {
         e.preventDefault();
         useAudioStore.getState().undo();

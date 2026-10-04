@@ -3,6 +3,10 @@
  * (move, trim). Colors, names and the mix (volume, mute, solo) are not undone,
  * nor is enabling a loop.
  *
+ * The last take too, for a quick retry (space, ctrl+Z, R, space): undone
+ * when nothing was edited after it (or once those edits are undone), its
+ * audio kept in memory for redo.
+ *
  * Every edit records a snapshot of these before and after. Actions made of
  * several steps (a loop is two markers + the loop) are wrapped in `edit()` so
  * that they are undone at once.
@@ -98,9 +102,49 @@ export function restoreSnapshot(state: Pick<AudioStore, 'loopState' | 'tracks' |
   };
 }
 
+interface UndoneTake {
+  trackId: string;
+  file: Blob;
+  clipOffset?: number;
+  recordedPitch?: number;
+  /** Top of the redo stack when the take was undone: redone only from there */
+  redoTop: HistoryEntry | undefined;
+}
+
 export const createHistoryActions = (set: SetState, get: () => AudioStore) => {
   /** Nested edits belong to the outermost one */
   let depth = 0;
+  /** Last take, and the top of the undo stack right after it */
+  let lastTake: { trackId: string; undoTop: HistoryEntry | undefined } | null = null;
+  let undoneTake: UndoneTake | null = null;
+
+  /** Removes the last take if it is next in line, false otherwise */
+  const undoTake = (): boolean => {
+    if (!lastTake || get().undoStack.at(-1) !== lastTake.undoTop) return false;
+    const { trackId } = lastTake;
+    lastTake = null;
+    const track = get().tracks.find((t) => t.id === trackId);
+    if (!track?.file || track.recordingState === 'recording') return false;
+    undoneTake = {
+      trackId,
+      file: track.file,
+      clipOffset: track.clipOffset,
+      recordedPitch: track.recordedPitch,
+      redoTop: get().redoStack.at(-1),
+    };
+    void get().clearRecording(trackId);
+    return true;
+  };
+
+  const redoTake = (): boolean => {
+    if (!undoneTake || get().redoStack.at(-1) !== undoneTake.redoTop) return false;
+    const { trackId, file, clipOffset, recordedPitch } = undoneTake;
+    undoneTake = null;
+    const track = get().tracks.find((t) => t.id === trackId);
+    if (!track || track.file || track.isArmed) return false;
+    void get().saveRecording(trackId, file, clipOffset, recordedPitch);
+    return true;
+  };
 
   const apply = (part: EditPart) => {
     const next = restoreSnapshot(get(), part);
@@ -143,11 +187,21 @@ export const createHistoryActions = (set: SetState, get: () => AudioStore) => {
         const entry = changedParts(before, snapshotOf(get()));
         if (entry) {
           set((state) => ({ undoStack: [...state.undoStack, entry].slice(-HISTORY_LIMIT), redoStack: [] }));
+          undoneTake = null; // a new edit drops what could be redone
         }
       }
     },
 
-    undo: () => step('undoStack', 'redoStack', 'before'),
-    redo: () => step('redoStack', 'undoStack', 'after'),
+    undo: () => {
+      if (!undoTake()) step('undoStack', 'redoStack', 'before');
+    },
+    redo: () => {
+      if (!redoTake()) step('redoStack', 'undoStack', 'after');
+    },
+
+    takeRecorded: (trackId: string) => {
+      lastTake = { trackId, undoTop: get().undoStack.at(-1) };
+      undoneTake = null;
+    },
   };
 };

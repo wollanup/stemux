@@ -44,6 +44,7 @@
       "keyboard": {
         "altSnap": "While dragging: ignore snapping",
         "altWheel": "Shift + Wheel - Horizontal scroll (when zoomed)",
+        "arm": "Arm / disarm a recording track (adds one if they all have a take)",
         "arrowLeft": "← - Rewind 5 seconds (hold for continuous)",
         "arrowRight": "→ - Forward 5 seconds (hold for continuous)",
         "ctrlLeft": "Ctrl + ← - Jump to beginning",
@@ -52,7 +53,7 @@
         "redo": "Redo",
         "space": "SPACE - Play/Pause",
         "title": "Keyboard Shortcuts",
-        "undo": "Undo (markers, loops, clips)"
+        "undo": "Undo (markers, loops, clips, last take)"
       },
       "loops": {
         "activeDesc": "Double click (or double tap) a loop in the top strip to enable it and play it from its start. You can also enable or disable it with its chip in the list above the timeline.",

@@ -155,6 +155,8 @@ export interface AudioStore {
   edit: <T>(fn: () => T) => T;
   undo: () => void;
   redo: () => void;
+  /** A take was just saved: the next undo removes it (unless edits come after) */
+  takeRecorded: (trackId: string) => void;
   
   addTrack: (file: File) => Promise<void>;
   removeTrack: (id: string) => void;
@@ -172,6 +174,8 @@ export interface AudioStore {
   // Recording actions
   addRecordableTrack: () => Promise<void>;
   toggleRecordArm: (trackId: string) => void;
+  /** R key: arms the recording track to use next (or disarms the armed one) */
+  armNextRecording: () => Promise<void>;
   startRecording: (trackId: string, ctxTime: number) => Promise<void>;
   stopRecording: (trackId: string) => Promise<void>;
   saveRecording: (trackId: string, blob: Blob, clipOffset?: number, recordedPitch?: number) => Promise<void>;

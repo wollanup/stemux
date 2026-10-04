@@ -15,10 +15,11 @@ vi.mock('../../../utils/indexedDB', () => ({
   savePieceSettings: async (id: string, settings: PieceSettings) => void db.settings.set(id, structuredClone(settings)),
 }));
 vi.mock('../../../audio/AudioEngine', () => ({ audioEngine: {} }));
-vi.mock('../../../audio/micSession', () => ({}));
+vi.mock('../../../audio/micSession', () => ({ openMic: async () => ({}), closeMic: () => undefined }));
 vi.mock('../../../i18n/config', () => ({ default: { t: (k: string) => k } }));
 
 const { createRecordingActions } = await import('../recording');
+const { createHistoryActions } = await import('../history');
 
 const recordable: AudioTrack = {
   id: 'rec',
@@ -32,19 +33,30 @@ const recordable: AudioTrack = {
   recordingStartOffset: 30,
 };
 
-const makeStore = () => {
+const makeStore = (tracks: AudioTrack[] = [recordable]) => {
   const seek = vi.fn();
   const store = createStore<AudioStore>()((set, get) => ({
-    tracks: [recordable],
+    tracks,
     currentPieceId: 'p',
     loopState: { markers: [], loops: [], activeLoopId: null },
     playbackState: { isPlaying: false, currentTime: 0, duration: 180, playbackRate: 1 },
     masterVolume: 1,
+    undoStack: [],
+    redoStack: [],
     seek,
+    updateTrack: (id: string, updates: Partial<AudioTrack>) =>
+      set((state) => ({ tracks: state.tracks.map((t) => (t.id === id ? { ...t, ...updates } : t)) })),
     ...createRecordingActions(set, get),
+    ...createHistoryActions(set, get),
+    // Stand-in: the real one also creates a piece and pauses
+    addRecordableTrack: async () =>
+      set((state) => ({ tracks: [...state.tracks, { ...recordable, id: `rec${state.tracks.length + 1}`, recordingState: 'idle' }] })),
   }) as unknown as AudioStore);
   return { store, seek };
 };
+
+/** clearRecording / saveRecording run in the background of undo / redo */
+const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 describe('recorded clips', () => {
   beforeEach(() => {
@@ -88,5 +100,69 @@ describe('recorded clips', () => {
     await store.getState().clearRecording('rec');
     expect(store.getState().tracks[0].recordedPitch).toBeUndefined();
     expect((db.settings.get('p') as PieceSettings).trackSettings[0].recordedPitch).toBeUndefined();
+  });
+});
+
+describe('quick retry: space, ctrl+Z, R, space', () => {
+  beforeEach(() => {
+    db.settings.clear();
+    db.files.clear();
+  });
+
+  it('undoes the last take, and redoes it', async () => {
+    const { store } = makeStore();
+    await store.getState().saveRecording('rec', new Blob(['wav']), 12, 2);
+
+    store.getState().undo();
+    await settle();
+    expect(store.getState().tracks[0].file).toBeUndefined();
+    expect(db.files.has('rec')).toBe(false);
+
+    store.getState().redo();
+    await settle();
+    const track = store.getState().tracks[0];
+    expect(track.file).toBeDefined();
+    expect(track.clipOffset).toBe(12);
+    expect(track.recordedPitch).toBe(2);
+    expect(db.files.has('rec')).toBe(true);
+  });
+
+  it('undoes clip edits made after the take first', async () => {
+    const { store } = makeStore();
+    await store.getState().saveRecording('rec', new Blob(['wav']), 12);
+    store.getState().edit(() => store.getState().updateTrack('rec', { clipOffset: 20 }));
+
+    store.getState().undo();
+    await settle();
+    expect(store.getState().tracks[0]).toMatchObject({ clipOffset: 12 });
+    expect(store.getState().tracks[0].file).toBeDefined();
+
+    store.getState().undo();
+    await settle();
+    expect(store.getState().tracks[0].file).toBeUndefined();
+  });
+
+  it('R arms the track whose take was undone, and disarms it on a second press', async () => {
+    const other: AudioTrack = { ...recordable, id: 'free', recordingState: 'idle' };
+    const { store } = makeStore([other, { ...recordable, recordingState: 'idle' }]);
+    store.getState().toggleRecordArm('rec');
+    store.getState().toggleRecordArm('rec');
+    await store.getState().saveRecording('rec', new Blob(['wav']), 0);
+    store.getState().undo();
+    await settle();
+
+    await store.getState().armNextRecording();
+    expect(store.getState().tracks.find((t) => t.isArmed)?.id).toBe('rec');
+    await store.getState().armNextRecording();
+    expect(store.getState().tracks.some((t) => t.isArmed)).toBe(false);
+  });
+
+  it('R adds a recording track when every one already has a take', async () => {
+    const { store } = makeStore();
+    await store.getState().saveRecording('rec', new Blob(['wav']), 0);
+    await store.getState().armNextRecording();
+    const tracks = store.getState().tracks;
+    expect(tracks).toHaveLength(2);
+    expect(tracks[1].isArmed).toBe(true);
   });
 });

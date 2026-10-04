@@ -445,6 +445,35 @@ test.describe('recording', () => {
   });
 });
 
+test.describe('quick retry', () => {
+  test('R arms, space records, ctrl+Z removes the take, ctrl+shift+Z brings it back', async ({ page }) => {
+    await openWithTracks(page, stems);
+    await page.getByRole('button', { name: 'Add recording track' }).click();
+    const arm = page.getByRole('button', { name: 'Arm for recording' });
+
+    const take = async () => {
+      await page.keyboard.press('r');
+      await expect(arm).toHaveAttribute('aria-pressed', 'true');
+      await page.keyboard.press('Space');
+      await page.waitForTimeout(1200);
+      await page.keyboard.press('Space');
+      await expect(page.locator('[data-clip]')).toHaveCount(4);
+    };
+
+    await take();
+    await page.keyboard.press('Control+z');
+    await expect(page.locator('[data-clip]')).toHaveCount(3);
+    await page.keyboard.press('Control+Shift+z');
+    await expect(page.locator('[data-clip]')).toHaveCount(4);
+
+    // Retry: the take goes away and a new one is recorded on the same track
+    await page.keyboard.press('Control+z');
+    await expect(page.locator('[data-clip]')).toHaveCount(3);
+    await take();
+    await expect(page.locator('[data-track-row]')).toHaveCount(4);
+  });
+});
+
 test.describe('touch screen', () => {
   test.use({ viewport: { width: 390, height: 800 }, hasTouch: true, isMobile: true });
 

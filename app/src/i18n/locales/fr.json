@@ -44,6 +44,7 @@
       "keyboard": {
         "altSnap": "Pendant un glissement : ignorer le magnétisme",
         "altWheel": "Maj + Molette - Défilement horizontal (si zoomé)",
+        "arm": "Armer / désarmer une piste d'enregistrement (en crée une si toutes ont déjà une prise)",
         "arrowLeft": "← - Reculer de 5 secondes (maintenir pour continu)",
         "arrowRight": "→ - Avancer de 5 secondes (maintenir pour continu)",
         "ctrlLeft": "Ctrl + ← - Retour au début",
@@ -52,7 +53,7 @@
         "redo": "Rétablir",
         "space": "ESPACE - Lecture/Pause",
         "title": "Raccourcis clavier",
-        "undo": "Annuler (repères, boucles, clips)"
+        "undo": "Annuler (repères, boucles, clips, dernière prise)"
       },
       "loops": {
         "activeDesc": "Double-cliquez (ou double-tapez) sur une boucle dans la bande du haut pour l'activer et la lire depuis son début. Vous pouvez aussi l'activer ou la désactiver avec sa puce dans la liste au-dessus de la timeline.",
