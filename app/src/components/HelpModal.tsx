@@ -187,6 +187,7 @@ const HelpModal = ({ open, onClose }: HelpModalProps) => {
           <Shortcut keys="Ctrl + ←">{t('help.sections.keyboard.ctrlLeft')}</Shortcut>
           <Shortcut keys="Ctrl + 🖱️">{t('help.sections.keyboard.ctrlWheel')}</Shortcut>
           <Shortcut keys="Shift + 🖱️">{t('help.sections.keyboard.altWheel')}</Shortcut>
+          <Shortcut keys="R">{t('help.sections.keyboard.arm')}</Shortcut>
           <Shortcut keys="Ctrl + Z">{t('help.sections.keyboard.undo')}</Shortcut>
           <Shortcut keys="Ctrl + Shift + Z">{t('help.sections.keyboard.redo')}</Shortcut>
           <Shortcut keys="Alt">{t('help.sections.keyboard.altSnap')}</Shortcut>

@@ -7,6 +7,7 @@ export interface AudioTrack {
   name: string;
   file?: File; // Optional for recordable tracks
   volume: number; // 0-1
+  pan?: number; // -1 left, 0 center, 1 right (undefined: center)
   reverb?: number; // Reverb send 0-1, recording tracks only (undefined: none)
   reverbEnabled?: boolean; // Reverb on/off, keeps the amount (undefined: on)
   isMuted: boolean;
@@ -76,6 +77,7 @@ export interface PieceSettings {
     id: string;
     name: string;
     volume: number;
+    pan?: number;
     reverb?: number;
     reverbEnabled?: boolean;
     isMuted: boolean;
@@ -153,6 +155,8 @@ export interface AudioStore {
   edit: <T>(fn: () => T) => T;
   undo: () => void;
   redo: () => void;
+  /** A take was just saved: the next undo removes it (unless edits come after) */
+  takeRecorded: (trackId: string) => void;
   
   addTrack: (file: File) => Promise<void>;
   removeTrack: (id: string) => void;
@@ -160,6 +164,7 @@ export interface AudioStore {
   updateTrack: (id: string, updates: Partial<AudioTrack>) => void;
   reorderTracks: (fromIndex: number, toIndex: number) => void;
   setVolume: (id: string, volume: number) => void;
+  setPan: (id: string, pan: number) => void;
   setReverb: (id: string, reverb: number) => void;
   toggleMute: (id: string) => void;
   toggleSolo: (id: string) => void;
@@ -169,6 +174,8 @@ export interface AudioStore {
   // Recording actions
   addRecordableTrack: () => Promise<void>;
   toggleRecordArm: (trackId: string) => void;
+  /** R key: arms the recording track to use next (or disarms the armed one) */
+  armNextRecording: () => Promise<void>;
   startRecording: (trackId: string, ctxTime: number) => Promise<void>;
   stopRecording: (trackId: string) => Promise<void>;
   saveRecording: (trackId: string, blob: Blob, clipOffset?: number, recordedPitch?: number) => Promise<void>;

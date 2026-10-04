@@ -200,6 +200,17 @@ describe('AudioEngine transport', () => {
     expect(gainNode.gain.value).toBe(0.25);
   });
 
+  it('pans a track after its gain, with a pan set before it is loaded', () => {
+    engine.setTrackPan('a', -0.4);
+    engine.addTrack('a', fakeBuffer(10));
+    engine.play();
+    const gainNode = [...ctx.startedSources()[0].connections][0] as { connections: Set<unknown> };
+    const panner = [...gainNode.connections].find((n) => (n as { pan?: unknown }).pan) as { pan: { value: number } };
+    expect(panner.pan.value).toBe(-0.4);
+    engine.setTrackPan('a', 0.7);
+    expect(panner.pan.value).toBe(0.7);
+  });
+
   it('emits "ended" once at the end of the longest track', () => {
     const ended = vi.fn();
     engine.on('ended', ended);

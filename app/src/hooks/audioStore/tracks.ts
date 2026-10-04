@@ -212,6 +212,10 @@ export const createTrackActions = (set: (partial: Partial<AudioStore> | ((state:
     get().updateTrack(id, { volume });
   },
 
+  setPan: (id: string, pan: number) => {
+    get().updateTrack(id, { pan });
+  },
+
   setReverb: (id: string, reverb: number) => {
     get().updateTrack(id, { reverb });
   },

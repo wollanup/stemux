@@ -54,6 +54,8 @@ interface EngineTrack {
   /** Seconds played */
   length: number;
   gain: GainNode;
+  /** After the gain, to the master: left / right balance */
+  panner: StereoPannerNode;
   /** Level meter tap after the gain: one analyser per channel (L, R) */
   meter: { splitter: ChannelSplitterNode; analysers: AnalyserNode[]; data: Float32Array<ArrayBuffer> };
   /** Reverb send after the gain (created on first use) */
@@ -77,6 +79,7 @@ export class AudioEngine {
   private master: GainNode | null = null;
   private tracks = new Map<string, EngineTrack>();
   private gains = new Map<string, number>();
+  private pans = new Map<string, number>();
   private reverbSends = new Map<string, number>();
   /** Pitch shift (semitones) a track was recorded at, 0 for imported files */
   private pitchOffsets = new Map<string, number>();
@@ -174,13 +177,17 @@ export class AudioEngine {
     const ctx = this.getContext();
     const gain = ctx.createGain();
     gain.gain.value = this.gains.get(id) ?? 1;
-    gain.connect(this.master!);
+    const panner = ctx.createStereoPanner();
+    panner.pan.value = this.pans.get(id) ?? 0;
+    gain.connect(panner);
+    panner.connect(this.master!);
 
     const track: EngineTrack = {
       id,
       buffer,
       ...window,
       gain,
+      panner,
       meter: AudioEngine.createMeter(ctx, gain),
       reverbSend: null,
       sources: new Set(),
@@ -244,6 +251,7 @@ export class AudioEngine {
     if (!track) return;
     this.stopVoice(track, 0);
     track.gain.disconnect();
+    track.panner.disconnect();
     track.meter.splitter.disconnect();
     this.destroyStretch(track);
     this.tracks.delete(id);
@@ -306,6 +314,15 @@ export class AudioEngine {
     const track = this.tracks.get(id);
     if (track && this.ctx) {
       track.gain.gain.setTargetAtTime(value, this.ctx.currentTime, 0.01);
+    }
+  }
+
+  /** Balance of a track: -1 left, 0 center, 1 right (the reverb stays centered) */
+  setTrackPan(id: string, value: number) {
+    this.pans.set(id, value);
+    const track = this.tracks.get(id);
+    if (track && this.ctx) {
+      track.panner.pan.setTargetAtTime(value, this.ctx.currentTime, 0.01);
     }
   }
 

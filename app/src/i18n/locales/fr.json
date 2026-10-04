@@ -44,6 +44,7 @@
       "keyboard": {
         "altSnap": "Pendant un glissement : ignorer le magnétisme",
         "altWheel": "Maj + Molette - Défilement horizontal (si zoomé)",
+        "arm": "Armer / désarmer une piste d'enregistrement (en crée une si toutes ont déjà une prise)",
         "arrowLeft": "← - Reculer de 5 secondes (maintenir pour continu)",
         "arrowRight": "→ - Avancer de 5 secondes (maintenir pour continu)",
         "ctrlLeft": "Ctrl + ← - Retour au début",
@@ -52,7 +53,7 @@
         "redo": "Rétablir",
         "space": "ESPACE - Lecture/Pause",
         "title": "Raccourcis clavier",
-        "undo": "Annuler (repères, boucles, clips)"
+        "undo": "Annuler (repères, boucles, clips, dernière prise)"
       },
       "loops": {
         "activeDesc": "Double-cliquez (ou double-tapez) sur une boucle dans la bande du haut pour l'activer et la lire depuis son début. Vous pouvez aussi l'activer ou la désactiver avec sa puce dans la liste au-dessus de la timeline.",
@@ -323,10 +324,20 @@
     "meter": "Vu-mètre",
     "mute": "Muet (appui long : tout réactiver)",
     "options": "Options de la piste",
+    "pan": "Panoramique",
+    "panCenter": "C",
+    "panLeft": "G {{n}}",
+    "panLeftEnd": "G",
+    "panReset": "Centrer",
+    "panRight": "D {{n}}",
+    "panRightEnd": "D",
+    "panToLeft": "Vers la gauche",
+    "panToRight": "Vers la droite",
     "peak": "Crête max : {{value}} (cliquer pour remettre à zéro)",
     "resizeHeaders": "Glisser pour changer la largeur (double-clic : taille par défaut)",
     "resizeHeight": "Glisser pour changer la hauteur (double-clic : taille par défaut)",
-    "solo": "Solo (appui long : solo exclusif)"
+    "solo": "Solo (appui long : solo exclusif)",
+    "volume": "Volume"
   },
   "units": {
     "bytes": "o",

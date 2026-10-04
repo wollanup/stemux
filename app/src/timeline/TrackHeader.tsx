@@ -30,6 +30,7 @@ import ColorPalette, { ColorDot } from '../components/ColorPalette';
 import ConfirmDialog from '../components/ConfirmDialog';
 import PeakMeter, { PEAK_METER_WIDTH } from './PeakMeter';
 import TrackFx from './TrackFx';
+import PanSlider from './PanSlider';
 import classes from './TrackHeader.module.css';
 
 const ICON = 18;
@@ -295,6 +296,8 @@ export default function TrackHeader({ track, variant, height, dimmed, dragHandle
       size="sm"
       color={track.color}
       label={(value) => `${Math.round(value)}%`}
+      thumbLabel={t('track.volume')}
+      data-volume-slider
       className={classes.volume}
       style={{ maxWidth: variant === 'row' ? 200 : undefined }}
     />
@@ -314,6 +317,7 @@ export default function TrackHeader({ track, variant, height, dimmed, dragHandle
       </Tooltip>
 
       {showLevelMeter && !recordRowApart ? <LevelMeter /> : volumeSlider}
+      <PanSlider track={track} />
 
       {!recordRowApart && recordControls}
     </div>

@@ -29,6 +29,9 @@ const getMicErrorMessage = (error: Error) => {
   return i18n.t('recording.errors.unknown');
 };
 
+/** Track armed last: R arms it again (after ctrl+Z removed its take) */
+let lastArmedId: string | null = null;
+
 export const createRecordingActions = (set: (partial: Partial<AudioStore> | ((state: AudioStore) => Partial<AudioStore>)) => void, get: () => AudioStore) => ({
   addRecordableTrack: () => enqueueTrackAddition(async () => {
     const { pause, currentPieceId, createPiece } = get();
@@ -128,6 +131,7 @@ export const createRecordingActions = (set: (partial: Partial<AudioStore> | ((st
     }));
 
     set({ tracks: updatedTracks });
+    if (newArmedState) lastArmedId = trackId;
     logger.debug(`🎙️ ${newArmedState ? 'Armed' : 'Disarmed'} track:`, track.name);
 
     if (newArmedState) {
@@ -142,6 +146,26 @@ export const createRecordingActions = (set: (partial: Partial<AudioStore> | ((st
     } else {
       closeMic();
     }
+  },
+
+  armNextRecording: async () => {
+    const { tracks, playbackState } = get();
+    if (tracks.some((t) => t.recordingState === 'recording') || playbackState.playbackRate !== 1) return;
+    const armed = tracks.find((t) => t.isArmed);
+    if (armed) {
+      get().toggleRecordArm(armed.id);
+      return;
+    }
+    // The track armed last if it is free (its take was undone), else the first free one
+    const free = (t: AudioTrack) => t.isRecordable && !t.file;
+    let target = tracks.find((t) => t.id === lastArmedId && free(t)) ?? tracks.find(free);
+    if (!target) {
+      // Every recording track has a take: a new one for the next take
+      const count = tracks.length;
+      await get().addRecordableTrack();
+      target = get().tracks.length > count ? get().tracks.at(-1) : undefined;
+    }
+    if (target) get().toggleRecordArm(target.id);
   },
 
   startRecording: async (trackId: string, ctxTime: number) => {
@@ -270,6 +294,7 @@ export const createRecordingActions = (set: (partial: Partial<AudioStore> | ((st
 
       // Go back to where the take started, ready to listen to it
       get().seek(recordingStartOffset);
+      get().takeRecorded(trackId);
 
     } catch (error) {
       console.error('Failed to save recording:', error);

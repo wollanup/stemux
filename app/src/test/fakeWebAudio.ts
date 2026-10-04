@@ -84,6 +84,10 @@ export class FakeAudioContext {
     return analyser;
   }
 
+  createStereoPanner() {
+    return Object.assign(new FakeNode(), { pan: new FakeParam(0) });
+  }
+
   createChannelSplitter() {
     return new FakeNode();
   }

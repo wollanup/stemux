@@ -144,7 +144,7 @@ test.describe('timeline', () => {
 
   test('the mouse wheel over a volume slider changes the volume', async ({ page }) => {
     await openWithTracks(page, stems);
-    const slider = page.locator('[data-track-row="bass.wav"] .mantine-Slider-root');
+    const slider = page.locator('[data-track-row="bass.wav"] [data-volume-slider]');
     const volume = () => slider.getByRole('slider').getAttribute('aria-valuenow').then(Number);
     const before = await volume();
     const box = (await slider.boundingBox())!;
@@ -442,6 +442,35 @@ test.describe('recording', () => {
     await page.reload();
     await expect(page.locator('[data-clip]')).toHaveCount(4);
     expect(Number(await page.locator('[data-clip]').nth(3).getAttribute('data-clip-start'))).toBeCloseTo(start, 3);
+  });
+});
+
+test.describe('quick retry', () => {
+  test('R arms, space records, ctrl+Z removes the take, ctrl+shift+Z brings it back', async ({ page }) => {
+    await openWithTracks(page, stems);
+    await page.getByRole('button', { name: 'Add recording track' }).click();
+    const arm = page.getByRole('button', { name: 'Arm for recording' });
+
+    const take = async () => {
+      await page.keyboard.press('r');
+      await expect(arm).toHaveAttribute('aria-pressed', 'true');
+      await page.keyboard.press('Space');
+      await page.waitForTimeout(1200);
+      await page.keyboard.press('Space');
+      await expect(page.locator('[data-clip]')).toHaveCount(4);
+    };
+
+    await take();
+    await page.keyboard.press('Control+z');
+    await expect(page.locator('[data-clip]')).toHaveCount(3);
+    await page.keyboard.press('Control+Shift+z');
+    await expect(page.locator('[data-clip]')).toHaveCount(4);
+
+    // Retry: the take goes away and a new one is recorded on the same track
+    await page.keyboard.press('Control+z');
+    await expect(page.locator('[data-clip]')).toHaveCount(3);
+    await take();
+    await expect(page.locator('[data-track-row]')).toHaveCount(4);
   });
 });
 
