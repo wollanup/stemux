@@ -15,6 +15,7 @@ import {useThrottle} from '../hooks/useThrottle';
 import {useWheelAdjust} from '../hooks/useWheelAdjust';
 import PlaybackSpeedMenu from './PlaybackSpeedMenu';
 import PitchMenu from './PitchMenu';
+import { BOTTOM_BAR_POPOVER } from './bottomBarPopover';
 import {useTranslation} from 'react-i18next';
 import {audioEngine} from '../audio/AudioEngine';
 import {formatBarBeat} from '../tempo/tempo';
@@ -446,7 +447,7 @@ const BottomControlBar = () => {
           {volumeSlider(masterWheelRef)}
         </Group>
 
-        <Popover position="top" shadow="md">
+        <Popover position="top" shadow="md" {...BOTTOM_BAR_POPOVER}>
           <Popover.Target>
             <ActionIcon
               variant="subtle"

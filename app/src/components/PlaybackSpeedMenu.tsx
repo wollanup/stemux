@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Button, Popover, SimpleGrid, Slider, Stack, Text } from '@mantine/core';
 import { IconGauge } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
+import { BOTTOM_BAR_POPOVER } from './bottomBarPopover';
 
 interface PlaybackSpeedMenuProps {
   currentRate: number;
@@ -55,7 +56,7 @@ const PlaybackSpeedMenu = ({ currentRate, disabled, onRateChange }: PlaybackSpee
   );
 
   return (
-    <Popover opened={opened} onChange={setOpened} position="top-end" shadow="md" width={260}>
+    <Popover opened={opened} onChange={setOpened} position="top-end" shadow="md" width={260} {...BOTTOM_BAR_POPOVER}>
       <Popover.Target>
         <Button
           // Controlled popover: the target does not toggle it by itself
