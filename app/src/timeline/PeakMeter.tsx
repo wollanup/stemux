@@ -2,23 +2,44 @@
  * Vertical peak meter of a track (dBFS, after its volume, mute and solo):
  * one bar per channel, a peak-hold line, and a clip light on top once the
  * track reached 0 dBFS. The highest peak is in the tooltip; a click resets it.
+ * `input`: shows the microphone instead (armed recording track).
  */
 
 import { useEffect, useRef } from 'react';
 import { useAppPalette } from '../theme/palette';
 import { useTranslation } from 'react-i18next';
 import { audioEngine } from '../audio/AudioEngine';
+import { getMic, subscribeMic } from '../audio/micSession';
 import { DANGER_DB, formatDb, meterPosition, METER_FLOOR_DB, silentMeter, stepMeter, toDb, WARN_DB, type ChannelMeter } from './meterMath';
 
 /** Width of the meter (px), both bars */
 export const PEAK_METER_WIDTH = 9;
 const CLIP_LIGHT_PX = 3;
 
-export default function PeakMeter({ trackId }: { trackId: string }) {
+export default function PeakMeter({ trackId, input = false }: { trackId: string; input?: boolean }) {
   const palette = useAppPalette();
   const { t } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const maxDb = useRef(METER_FLOOR_DB);
+  /** Highest mic peak received since the last frame */
+  const inputPeak = useRef(0);
+
+  useEffect(() => {
+    if (!input) return;
+    let unsubscribeLevel = () => {};
+    const follow = (recorder: ReturnType<typeof getMic>) => {
+      unsubscribeLevel();
+      unsubscribeLevel = recorder?.onLevel((peak) => {
+        inputPeak.current = Math.max(inputPeak.current, peak);
+      }) ?? (() => {});
+    };
+    follow(getMic());
+    const unsubscribeMic = subscribeMic(follow);
+    return () => {
+      unsubscribeMic();
+      unsubscribeLevel();
+    };
+  }, [input]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -35,7 +56,14 @@ export default function PeakMeter({ trackId }: { trackId: string }) {
       raf = requestAnimationFrame(draw);
       const dt = Math.min(0.1, (now - last) / 1000);
       last = now;
-      const peaks = audioEngine.getTrackPeaks(trackId) ?? [];
+      let peaks: number[];
+      if (input) {
+        // The mic sends a level every ~50ms: between two, the bar falls smoothly
+        peaks = [inputPeak.current];
+        inputPeak.current = 0;
+      } else {
+        peaks = audioEngine.getTrackPeaks(trackId) ?? [];
+      }
       if (meters.length !== peaks.length) meters = peaks.map(silentMeter);
       const idle = meters.every((m) => m.level <= METER_FLOOR_DB && m.hold <= METER_FLOOR_DB) && peaks.every((p) => p === 0);
       meters = meters.map((m, i) => stepMeter(m, toDb(peaks[i]), dt));
@@ -93,7 +121,7 @@ export default function PeakMeter({ trackId }: { trackId: string }) {
     };
     raf = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(raf);
-  }, [trackId, palette, t]);
+  }, [trackId, input, palette, t]);
 
   return (
     <canvas

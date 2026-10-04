@@ -15,6 +15,12 @@
     "rewind5": "Rewind 5 seconds (hold for continuous)",
     "skipToStart": "Skip to start"
   },
+  "fx": {
+    "close": "Close",
+    "reverb": "Reverb",
+    "title": "Effects",
+    "titleFor": "Effects · {{name}}"
+  },
   "help": {
     "sections": {
       "basics": {
@@ -131,6 +137,7 @@
     "showPanel": "Show markers and loops (to edit them in the loop strip)"
   },
   "menu": {
+    "audio": "Audio",
     "deleteAllConfirmButton": "Delete All",
     "deleteAllConfirmMessage": "Are you sure you want to delete all tracks? This action cannot be undone.",
     "deleteAllConfirmTitle": "Delete All Tracks?",
@@ -221,6 +228,23 @@
     "understood": "Got it"
   },
   "settings": {
+    "audioTitle": "Audio settings",
+    "input": {
+      "channel": "Input",
+      "channelN": "Input {{n}}",
+      "defaultDevice": "System default",
+      "description": "Sound card and input used for recording. A 2-input sound card shows up as a single stereo device: pick the input your mic or instrument is plugged into.",
+      "device": "Device",
+      "missing": "Device not connected (the default one is used)",
+      "namesHidden": "Device names show up once the site may use the microphone.",
+      "openFailed": "Could not open the input. Check the site's microphone permission; on Windows, the browser uses the Windows driver, not ASIO: close any software (DAW) holding the sound card in exclusive mode, and check it is enabled in Settings → Sound → Input.",
+      "showNames": "Show names",
+      "stopTest": "Stop the test",
+      "test": "Test the input",
+      "testHelp": "Play or speak: the moving meter shows which input gets the signal.",
+      "title": "Audio input (recording)",
+      "unnamed": "Device {{n}}"
+    },
     "latency": {
       "auto": "Auto",
       "autoDescription": "Browser estimate: {{ms}} ms (output only, often too low). Measure it for accurate timing.",

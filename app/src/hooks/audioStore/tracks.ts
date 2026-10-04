@@ -212,6 +212,10 @@ export const createTrackActions = (set: (partial: Partial<AudioStore> | ((state:
     get().updateTrack(id, { volume });
   },
 
+  setReverb: (id: string, reverb: number) => {
+    get().updateTrack(id, { reverb });
+  },
+
   toggleMute: (id: string) => {
     const track = get().tracks.find((t) => t.id === id);
     if (!track) return;

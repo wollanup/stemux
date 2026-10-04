@@ -29,6 +29,7 @@ import { TRACK_COLORS } from '../utils/colors';
 import ColorPalette, { ColorDot } from '../components/ColorPalette';
 import ConfirmDialog from '../components/ConfirmDialog';
 import PeakMeter, { PEAK_METER_WIDTH } from './PeakMeter';
+import TrackFx from './TrackFx';
 import classes from './TrackHeader.module.css';
 
 const ICON = 18;
@@ -44,7 +45,7 @@ interface TrackHeaderProps {
 /** Gap between the peak meter and the edge of the column: the width handle is there (px) */
 const METER_RIGHT_PX = 8;
 
-/** Input level of the armed track's microphone */
+/** Input level of the armed track's microphone (phones: the header has no peak meter) */
 function LevelMeter() {
   const [recorder, setRecorder] = useState<MicRecorder | null>(getMic);
   const [level, setLevel] = useState(0);
@@ -232,6 +233,73 @@ export default function TrackHeader({ track, variant, height, dimmed, dragHandle
     </div>
   );
 
+  // Recording track buttons: their own row in the column, at the end of the controls row otherwise
+  const recordRowApart = variant === 'column' && !!track.isRecordable;
+  const showLevelMeter = !!track.isArmed && !track.file;
+
+  const recordControls = track.isRecordable && (
+    <>
+      <TrackFx track={track} variant={variant} />
+      <Tooltip
+        label={
+          track.file
+            ? t('recording.clearRecordingFirst')
+            : playbackRate !== 1 && !track.isArmed
+              ? t('recording.normalSpeedRequired')
+              : t('recording.armTrack')
+        }
+      >
+        <span className={classes.tooltipAnchor}>
+          <ActionIcon
+            variant={track.isArmed ? 'filled' : 'subtle'}
+            color={track.isArmed ? 'red' : 'gray'}
+            aria-label={t('recording.armTrack')}
+            aria-pressed={!!track.isArmed}
+            onClick={() => toggleRecordArm(track.id)}
+            disabled={armDisabled}
+          >
+            {isRecording ? <IconCircleFilled size={14} /> : <IconMicrophone size={ICON} />}
+          </ActionIcon>
+        </span>
+      </Tooltip>
+      {track.file && (
+        <>
+          <Tooltip label={t('recording.clearRecording')}>
+            <ActionIcon variant="subtle" color="gray" className={classes.hoverDanger} aria-label={t('recording.clearRecording')} onClick={() => clearRecording(track.id)}>
+              <IconTrash size={ICON} />
+            </ActionIcon>
+          </Tooltip>
+          <Tooltip label={t('recording.downloadRecording')}>
+            <ActionIcon variant="subtle" color="gray" className={classes.hoverPrimary} aria-label={t('recording.downloadRecording')} onClick={downloadRecording}>
+              <IconDownload size={ICON} />
+            </ActionIcon>
+          </Tooltip>
+        </>
+      )}
+    </>
+  );
+
+  const volumeSlider = (
+    <Slider
+      ref={volumeWheelRef}
+      value={dragVolume ?? track.volume * 100}
+      onChange={(value) => {
+        setDragVolume(value);
+        throttledSetVolume(track.id, value / 100);
+      }}
+      onChangeEnd={(value) => {
+        setVolume(track.id, value / 100);
+        setDragVolume(null);
+      }}
+      disabled={track.isMuted}
+      size="sm"
+      color={track.color}
+      label={(value) => `${Math.round(value)}%`}
+      className={classes.volume}
+      style={{ maxWidth: variant === 'row' ? 200 : undefined }}
+    />
+  );
+
   const controlsRow = (
     <div className={classes.row} style={{ paddingLeft: 4 }}>
       <Tooltip label={t('track.solo')}>
@@ -245,69 +313,16 @@ export default function TrackHeader({ track, variant, height, dimmed, dragHandle
         </ActionIcon>
       </Tooltip>
 
-      {track.isArmed && !track.file ? (
-        <LevelMeter />
-      ) : (
-        <Slider
-          ref={volumeWheelRef}
-          value={dragVolume ?? track.volume * 100}
-          onChange={(value) => {
-            setDragVolume(value);
-            throttledSetVolume(track.id, value / 100);
-          }}
-          onChangeEnd={(value) => {
-            setVolume(track.id, value / 100);
-            setDragVolume(null);
-          }}
-          disabled={track.isMuted}
-          size="sm"
-          color={track.color}
-          label={(value) => `${Math.round(value)}%`}
-          className={classes.volume}
-          style={{ maxWidth: variant === 'row' ? 200 : undefined }}
-        />
-      )}
+      {showLevelMeter && !recordRowApart ? <LevelMeter /> : volumeSlider}
 
-      {track.isRecordable && (
-        <>
-          <Tooltip
-            label={
-              track.file
-                ? t('recording.clearRecordingFirst')
-                : playbackRate !== 1 && !track.isArmed
-                  ? t('recording.normalSpeedRequired')
-                  : t('recording.armTrack')
-            }
-          >
-            <span className={classes.tooltipAnchor}>
-              <ActionIcon
-                variant={track.isArmed ? 'filled' : 'subtle'}
-                color={track.isArmed ? 'red' : 'gray'}
-                aria-label={t('recording.armTrack')}
-                aria-pressed={!!track.isArmed}
-                onClick={() => toggleRecordArm(track.id)}
-                disabled={armDisabled}
-              >
-                {isRecording ? <IconCircleFilled size={14} /> : <IconMicrophone size={ICON} />}
-              </ActionIcon>
-            </span>
-          </Tooltip>
-          {track.file && (
-            <>
-              <Tooltip label={t('recording.clearRecording')}>
-                <ActionIcon variant="subtle" color="gray" className={classes.hoverDanger} aria-label={t('recording.clearRecording')} onClick={() => clearRecording(track.id)}>
-                  <IconTrash size={ICON} />
-                </ActionIcon>
-              </Tooltip>
-              <Tooltip label={t('recording.downloadRecording')}>
-                <ActionIcon variant="subtle" color="gray" className={classes.hoverPrimary} aria-label={t('recording.downloadRecording')} onClick={downloadRecording}>
-                  <IconDownload size={ICON} />
-                </ActionIcon>
-              </Tooltip>
-            </>
-          )}
-        </>
-      )}
+      {!recordRowApart && recordControls}
+    </div>
+  );
+
+  // The column has the track peak meter: it shows the mic while armed
+  const recordRow = recordRowApart && (
+    <div className={classes.row} style={{ paddingLeft: 4 }}>
+      {recordControls}
     </div>
   );
 
@@ -327,10 +342,12 @@ export default function TrackHeader({ track, variant, height, dimmed, dragHandle
     >
       {nameRow}
       {!isCollapsed && controlsRow}
+      {!isCollapsed && recordRow}
       {/* Desktop: peak meter just before the waveform */}
       {variant === 'column' && (
         <div style={{ position: 'absolute', top: 4, bottom: 4, right: METER_RIGHT_PX }}>
-          <PeakMeter trackId={track.id} />
+          {/* Keyed: the highest peak is not shared between the mic and the track */}
+          <PeakMeter key={showLevelMeter ? 'input' : 'track'} trackId={track.id} input={showLevelMeter} />
         </div>
       )}
 

@@ -216,6 +216,41 @@ describe('AudioEngine transport', () => {
   });
 });
 
+describe('AudioEngine reverb', () => {
+  const gainOf = (id: string) => {
+    engine.play();
+    const source = ctx.startedSources().find((s) => s.buffer === engine.getTrackBuffer(id))!;
+    return [...source.connections][0] as { connections: Set<unknown> };
+  };
+
+  it('creates no reverb while no track uses it', () => {
+    engine.addTrack('a', fakeBuffer(10));
+    engine.setTrackReverb('a', 0);
+    expect(ctx.convolvers).toHaveLength(0);
+  });
+
+  it('sends a track after its volume to one shared reverb', () => {
+    engine.setTrackReverb('a', 0.4); // set before loading, like gains
+    engine.addTrack('a', fakeBuffer(10));
+    engine.addTrack('b', fakeBuffer(10));
+    engine.setTrackReverb('b', 0.7);
+
+    expect(ctx.convolvers).toHaveLength(1);
+    expect(ctx.convolvers[0].buffer!.numberOfChannels).toBe(2);
+    type Node = { gain?: { value: number }; connections: Set<unknown> };
+    // The send: the node after the track gain that leads to the convolver
+    const sendOf = (id: string) =>
+      [...gainOf(id).connections].find((n) =>
+        [...(n as Node).connections].some((next) => (next as Node).connections?.has(ctx.convolvers[0]))
+      ) as Required<Node>;
+    expect(sendOf('a').gain.value).toBe(0.4);
+    expect(sendOf('b').gain.value).toBe(0.7);
+    const bus = [...sendOf('a').connections][0] as { connections: Set<unknown> };
+    expect([...sendOf('b').connections][0]).toBe(bus);
+    expect(bus.connections.has(ctx.convolvers[0])).toBe(true);
+  });
+});
+
 describe('AudioEngine loops', () => {
   it('schedules a sample-accurate jump back to the loop start', () => {
     engine.addTrack('a', fakeBuffer(10));

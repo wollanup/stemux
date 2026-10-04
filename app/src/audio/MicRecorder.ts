@@ -8,21 +8,23 @@
  */
 
 import { logger } from '../utils/logger';
+import { loadInputSelection, type InputSelection } from './inputDevice';
 
 const PROCESSOR_NAME = 'stemux-capture';
 
 /** Exported for tests */
 export const WORKLET_SOURCE = `
 class StemuxCaptureProcessor extends AudioWorkletProcessor {
-  constructor() {
+  constructor(options) {
     super();
+    this.channel = (options && options.processorOptions && options.processorOptions.channel) || 0;
     this.startFrame = Infinity;
     this.stopFrame = Infinity;
     this.closed = false;
     this.chunk = new Float32Array(4096);
     this.chunkLength = 0;
     this.chunkFrame = 0;
-    this.peak = 0;
+    this.peaks = [];
     this.levelCounter = 0;
     this.port.onmessage = (event) => {
       const msg = event.data;
@@ -32,6 +34,8 @@ class StemuxCaptureProcessor extends AudioWorkletProcessor {
         this.chunkLength = 0;
       } else if (msg.type === 'stop') {
         this.stopFrame = msg.frame;
+      } else if (msg.type === 'channel') {
+        this.channel = msg.channel;
       } else if (msg.type === 'close') {
         this.closed = true;
       }
@@ -47,20 +51,27 @@ class StemuxCaptureProcessor extends AudioWorkletProcessor {
 
   process(inputs) {
     if (this.closed) return false;
-    const channel = inputs[0] && inputs[0][0];
+    const input = inputs[0];
+    const channel = input && (input[this.channel] || input[0]);
     if (!channel) return true;
     const n = channel.length;
     const blockStart = currentFrame;
 
-    // Input level meter (~every 50ms)
-    for (let i = 0; i < n; i++) {
-      const v = Math.abs(channel[i]);
-      if (v > this.peak) this.peak = v;
+    // Input level meters, every channel (~every 50ms)
+    for (let c = 0; c < input.length; c++) {
+      const data = input[c];
+      let peak = this.peaks[c] || 0;
+      for (let i = 0; i < n; i++) {
+        const v = Math.abs(data[i]);
+        if (v > peak) peak = v;
+      }
+      this.peaks[c] = peak;
     }
     this.levelCounter += n;
     if (this.levelCounter >= sampleRate * 0.05) {
-      this.port.postMessage({ type: 'level', peak: this.peak });
-      this.peak = 0;
+      const peaks = this.peaks.slice(0, input.length);
+      this.port.postMessage({ type: 'level', peak: peaks[this.channel] || 0, peaks });
+      this.peaks = [];
       this.levelCounter = 0;
     }
 
@@ -108,11 +119,18 @@ export const MIC_CONSTRAINTS: MediaTrackConstraints = {
   echoCancellation: false, // critical for music
   noiseSuppression: false,
   autoGainControl: false,
-  channelCount: { ideal: 1 },
+  // As many channels as the device has: the chosen input may not be the first one
+  channelCount: { ideal: 8 },
 };
+
+const isMissingDevice = (error: unknown) =>
+  error instanceof Error && (error.name === 'OverconstrainedError' || error.name === 'NotFoundError');
 
 export class MicRecorder {
   private readonly ctx: AudioContext;
+  private readonly input: InputSelection;
+  private channel = 0;
+  private channelCount = 0;
   private stream: MediaStream | null = null;
   private source: MediaStreamAudioSourceNode | null = null;
   private node: AudioWorkletNode | null = null;
@@ -120,12 +138,13 @@ export class MicRecorder {
   private startFrame = 0;
   private stopFrame = Infinity;
   private stopResolver: ((take: Take) => void) | null = null;
-  private levelListeners = new Set<(peak: number) => void>();
+  private levelListeners = new Set<(peak: number, peaks: number[]) => void>();
   private dataListeners = new Set<(frame: number, samples: Float32Array) => void>();
   private recording = false;
 
-  constructor(ctx: AudioContext) {
+  constructor(ctx: AudioContext, input: InputSelection = loadInputSelection()) {
     this.ctx = ctx;
+    this.input = input;
   }
 
   isOpen() {
@@ -139,16 +158,20 @@ export class MicRecorder {
   async open(): Promise<void> {
     if (this.node) return;
     await ensureModule(this.ctx);
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: MIC_CONSTRAINTS });
+    const stream = await this.getStream();
     this.stream = stream;
     this.source = this.ctx.createMediaStreamSource(stream);
+    const settings = stream.getAudioTracks()[0]?.getSettings();
+    this.channelCount = Math.max(1, settings?.channelCount || this.source.channelCount || 1);
+    this.channel = Math.min(this.input.channel, this.channelCount - 1);
     const node = new AudioWorkletNode(this.ctx, PROCESSOR_NAME, {
       numberOfInputs: 1,
       numberOfOutputs: 1,
       outputChannelCount: [1],
-      channelCount: 1,
+      channelCount: this.channelCount,
       channelCountMode: 'explicit',
-      channelInterpretation: 'discrete', // keep input 1 only, no downmix
+      channelInterpretation: 'discrete', // each input on its own, no downmix
+      processorOptions: { channel: this.channel },
     });
     node.port.onmessage = (event) => this.handleMessage(event.data);
     this.source.connect(node);
@@ -156,8 +179,43 @@ export class MicRecorder {
     node.connect(this.ctx.destination);
     this.node = node;
 
-    const settings = stream.getAudioTracks()[0]?.getSettings();
-    logger.log(`🎙️ Mic opened: ${settings?.sampleRate ?? '?'}Hz, ${settings?.channelCount ?? '?'}ch, ctx ${this.ctx.sampleRate}Hz`);
+    logger.log(
+      `🎙️ Mic opened: ${stream.getAudioTracks()[0]?.label || '?'}, input ${this.channel + 1}/${this.channelCount}, ` +
+        `${settings?.sampleRate ?? '?'}Hz, ctx ${this.ctx.sampleRate}Hz`
+    );
+  }
+
+  /** The chosen device, or the default one if it is no longer plugged in */
+  private async getStream(): Promise<MediaStream> {
+    const { deviceId } = this.input;
+    if (deviceId === null) return navigator.mediaDevices.getUserMedia({ audio: MIC_CONSTRAINTS });
+    try {
+      return await navigator.mediaDevices.getUserMedia({ audio: { ...MIC_CONSTRAINTS, deviceId: { exact: deviceId } } });
+    } catch (error) {
+      if (!isMissingDevice(error)) throw error;
+      logger.warn('🎙️ Chosen input not found, using the default one');
+      return navigator.mediaDevices.getUserMedia({ audio: MIC_CONSTRAINTS });
+    }
+  }
+
+  /** Device asked for (null: the default one) */
+  getDeviceId() {
+    return this.input.deviceId;
+  }
+
+  /** Channels of the opened device (0 when closed) */
+  getChannelCount() {
+    return this.channelCount;
+  }
+
+  getChannel() {
+    return this.channel;
+  }
+
+  /** Records another input of the same device, effective right away */
+  setChannel(channel: number) {
+    this.channel = Math.max(0, Math.min(channel, this.channelCount - 1));
+    this.node?.port.postMessage({ type: 'channel', channel: this.channel });
   }
 
   close() {
@@ -168,6 +226,7 @@ export class MicRecorder {
     this.node = null;
     this.source = null;
     this.stream = null;
+    this.channelCount = 0;
     this.recording = false;
   }
 
@@ -200,7 +259,8 @@ export class MicRecorder {
     });
   }
 
-  onLevel(listener: (peak: number) => void): () => void {
+  /** `peak`: recorded input; `peaks`: every input of the device */
+  onLevel(listener: (peak: number, peaks: number[]) => void): () => void {
     this.levelListeners.add(listener);
     return () => {
       this.levelListeners.delete(listener);
@@ -214,9 +274,9 @@ export class MicRecorder {
     };
   }
 
-  private handleMessage(msg: { type: string; frame?: number; samples?: Float32Array; peak?: number }) {
+  private handleMessage(msg: { type: string; frame?: number; samples?: Float32Array; peak?: number; peaks?: number[] }) {
     if (msg.type === 'level') {
-      this.levelListeners.forEach((l) => l(msg.peak ?? 0));
+      this.levelListeners.forEach((l) => l(msg.peak ?? 0, msg.peaks ?? []));
     } else if (msg.type === 'data' && msg.samples) {
       this.chunks.push({ frame: msg.frame!, samples: msg.samples });
       this.dataListeners.forEach((l) => l(msg.frame!, msg.samples!));

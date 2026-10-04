@@ -6,7 +6,7 @@ import type { AudioTrack } from '../types/audio';
 import TrackHeader from './TrackHeader';
 import TrackLane from './TrackLane';
 import { useTrackAudio } from './useTrackAudio';
-import { clampLaneHeight, COLLAPSED_LANE_HEIGHT, LANE_HEIGHT, LANE_HEIGHT_MOBILE } from './layout';
+import { clampLaneHeight, COLLAPSED_LANE_HEIGHT, LANE_HEIGHT, LANE_HEIGHT_MOBILE, LANE_HEIGHT_RECORD } from './layout';
 import ResizeHandle from './ResizeHandle';
 import { useAudioStore } from '../hooks/useAudioStore';
 
@@ -31,7 +31,7 @@ function TrackRow({ track, wide, headerWidth, headerResize, contentWidth, viewpo
   const collapsed = track.isCollapsed ?? false;
 
   // Height: set by the user per track (saved with the piece), live while dragging
-  const defaultHeight = wide ? LANE_HEIGHT : LANE_HEIGHT_MOBILE;
+  const defaultHeight = wide ? (track.isRecordable ? LANE_HEIGHT_RECORD : LANE_HEIGHT) : LANE_HEIGHT_MOBILE;
   const savedHeight = track.height ?? defaultHeight;
   const [dragHeight, setDragHeight] = useState<number | null>(null);
   const laneHeight = collapsed ? COLLAPSED_LANE_HEIGHT : (dragHeight ?? savedHeight);

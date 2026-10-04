@@ -38,6 +38,10 @@ export class FakeAnalyser extends FakeNode {
   }
 }
 
+export class FakeConvolver extends FakeNode {
+  buffer: AudioBuffer | null = null;
+}
+
 export class FakeBufferSource extends FakeNode {
   buffer: AudioBuffer | null = null;
   onended: (() => void) | null = null;
@@ -92,6 +96,21 @@ export class FakeAudioContext {
 
   createMediaStreamSource() {
     return new FakeNode();
+  }
+
+  convolvers: FakeConvolver[] = [];
+
+  createConvolver() {
+    const convolver = new FakeConvolver();
+    this.convolvers.push(convolver);
+    return convolver;
+  }
+
+  createBuffer(channels: number, length: number, sampleRate: number) {
+    const buffer = fakeBuffer(length / sampleRate, sampleRate, channels);
+    return Object.assign(buffer, {
+      copyToChannel: (source: Float32Array, channel: number) => buffer.getChannelData(channel).set(source),
+    });
   }
 
   resume() {

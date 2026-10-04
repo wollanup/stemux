@@ -3,7 +3,6 @@ import { IconChartBar, IconWaveSine } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { useAudioStore } from '../hooks/useAudioStore';
 import { useSmallerThan } from '../theme/palette';
-import RecordingLatencySetting from './RecordingLatencySetting';
 import classes from './Settings.module.css';
 
 interface SettingsUIProps {
@@ -42,7 +41,6 @@ export default function SettingsUI({ open, onClose }: SettingsUIProps) {
   const setWaveformStyle = useAudioStore(state => state.setWaveformStyle);
   const waveformNormalize = useAudioStore(state => state.waveformNormalize);
   const setWaveformNormalize = useAudioStore(state => state.setWaveformNormalize);
-  const isRecordingSupported = useAudioStore(state => state.isRecordingSupported);
 
   return (
     <Modal
@@ -84,9 +82,6 @@ export default function SettingsUI({ open, onClose }: SettingsUIProps) {
           }
         />
       </div>
-
-      {/* Recording latency compensation */}
-      {isRecordingSupported && <RecordingLatencySetting />}
     </Modal>
   );
 }

@@ -5,7 +5,7 @@ import { FakeAudioContext } from '../../test/fakeWebAudio';
 const SAMPLE_RATE = 48000;
 const BLOCK = 128;
 
-type Message = { type: string; frame?: number; samples?: Float32Array; peak?: number };
+type Message = { type: string; frame?: number; samples?: Float32Array; peak?: number; peaks?: number[] };
 
 interface Processor {
   port: { postMessage: (msg: Message) => void; onmessage: ((event: { data: unknown }) => void) | null };
@@ -13,14 +13,16 @@ interface Processor {
 }
 
 /** Evaluates the worklet source with fake AudioWorkletGlobalScope globals */
-const loadProcessorClass = (): new () => Processor => {
-  let registered: (new () => Processor) | null = null;
+type ProcessorClass = new (options?: { processorOptions?: { channel?: number } }) => Processor;
+
+const loadProcessorClass = (): ProcessorClass => {
+  let registered: ProcessorClass | null = null;
   class AudioWorkletProcessor {
     port = { postMessage: () => {}, onmessage: null };
   }
   new Function('AudioWorkletProcessor', 'registerProcessor', 'sampleRate', WORKLET_SOURCE)(
     AudioWorkletProcessor,
-    (_name: string, cls: new () => Processor) => {
+    (_name: string, cls: ProcessorClass) => {
       registered = cls;
     },
     SAMPLE_RATE
@@ -112,6 +114,34 @@ describe('capture worklet', () => {
     }
     const level = messages.find((m) => m.type === 'level');
     expect(level?.peak).toBeCloseTo(0.8, 6);
+  });
+});
+
+describe('capture worklet, multichannel device', () => {
+  it('records the chosen input and meters every input', () => {
+    const processor = new Processor({ processorOptions: { channel: 1 } });
+    const messages: Message[] = [];
+    processor.port.postMessage = (msg) => messages.push(msg);
+    processor.port.onmessage!({ data: { type: 'start', frame: 0 } });
+    for (let frame = 0; frame < 4096; frame += BLOCK) {
+      (globalThis as unknown as { currentFrame: number }).currentFrame = frame;
+      processor.process([[new Float32Array(BLOCK).fill(0.1), new Float32Array(BLOCK).fill(0.6)]]);
+    }
+    const data = messages.find((m) => m.type === 'data')!;
+    expect(data.samples![0]).toBeCloseTo(0.6, 6);
+    const level = messages.find((m) => m.type === 'level')!;
+    expect(level.peak).toBeCloseTo(0.6, 6);
+    expect(level.peaks![0]).toBeCloseTo(0.1, 6);
+    expect(level.peaks![1]).toBeCloseTo(0.6, 6);
+
+    processor.port.onmessage!({ data: { type: 'channel', channel: 0 } });
+    messages.length = 0;
+    (globalThis as unknown as { currentFrame: number }).currentFrame = 8192;
+    processor.process([[new Float32Array(BLOCK).fill(0.1), new Float32Array(BLOCK).fill(0.6)]]);
+    processor.port.onmessage!({ data: { type: 'stop', frame: 8192 + BLOCK } });
+    (globalThis as unknown as { currentFrame: number }).currentFrame = 8192 + BLOCK;
+    processor.process([[new Float32Array(BLOCK), new Float32Array(BLOCK)]]);
+    expect(messages.find((m) => m.type === 'data')!.samples![0]).toBeCloseTo(0.1, 6);
   });
 });
 
@@ -214,6 +244,28 @@ describe('MicRecorder', () => {
     recorder.close();
     expect(recorder.isOpen()).toBe(false);
     expect(stream.getTracks()[0].stop).toHaveBeenCalled();
+  });
+
+  it('opens the chosen device and input', async () => {
+    const recorder = new MicRecorder(ctx as unknown as AudioContext, { deviceId: 'scarlett', channel: 1 });
+    await recorder.open();
+    const constraints = (navigator.mediaDevices.getUserMedia as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    expect(constraints.audio.deviceId).toEqual({ exact: 'scarlett' });
+    // The fake track is mono: the input is clamped to it
+    expect(recorder.getChannel()).toBe(0);
+  });
+
+  it('falls back to the default device when the chosen one is unplugged', async () => {
+    const getUserMedia = navigator.mediaDevices.getUserMedia as ReturnType<typeof vi.fn>;
+    const fallback = getUserMedia.getMockImplementation()!;
+    getUserMedia.mockImplementationOnce(async () => {
+      throw Object.assign(new Error('missing'), { name: 'OverconstrainedError' });
+    });
+    getUserMedia.mockImplementationOnce(fallback);
+    const recorder = new MicRecorder(ctx as unknown as AudioContext, { deviceId: 'gone', channel: 0 });
+    await recorder.open();
+    expect(recorder.isOpen()).toBe(true);
+    expect(getUserMedia.mock.calls[1][0].audio.deviceId).toBeUndefined();
   });
 
   it('asks for a raw signal (no echo cancellation, AGC or noise suppression)', async () => {
