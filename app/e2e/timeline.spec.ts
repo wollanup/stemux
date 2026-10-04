@@ -421,6 +421,8 @@ test.describe('recording', () => {
     await expect(page.locator('[data-track-row]')).toHaveCount(4);
     await page.getByRole('button', { name: 'Arm for recording' }).click();
     await expect(page.getByRole('button', { name: 'Arm for recording' })).toHaveAttribute('aria-pressed', 'true');
+    // Armed: the track peak meter shows the (fake) microphone
+    await expect(page.locator('[data-track-row]').nth(3).locator('[data-peak-meter]')).toHaveAttribute('data-drawn', 'live');
 
     await page.keyboard.press('Space');
     await page.waitForTimeout(2000);

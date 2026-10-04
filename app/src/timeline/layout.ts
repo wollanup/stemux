@@ -33,6 +33,8 @@ export function rulerLayout(editable: boolean, coarsePointer: boolean): RulerLay
 
 /** Track heights (resizable per track, saved with the piece) */
 export const LANE_HEIGHT = 80;
+/** Recording tracks: one more row of buttons in the header column */
+export const LANE_HEIGHT_RECORD = 100;
 export const LANE_HEIGHT_MOBILE = 64;
 export const LANE_HEIGHT_MIN = 64;
 export const LANE_HEIGHT_MAX = 400;
