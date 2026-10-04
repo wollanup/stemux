@@ -9,6 +9,7 @@ import {
   IconHelpCircle,
   IconMagnet,
   IconMapPinOff,
+  IconMicrophone,
   IconMoon,
   IconMusic,
   IconRefresh,
@@ -44,6 +45,7 @@ interface TopBarProps {
   onOpenHelp: () => void;
   onOpenThemeDialog: () => void;
   onOpenSettings: () => void;
+  onOpenAudioSettings: () => void;
   onOpenDeleteAllDialog: () => void;
   onOpenPiecesManager: () => void;
 }
@@ -65,6 +67,7 @@ const TopBar = ({
   onOpenHelp,
   onOpenThemeDialog,
   onOpenSettings,
+  onOpenAudioSettings,
   onOpenDeleteAllDialog,
   onOpenPiecesManager,
 }: TopBarProps) => {
@@ -73,6 +76,7 @@ const TopBar = ({
   const [deleteMarkersOpen, setDeleteMarkersOpen] = useState(false);
   const [tempoOpen, setTempoOpen] = useState(false);
   const tempo = useAudioStore((s) => s.tempo);
+  const isRecordingSupported = useAudioStore((s) => s.isRecordingSupported);
   const markerCount = useAudioStore((s) => s.loopState.markers.length);
 
   const { getRecentPieces, getCurrentPiece, loadPiece, currentPieceName, snapEnabled, setSnapEnabled, editMode, setEditMode } = useAudioStore();
@@ -144,6 +148,11 @@ const TopBar = ({
         <Menu.Item leftSection={<IconWaveSine size={16} />} onClick={onOpenSettings}>
           {t('menu.interface')}
         </Menu.Item>
+        {isRecordingSupported && (
+          <Menu.Item leftSection={<IconMicrophone size={16} />} onClick={onOpenAudioSettings}>
+            {t('menu.audio')}
+          </Menu.Item>
+        )}
         <Menu.Item leftSection={<IconMapPinOff size={16} />} onClick={() => setDeleteMarkersOpen(true)} disabled={markerCount === 0}>
           {t('markers.deleteAll')}
         </Menu.Item>

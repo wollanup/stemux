@@ -5,6 +5,8 @@
 
 import { audioEngine } from './AudioEngine';
 import { MicRecorder } from './MicRecorder';
+import type { InputSelection } from './inputDevice';
+import { logger } from '../utils/logger';
 
 let recorder: MicRecorder | null = null;
 let opening: Promise<MicRecorder> | null = null;
@@ -63,6 +65,22 @@ export const closeMic = () => {
   } else {
     close();
   }
+};
+
+/**
+ * New input chosen in the settings: the open mic follows right away, unless a
+ * take is being recorded (it then applies from the next arming).
+ */
+export const applyInputSelection = (selection: InputSelection) => {
+  if (!recorder || recorder.isRecording() || pendingStop) return;
+  if (selection.deviceId === recorder.getDeviceId()) {
+    recorder.setChannel(selection.channel);
+    return;
+  }
+  recorder.close();
+  recorder = null;
+  notify();
+  openMic().catch((error: Error) => logger.error('Failed to reopen microphone:', error));
 };
 
 export const subscribeMic = (listener: (recorder: MicRecorder | null) => void) => {

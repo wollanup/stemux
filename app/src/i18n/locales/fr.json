@@ -131,6 +131,7 @@
     "showPanel": "Afficher repères et boucles (pour les modifier dans la bande des boucles)"
   },
   "menu": {
+    "audio": "Audio",
     "deleteAllConfirmButton": "Tout supprimer",
     "deleteAllConfirmMessage": "Êtes-vous sûr de vouloir supprimer toutes les pistes ? Cette action est irréversible.",
     "deleteAllConfirmTitle": "Supprimer toutes les pistes ?",
@@ -223,6 +224,23 @@
     "understood": "J'ai compris"
   },
   "settings": {
+    "audioTitle": "Paramètres audio",
+    "input": {
+      "channel": "Entrée",
+      "channelN": "Entrée {{n}}",
+      "defaultDevice": "Par défaut du système",
+      "description": "Carte son et entrée utilisées pour enregistrer. Une carte son à 2 entrées apparaît comme un seul périphérique stéréo : choisissez l'entrée où sont branchés votre micro ou votre instrument.",
+      "device": "Périphérique",
+      "missing": "Périphérique non connecté (celui par défaut est utilisé)",
+      "namesHidden": "Les noms des périphériques s'affichent une fois l'accès au micro autorisé.",
+      "openFailed": "Impossible d'ouvrir l'entrée. Vérifiez la permission micro du site ; sous Windows, le navigateur passe par le pilote Windows et non par l'ASIO : fermez le logiciel (DAW) qui garderait la carte son en mode exclusif, et vérifiez qu'elle est activée dans Paramètres → Son → Entrée.",
+      "showNames": "Afficher les noms",
+      "stopTest": "Arrêter le test",
+      "test": "Tester l'entrée",
+      "testHelp": "Jouez ou parlez : la jauge qui bouge indique l'entrée où arrive le signal.",
+      "title": "Entrée audio (enregistrement)",
+      "unnamed": "Périphérique {{n}}"
+    },
     "latency": {
       "auto": "Auto",
       "autoDescription": "Estimation du navigateur : {{ms}} ms (sortie seulement, souvent sous-estimée). Mesurez-la pour un calage précis.",

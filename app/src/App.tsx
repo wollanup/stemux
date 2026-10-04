@@ -11,6 +11,7 @@ import MarkersPanel from './components/MarkersPanel';
 import {PWAUpdatePrompt} from './components/PWAUpdatePrompt';
 import HelpModal from './components/HelpModal';
 import SettingsUI from './components/SettingsUI';
+import AudioSettings from './components/AudioSettings';
 import PiecesManager from './components/PiecesManager';
 import RecordingPermissionGuide from './components/RecordingPermissionGuide';
 import {useTranslation} from 'react-i18next';
@@ -44,6 +45,7 @@ function App() {
     const [isLoadingStorage, setIsLoadingStorage] = useState(true);
     const [helpModalOpen, setHelpModalOpen] = useState(false);
     const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+    const [audioSettingsOpen, setAudioSettingsOpen] = useState(false);
     const [themeDialogOpen, setThemeDialogOpen] = useState(false);
     const [deleteAllDialogOpen, setDeleteAllDialogOpen] = useState(false);
     const [piecesManagerOpen, setPiecesManagerOpen] = useState(false);
@@ -172,6 +174,7 @@ function App() {
                     onOpenHelp={() => setHelpModalOpen(true)}
                     onOpenThemeDialog={() => setThemeDialogOpen(true)}
                     onOpenSettings={() => setSettingsModalOpen(true)}
+                    onOpenAudioSettings={() => setAudioSettingsOpen(true)}
                     onOpenDeleteAllDialog={() => setDeleteAllDialogOpen(true)}
                     onOpenPiecesManager={() => setPiecesManagerOpen(true)}
                 />
@@ -187,6 +190,9 @@ function App() {
 
             {/* Interface Settings Modal */}
             <SettingsUI open={settingsModalOpen} onClose={() => setSettingsModalOpen(false)}/>
+
+            {/* Audio Settings Modal (recording input, latency) */}
+            <AudioSettings open={audioSettingsOpen} onClose={() => setAudioSettingsOpen(false)}/>
 
             {/* Theme Selection Dialog */}
             <Modal
