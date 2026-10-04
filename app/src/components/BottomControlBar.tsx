@@ -1,8 +1,7 @@
 import {useEffect, useRef, useState} from 'react';
-import {ActionIcon, Box, Button, Group, Popover, Slider, Text, Tooltip} from '@mantine/core';
+import {ActionIcon, Box, Group, Popover, Slider, Text, Tooltip} from '@mantine/core';
 import {
   IconCircleFilled,
-  IconGauge,
   IconPlayerPauseFilled,
   IconPlayerPlayFilled,
   IconPlayerSkipBackFilled,
@@ -14,7 +13,7 @@ import {useAudioStore} from '../hooks/useAudioStore';
 import {usePlaybackTime} from '../hooks/usePlaybackTime';
 import {useThrottle} from '../hooks/useThrottle';
 import {useWheelAdjust} from '../hooks/useWheelAdjust';
-import PlaybackSpeedDrawer from './PlaybackSpeedDrawer';
+import PlaybackSpeedMenu from './PlaybackSpeedMenu';
 import {useTranslation} from 'react-i18next';
 import {audioEngine} from '../audio/AudioEngine';
 import {formatBarBeat} from '../tempo/tempo';
@@ -40,7 +39,6 @@ const BottomControlBar = () => {
   const isAnyTrackArmed = tracks.some((t) => t.isArmed);
   const isRecording = tracks.some((t) => t.recordingState === 'recording');
 
-  const [speedDrawerOpen, setSpeedDrawerOpen] = useState(false);
   const [tempMasterVolume, setTempMasterVolume] = useState(masterVolume);
 
   // Throttled master volume update (max 20 updates/sec = 50ms)
@@ -464,25 +462,12 @@ const BottomControlBar = () => {
         </Popover>
 
         {/* Playback speed */}
-        <Button
-          leftSection={<IconGauge size={18} />}
-          onClick={() => setSpeedDrawerOpen(true)}
+        <PlaybackSpeedMenu
+          currentRate={playbackState.playbackRate}
           disabled={!hasLoadedTracks}
-          variant="outline"
-          size="xs"
-          miw={100}
-        >
-          {playbackState.playbackRate.toFixed(2)}x
-        </Button>
+          onRateChange={setPlaybackRate}
+        />
       </Group>
-
-      {/* Playback Speed Drawer */}
-      <PlaybackSpeedDrawer
-        open={speedDrawerOpen}
-        currentRate={playbackState.playbackRate}
-        onClose={() => setSpeedDrawerOpen(false)}
-        onRateChange={setPlaybackRate}
-      />
     </>
   );
 };
