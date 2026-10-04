@@ -1,283 +1,111 @@
-# Stemux
-## Practice, mix and loop your stems
+<p align="center">
+  <img src="app/public/icons/android/android-launchericon-192-192.png" width="96" alt="">
+</p>
 
-<div align="center">
+<h1 align="center">Stemux</h1>
 
-![Stemux Logo](app/public/icons/android/android-launchericon-192-192.png)
+<p align="center">
+  <b>Tes pistes, une par une, au tempo et au ton que tu veux.</b><br>
+  Le lecteur multipiste pour travailler un morceau instrument par instrument.
+</p>
 
-**Practice smarter with isolated stems**
-
-A modern, browser-based multi-track audio player designed for musicians who want to practice with full control over individual instrument tracks.
-
-[✨ Features](#-features) • [🚀 Quick Start](#-quick-start) • [📖 User Guide](#-user-guide) • [🛠️ Tech Stack](#-tech-stack)
-
-</div>
-
----
-
-## ✨ Features
-
-### 🎛️ **Advanced Track Controls**
-- **Independent Volume Control** - Adjust each track's volume separately, plus master volume (the mouse wheel works on the sliders)
-- **Level Meters** - A dBFS peak meter per track, right before its waveform (desktop), with peak hold and clip light
-- **Track Colors** - Pick each track's color from a palette (track ⋮ menu)
-- **Smart Solo System** 
-  - Short press: Solo one track (mutes all others)
-  - Long press: Exclusive solo (unmutes all + solos only selected track)
-- **Intelligent Mute**
-  - Short press: Toggle mute for one track
-  - Long press: Unmute all tracks at once
-- **Single Timeline** - One time ruler, one playhead and every clip at its place (like an audio editor)
-- **Drag to Scroll** - Dragging the lanes scrolls the timeline; switch to edit mode (top bar) to move and trim clips
-- **Clip Editing** - Move clips and trim their start/end with the mouse, with snapping to markers, loops, other clips and the beats
-- **Undo / Redo** - Ctrl+Z / Ctrl+Shift+Z for markers, loops and clips
-
-### 🎵 **Multi-Piece Management**
-- **Create Multiple Projects** - Organize your work into separate pieces/songs
-- **Independent Storage** - Each piece saves its own tracks, loops, and settings
-- **Quick Switching** - Access recent pieces from the dropdown menu (click "Stemux ▼")
-- **Auto-Save** - Changes are automatically saved to your browser
-- **Easy Management** - Rename, delete, or create new pieces from one place
-- **Storage Overview** - See total space used by all your pieces
-
-### 🔁 **Loop System**
-- **Visual Timeline** - See your playback position in real-time
-- **Easy Loop Creation** - Drag on the time ruler to create a loop, drag its edges to adjust it, click to add a marker
-- **Loop Colors** - Pick each loop's color from a palette; delete loops and markers with one click
-- **Auto-Repeat** - Automatically loops back for focused practice on difficult sections
-- **Smart Skip** - Return to loop start (or track start if no loop active)
-
-### 🥁 **Tempo & Bars**
-- **Tempo per Piece** - Type it, tap it, or let Stemux detect it from the tracks
-- **Time Signature & Bar 1** - 4/4, 3/4, 6/8...; place bar 1 at the playhead
-- **Ruler in Bars** - Bar numbers, beat grid across the tracks, position as bar.beat
-- **Snap to the Grid** - Markers, loops and clips stick to the beats
-
-### ⚡ **Playback Features**
-- **Variable Speed** - 0.25x to 4.0x playback (perfect for learning complex parts)
-- **Keyboard Shortcuts** - SPACE for play/pause (more coming soon!)
-- **Precise Seeking** - Click anywhere on the waveform to jump
-- **Synchronized Playback** - All tracks stay perfectly in sync
-
-### 💾 **Storage & Compatibility**
-- **Offline First** - Files stored locally in your browser (IndexedDB)
-- **No Upload Required** - Everything stays on your device
-- **PWA Support** - Install as a desktop/mobile app
-- **Multiple Formats** - MP3, WAV, OGG, M4A, FLAC, AAC
-
-### 🎨 **User Experience**
-- **Dark/Light Mode** - Automatic theme based on system preference
-- **Responsive Design** - Works on desktop, tablet, and mobile
-- **Touch-Friendly** - Optimized for touchscreen devices
-- **Rename Tracks** - Click track names to customize them
-- **Internationalization** - Available in English and French
+<p align="center">
+  <a href="https://app.stemux.fr"><b>Ouvrir l'application</b></a>
+  ·
+  <a href="#linstaller">L'installer</a>
+  ·
+  <a href="https://github.com/wollanup/stemux/actions/workflows/ci.yml"><img src="https://github.com/wollanup/stemux/actions/workflows/ci.yml/badge.svg" alt="Tests" align="center"></a>
+</p>
 
 ---
 
-
-
-## 🚀 Quick Start
-
-### 🌐 **Try it Online**
-Visit [https://app.stemux.fr](https://app.stemux.fr) to start using Stemux immediately - no installation required!
-
-### 💻 **Run Locally**
-
-```bash
-# Clone the repository
-git clone https://github.com/yourusername/stemux.git
-cd stemux/app
-
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
-```
-
-Open http://localhost:5173 in your browser.
-
-### 📦 **Build for Production**
-
-```bash
-cd app
-npm run build
-npm run preview
-```
-
-### 🧪 **Checks & Tests**
-
-```bash
-cd app
-npm run lint
-npm run typecheck
-npm test          # unit tests (Vitest), `npm run test:watch` while developing
-npm run test:e2e  # UI tests (Playwright, Chromium with a fake microphone)
-```
-
-The same checks run on GitHub Actions for every push and pull request (`.github/workflows/ci.yml`).
-
-### 🐳 **Docker Deployment**
-
-```bash
-# From project root
-docker build -t stemux .
-docker run -p 3000:3000 stemux
-```
-
-Access at http://localhost:3000
-
----
-
-## 📖 User Guide
-
-### Getting Started
-
-1. **Load Your Tracks**
-   - Drag & drop audio files onto the upload area
-   - Or click to browse your files
-   - Supports MP3, WAV, OGG, and more
-   - Files are saved locally in your browser
-
-2. **Control Playback**
-   - Use the floating ▶️ button or press **SPACE**
-   - Adjust speed with the speed control (0.25x - 4.0x)
-   - Click waveforms to seek to specific positions
-
-3. **Master Your Mix**
-   - Adjust individual track volumes
-   - Use solo to isolate instruments
-   - Mute tracks you don't need
-   - Control master volume from the bottom bar
-
-### Managing Pieces
-
-Organize your work into separate pieces (songs/projects):
-
-1. **Quick Access** - Click **"Stemux ▼"** in the top bar to open the pieces menu
-2. **Switch Pieces** - Select from your 10 most recent pieces
-3. **Create New** - Click "Manage Pieces" → "New Piece" to start fresh
-4. **Current Piece** 
-   - Click the piece name to rename it
-   - Each piece keeps its own tracks, loops, and settings
-5. **Delete Old Work** - Remove pieces you no longer need
-
-**Desktop:** See current piece name in top bar  
-**Mobile:** Manage pieces from the menu (⋮); open a piece with its *Open* button
-
-### Track Controls
-
-| Icon | Control | Short Press | Long Press |
-|------|---------|-------------|------------|
-| 🎧 | Solo | Solo this track (mute others) | Exclusive solo (unmute all + solo only this) |
-| 🔊 | Mute | Toggle mute for this track | Unmute all tracks |
-| 🎚️ | Volume | Drag slider to adjust | - |
-
-### Loop System
-
-Perfect for practicing difficult sections:
-
-1. **Create a Loop** - Drag in the top strip of the time ruler (a click there adds a marker)
-2. **Adjust It** - Drag its handles, or drag the loop itself to move it
-3. **Practice** - Double click the loop (or click its chip) to play it repeatedly
-4. **Manage** - Chips above the timeline: × deletes, ⋮ for color, "loop on entry"...
-
-### Tempo & Bars
-
-1. **Open the Tempo Panel** - Click the ♪ button in the top bar
-2. **Set the Tempo** - Type the BPM, tap along, or click *Detect* (steady tempos; ÷2 / ×2 fix octave mistakes)
-3. **Signature & Bar 1** - Choose the time signature and where bar 1 starts
-4. **Ruler** - Switch between time and bars; in bars mode markers, loops and clips snap to the beats (Alt: freely)
-
-### Keyboard Shortcuts
-
-| Key | Action |
-|-----|--------|
-| `SPACE` | Play / Pause |
-| `Ctrl + Z` / `Ctrl + Shift + Z` | Undo / redo (markers, loops, clips) |
-| `Ctrl + wheel` | Zoom around the mouse |
-| `Alt` (while dragging) | Ignore snapping |
-
-### Tips & Tricks
-
-💡 **Click track names** to rename them for better organization
-
-💾 **Everything is offline** - No internet needed after initial load
-
-⏮️ **Smart skip button** - Returns to loop start (or track start if no loop)
-
-🎯 **Combine features** - Use solo + loop to laser-focus on specific instruments in specific sections
-
----
-
-## 🛠️ Tech Stack
-
-- **[React 19](https://react.dev/)** - UI framework
-- **[TypeScript](https://www.typescriptlang.org/)** - Type safety
-- **[Mantine 9](https://mantine.dev/)** - Component library, with [Tabler Icons](https://tabler.io/icons)
-- **[Web Audio API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API)** - Audio processing
-- **[Signalsmith Stretch](https://signalsmith-audio.co.uk/code/stretch/)** - Pitch-preserving speed change
-- **[Zustand](https://zustand-demo.pmnd.rs/)** - State management
-- **[Vite](https://vitejs.dev/)** - Build tool
-- **[Vite PWA Plugin](https://vite-pwa-org.netlify.app/)** - Progressive Web App support
-- **[i18next](https://www.i18next.com/)** - Internationalization
-
----
-
-## 🎯 Use Cases
-
-**Stemux is perfect for:**
-
-- 🎸 **Guitarists** learning solos by isolating the guitar track
-- 🥁 **Drummers** practicing with muted drums to play along
-- 🎹 **Keyboardists** focusing on chord progressions
-- 🎤 **Vocalists** practicing with instrumental-only mixes
-- 🎼 **Music Students** analyzing arrangements by isolating parts
-- 🎵 **Producers** reviewing stems before mixing
-
----
-
-## 🌍 Internationalization
-
-Currently available in:
-- 🇬🇧 English
-- 🇫🇷 French
-
-Want to add your language? Contributions welcome!
-
----
-
-## 🤝 Contributing
-
-Contributions, issues, and feature requests are welcome!
-
-1. Fork the project
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
----
-
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 🙏 Acknowledgments
-
-- **WaveSurfer.js** - Powered the waveforms of the first versions
-- **Material-UI** - Component library of the first versions
-- **Mantine** - For the component library
-- **Web Audio API** - For making this possible in the browser
-
----
-
-<div align="center">
-
-**Made with ❤️ and AI for musicians**
-
-⭐ Star this repo if you find it useful!
-
-</div>
+Tu bosses un morceau et tu as les pistes séparées (les *stems*) : la batterie, la basse, les cuivres,
+chacun dans son fichier. Dans un lecteur classique, tu ne peux pas couper ta partie pour jouer à sa place,
+ralentir le passage qui coince, le reprendre en boucle vingt fois ni t'enregistrer par-dessus.
+
+**Stemux fait tout ça dans le navigateur.** Tu déposes tes pistes, tu coupes ou isoles ce que tu veux,
+tu poses une boucle sur le passage difficile, tu le ralentis, et tu joues.
+
+<p align="center">
+  <img src="docs/screenshots/timeline.png" width="800" alt="Quatre pistes de fanfare, une boucle sur un passage, la règle en mesures">
+</p>
+<p align="center">
+  <img src="docs/screenshots/pitch.png" height="240" alt="Réglage de la hauteur en demi-tons et en cents">
+  <img src="docs/screenshots/tempo.png" height="240" alt="Tempo détecté, signature et mesure 1">
+  <img src="docs/screenshots/mobile.png" height="240" alt="Stemux sur téléphone">
+</p>
+
+## Ce qu'il sait faire
+
+- **Toutes tes pistes, calées.** Jusqu'à 8 pistes (MP3, WAV, OGG, FLAC, M4A… tout ce que ton navigateur
+  sait lire), jouées sur la même horloge : elles restent synchronisées à l'échantillon près, en boucle
+  comme au ralenti.
+- **Le mix sous la main.** Volume par piste (la molette marche aussi), solo et mute. Appui long sur solo :
+  tu n'entends plus que cette piste. Appui long sur mute : tout revient. Sur ordinateur, un vumètre par
+  piste.
+- **Des boucles pour les passages durs.** Glisse sur le haut de la règle pour créer une boucle, tire ses
+  bords pour l'ajuster, double-clic pour la jouer. Elle reboucle sans trou. Repères, couleurs, et
+  « boucler à l'entrée » pour qu'elle s'active quand la lecture y arrive.
+- **Ralentir sans changer le ton.** De 0,5x à 2x, la hauteur ne bouge pas.
+- **Changer le ton sans changer le tempo.** Transposition en demi-tons (jusqu'à une octave) et accord fin
+  en cents (±50). Pour jouer dans une autre tonalité, ou pour caler un enregistrement qui n'est pas au
+  diapason de ton instrument (coucou les fanfares).
+- **Tempo et mesures.** Tape le tempo, tapote-le, ou laisse Stemux le détecter. La règle compte alors en
+  mesures, et les repères, boucles et clips s'aimantent sur les temps.
+- **Enregistre-toi par-dessus.** Ajoute une piste d'enregistrement, arme-la, lance la lecture. La prise
+  tombe en place : la latence du casque et du micro est compensée, et tu peux la mesurer en un clic dans
+  les réglages. Réécoute, déplace, télécharge.
+- **Retouche les clips.** En mode édition, déplace les pistes sur la timeline et rogne leur début ou leur
+  fin, avec aimantation. Ctrl+Z si tu te trompes.
+- **Un morceau, un projet.** Chaque morceau garde ses pistes, ses boucles, son tempo, sa hauteur et ses
+  volumes. Rien à enregistrer : tout est sauvegardé au fil de l'eau.
+- **Clair ou sombre, français ou anglais.** Thème clair, sombre ou selon le système ; la langue suit celle
+  du navigateur.
+
+## Au clavier
+
+| Touche | Action |
+|---|---|
+| `Espace` | Lecture / pause |
+| `←` `→` | Recule / avance de 5 s (maintenu : défile, de plus en plus vite) |
+| `Ctrl + ←` | Retour au début |
+| `Ctrl + Z` / `Ctrl + Maj + Z` | Annuler / rétablir (repères, boucles, clips) |
+| `Ctrl + molette` | Zoom autour de la souris |
+| `Alt` pendant un glisser | Sans aimantation |
+
+## L'installer
+
+Stemux est une application web installable, sans store ni compte :
+
+- **Android (Chrome)** : ouvre [app.stemux.fr](https://app.stemux.fr), menu ⋮ puis
+  « Installer l'application ».
+- **iPhone (Safari)** : ouvre le site, bouton Partager puis « Sur l'écran d'accueil ».
+- **Ordinateur (Chrome, Edge)** : l'icône d'installation au bout de la barre d'adresse.
+
+Elle s'ouvre ensuite dans sa propre fenêtre, fonctionne hors ligne, et te prévient quand une nouvelle
+version est prête.
+
+## Bon à savoir
+
+- **Stemux ne sépare pas un mix.** Il lit des pistes déjà séparées : exportées de ton logiciel, fournies
+  avec une méthode, ou extraites avec un outil de séparation comme [Demucs](https://github.com/adefossez/demucs).
+- **Pour enregistrer**, le micro doit être autorisé deux fois : par le téléphone pour le navigateur, puis
+  par le site. Mets un casque, sinon le micro reprend les pistes.
+- **Tes morceaux vivent dans ton navigateur.** Effacer les données du site les efface aussi, et ils ne
+  passent pas d'un appareil à l'autre.
+
+## Vie privée
+
+Pas de compte, pas de pub, pas de pistage. Tes fichiers ne quittent jamais ton appareil : tout est lu et
+stocké dans le navigateur.
+
+## Contribuer
+
+Idées, bugs, envies : ouvre une [issue](https://github.com/wollanup/stemux/issues).
+Pour lancer le projet en local et comprendre comment il est construit, voir la
+[documentation technique](docs/DEVELOPMENT.md).
+
+## Licence
+
+[MIT](LICENSE). Les bibliothèques utilisées et leurs licences sont listées dans
+[THIRD-PARTY-LICENSES.md](THIRD-PARTY-LICENSES.md).
