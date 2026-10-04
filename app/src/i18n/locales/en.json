@@ -321,10 +321,20 @@
     "meter": "Level meter",
     "mute": "Mute (long press: unmute all)",
     "options": "Track options",
+    "pan": "Pan",
+    "panCenter": "C",
+    "panLeft": "L {{n}}",
+    "panLeftEnd": "L",
+    "panReset": "Center",
+    "panRight": "R {{n}}",
+    "panRightEnd": "R",
+    "panToLeft": "To the left",
+    "panToRight": "To the right",
     "peak": "Highest peak: {{value}} (click to reset)",
     "resizeHeaders": "Drag to change the width (double click: default size)",
     "resizeHeight": "Drag to change the height (double click: default size)",
-    "solo": "Solo (long press: exclusive solo)"
+    "solo": "Solo (long press: exclusive solo)",
+    "volume": "Volume"
   },
   "units": {
     "bytes": "B",

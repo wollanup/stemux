@@ -323,10 +323,20 @@
     "meter": "Vu-mètre",
     "mute": "Muet (appui long : tout réactiver)",
     "options": "Options de la piste",
+    "pan": "Panoramique",
+    "panCenter": "C",
+    "panLeft": "G {{n}}",
+    "panLeftEnd": "G",
+    "panReset": "Centrer",
+    "panRight": "D {{n}}",
+    "panRightEnd": "D",
+    "panToLeft": "Vers la gauche",
+    "panToRight": "Vers la droite",
     "peak": "Crête max : {{value}} (cliquer pour remettre à zéro)",
     "resizeHeaders": "Glisser pour changer la largeur (double-clic : taille par défaut)",
     "resizeHeight": "Glisser pour changer la hauteur (double-clic : taille par défaut)",
-    "solo": "Solo (appui long : solo exclusif)"
+    "solo": "Solo (appui long : solo exclusif)",
+    "volume": "Volume"
   },
   "units": {
     "bytes": "o",
