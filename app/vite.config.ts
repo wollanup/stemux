@@ -179,12 +179,14 @@ export default defineConfig({
     exclude: [], // Force optimize all deps
   },
   build: {
-    rollupOptions: {
+    rolldownOptions: {
       output: {
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom'],
-          'mui-vendor': ['@mui/material', '@mui/icons-material'],
-          'i18n-vendor': ['react-i18next', 'i18next'],
+        codeSplitting: {
+          groups: [
+            { name: 'react-vendor', test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/ },
+            { name: 'mui-vendor', test: /node_modules[\\/](@mui|@emotion)[\\/]/ },
+            { name: 'i18n-vendor', test: /node_modules[\\/](i18next|react-i18next)[\\/]/ },
+          ],
         },
       },
     },
