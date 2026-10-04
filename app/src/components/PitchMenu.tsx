@@ -6,6 +6,7 @@ import { useAudioStore } from '../hooks/useAudioStore';
 import { useWheelAdjust } from '../hooks/useWheelAdjust';
 import { CENTS_RANGE, PITCH_RANGE, NO_PITCH_SHIFT, isPitchShifted, type PitchShift } from '../audio/pitch';
 import { useSmallerThan } from '../theme/palette';
+import { BOTTOM_BAR_POPOVER } from './bottomBarPopover';
 
 /** Cents moved by the - / + buttons and a wheel step */
 const CENTS_STEP = 5;
@@ -81,7 +82,7 @@ const PitchMenu = ({ disabled }: { disabled: boolean }) => {
   const compact = useSmallerThan('xs');
 
   return (
-    <Popover opened={opened} onChange={setOpened} position="top-end" shadow="md" trapFocus returnFocus>
+    <Popover opened={opened} onChange={setOpened} position="top-end" shadow="md" trapFocus returnFocus {...BOTTOM_BAR_POPOVER}>
       <Popover.Target>
         <Tooltip label={t('pitch.title')} disabled={opened}>
           <Button
