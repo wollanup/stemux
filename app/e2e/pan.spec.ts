@@ -11,8 +11,8 @@ test.describe('pan', () => {
     // Click near the left end
     const box = (await slider.boundingBox())!;
     await page.mouse.click(box.x + box.width * 0.1, box.y + box.height / 2);
+    await expect.poll(async () => Number(await thumb.getAttribute('aria-valuenow'))).toBeLessThan(-50);
     const left = Number(await thumb.getAttribute('aria-valuenow'));
-    expect(left).toBeLessThan(-50);
 
     await page.reload();
     await expect(page.locator('[data-pan-slider]').getByRole('slider', { name: 'Pan' })).toHaveAttribute('aria-valuenow', String(left));
