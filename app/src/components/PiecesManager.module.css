@@ -1,0 +1,11 @@
+.name {
+  cursor: pointer;
+}
+
+.name:hover {
+  color: var(--mantine-primary-color-filled);
+}
+
+.piece {
+  padding: 8px 0;
+}

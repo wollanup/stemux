@@ -1,10 +1,10 @@
-import { Button, Snackbar, Alert } from '@mui/material';
+import { Button, Notification, Portal } from '@mantine/core';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { useTranslation } from 'react-i18next';
 import {logger} from '../utils/logger';
 export function PWAUpdatePrompt() {
   const { t } = useTranslation();
-  
+
   const {
     needRefresh: [needRefresh, setNeedRefresh],
     updateServiceWorker,
@@ -30,32 +30,20 @@ export function PWAUpdatePrompt() {
     setNeedRefresh(false);
   };
 
+  if (!showReload) return null;
+
   return (
-    <>
-      {showReload && (
-        <Snackbar
-          open={showReload}
-          onClose={close}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        >
-          <Alert
-            onClose={close}
-            severity="info"
-            sx={{ width: '100%' }}
-            action={
-              <Button
-                color="inherit"
-                size="small"
-                onClick={() => updateServiceWorker(true)}
-              >
-                {t('pwa.reload')}
-              </Button>
-            }
-          >
-            {t('pwa.updateAvailable')}
-          </Alert>
-        </Snackbar>
-      )}
-    </>
+    <Portal>
+      <Notification
+        onClose={close}
+        withBorder
+        style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', zIndex: 1400, maxWidth: 'calc(100vw - 32px)' }}
+      >
+        {t('pwa.updateAvailable')}
+        <Button variant="light" size="compact-sm" ml="md" onClick={() => updateServiceWorker(true)}>
+          {t('pwa.reload')}
+        </Button>
+      </Notification>
+    </Portal>
   );
 }

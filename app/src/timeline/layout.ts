@@ -36,7 +36,8 @@ export const LANE_HEIGHT = 80;
 export const LANE_HEIGHT_MOBILE = 64;
 export const LANE_HEIGHT_MIN = 64;
 export const LANE_HEIGHT_MAX = 400;
-export const COLLAPSED_LANE_HEIGHT = 32;
+/** Room for the header name row: padding, a 28px button, padding, border */
+export const COLLAPSED_LANE_HEIGHT = 40;
 
 /** Horizontal scrollbar, kept above the play button that overlaps the timeline bottom */
 export const SCROLLBAR_HEIGHT = 12;

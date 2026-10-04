@@ -1,0 +1,26 @@
+.track {
+  position: relative;
+  height: 100%;
+  background-color: var(--sb-track);
+  border-top: 1px solid var(--mantine-color-default-border);
+  border-bottom: 1px solid var(--mantine-color-default-border);
+  box-sizing: border-box;
+  touch-action: none;
+  cursor: pointer;
+}
+
+.thumb {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  background-color: var(--sb-thumb);
+  transition: background-color 0.15s;
+}
+
+.track:hover .thumb {
+  background-color: var(--sb-thumb-hover);
+}
+
+.track:active .thumb {
+  background-color: alpha(var(--mantine-primary-color-filled), 0.7);
+}

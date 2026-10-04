@@ -4,7 +4,7 @@
  */
 
 import { useRef } from 'react';
-import { alpha, Box } from '@mui/material';
+import classes from './ResizeHandle.module.css';
 
 interface ResizeHandleProps {
   /** 'x' = vertical strip on the right edge, 'y' = horizontal strip on the bottom edge */
@@ -16,14 +16,13 @@ interface ResizeHandleProps {
   label: string;
 }
 
-const THICKNESS = 6;
-
 export default function ResizeHandle({ axis, onResize, onEnd, onReset, label }: ResizeHandleProps) {
   const start = useRef<{ pointerId: number; pos: number } | null>(null);
   const position = (e: React.PointerEvent) => (axis === 'x' ? e.clientX : e.clientY);
 
   return (
-    <Box
+    <div
+      className={`${classes.handle} ${classes[axis]}`}
       role="separator"
       aria-orientation={axis === 'x' ? 'vertical' : 'horizontal'}
       aria-label={label}
@@ -53,17 +52,6 @@ export default function ResizeHandle({ axis, onResize, onEnd, onReset, label }: 
         onReset();
       }}
       onClick={(e) => e.stopPropagation()}
-      sx={(theme) => ({
-        position: 'absolute',
-        zIndex: 7,
-        touchAction: 'none',
-        // Inside the resized area: never over the clip edges next to it
-        ...(axis === 'x'
-          ? { top: 0, bottom: 0, right: 0, width: THICKNESS, cursor: 'col-resize' }
-          : { left: 0, right: 0, bottom: 0, height: THICKNESS, cursor: 'row-resize' }),
-        '&:hover, &:active': { bgcolor: alpha(theme.palette.primary.main, 0.35) },
-        transition: 'background-color 0.15s',
-      })}
     />
   );
 }

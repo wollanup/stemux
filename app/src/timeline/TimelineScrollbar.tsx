@@ -5,7 +5,8 @@
  */
 
 import { useEffect, useRef, type RefObject } from 'react';
-import { alpha, Box } from '@mui/material';
+import { useAppPalette } from '../theme/palette';
+import classes from './TimelineScrollbar.module.css';
 import { useTimelineView } from './viewStore';
 import { SCROLLBAR_BOTTOM_GAP, SCROLLBAR_HEIGHT } from './layout';
 import { scrollbarColors } from './scrollbarColors';
@@ -23,6 +24,7 @@ export default function TimelineScrollbar({ scrollRef, headerWidth, containerWid
   const { scrollLeft, viewportWidth } = useTimelineView();
   const trackRef = useRef<HTMLDivElement>(null);
   const drag = useRef<{ pointerId: number; x: number; scrollLeft: number } | null>(null);
+  const colors = scrollbarColors(useAppPalette());
 
   const trackWidth = Math.max(0, containerWidth - headerWidth);
   const maxScroll = Math.max(0, contentWidth - viewportWidth);
@@ -53,20 +55,22 @@ export default function TimelineScrollbar({ scrollRef, headerWidth, containerWid
   };
 
   return (
-    <Box
-      sx={{
+    <div
+      style={{
         position: 'sticky',
         left: 0,
         bottom: SCROLLBAR_BOTTOM_GAP,
         zIndex: 4,
         width: containerWidth,
         height: SCROLLBAR_HEIGHT,
-        pl: `${headerWidth}px`,
+        paddingLeft: headerWidth,
         boxSizing: 'border-box',
       }}
     >
-      <Box
+      <div
         ref={trackRef}
+        className={classes.track}
+        style={{ '--sb-track': colors.track, '--sb-thumb': colors.thumb, '--sb-thumb-hover': colors.thumbHover } as React.CSSProperties}
         data-timeline-scrollbar
         role="scrollbar"
         aria-orientation="horizontal"
@@ -94,36 +98,13 @@ export default function TimelineScrollbar({ scrollRef, headerWidth, containerWid
         }}
         onPointerUp={() => (drag.current = null)}
         onPointerCancel={() => (drag.current = null)}
-        sx={(theme) => {
-          const colors = scrollbarColors(theme);
-          return {
-            position: 'relative',
-            height: '100%',
-            bgcolor: colors.track,
-            borderTop: `1px solid ${theme.palette.divider}`,
-            borderBottom: `1px solid ${theme.palette.divider}`,
-            boxSizing: 'border-box',
-            touchAction: 'none',
-            cursor: 'pointer',
-            '&:hover [data-thumb]': { bgcolor: colors.thumbHover },
-            '&:active [data-thumb]': { bgcolor: alpha(theme.palette.primary.main, 0.7) },
-          };
-        }}
       >
-        <Box
+        <div
           data-thumb
-          sx={(theme) => ({
-            position: 'absolute',
-            top: 2,
-            bottom: 2,
-            left: thumbLeft,
-            width: thumbWidth,
-            borderRadius: SCROLLBAR_HEIGHT / 2,
-            bgcolor: scrollbarColors(theme).thumb,
-            transition: 'background-color 0.15s',
-          })}
+          className={classes.thumb}
+          style={{ left: thumbLeft, width: thumbWidth, borderRadius: SCROLLBAR_HEIGHT / 2 }}
         />
-      </Box>
-    </Box>
+      </div>
+    </div>
   );
 }

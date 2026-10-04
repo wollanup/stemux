@@ -1,51 +1,23 @@
 import {useEffect, useRef, useState} from 'react';
-import {AppBar, Box, Button, Fab, IconButton, Popover, Slider, Stack, styled, Toolbar, Tooltip, Typography} from '@mui/material';
-import FastRewindIcon from '@mui/icons-material/FastRewind';
-import FastForwardIcon from '@mui/icons-material/FastForward';
-import PauseIcon from '@mui/icons-material/Pause';
-import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import SkipPreviousIcon from '@mui/icons-material/SkipPrevious';
-import SpeedIcon from '@mui/icons-material/Speed';
-import VolumeUpIcon from '@mui/icons-material/VolumeUp';
-import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
+import {ActionIcon, Box, Group, Popover, Slider, Text, Tooltip} from '@mantine/core';
+import {
+  IconCircleFilled,
+  IconPlayerPauseFilled,
+  IconPlayerPlayFilled,
+  IconPlayerSkipBackFilled,
+  IconPlayerTrackNextFilled,
+  IconPlayerTrackPrevFilled,
+  IconVolume,
+} from '@tabler/icons-react';
 import {useAudioStore} from '../hooks/useAudioStore';
 import {usePlaybackTime} from '../hooks/usePlaybackTime';
 import {useThrottle} from '../hooks/useThrottle';
 import {useWheelAdjust} from '../hooks/useWheelAdjust';
-import PlaybackSpeedDrawer from './PlaybackSpeedDrawer';
+import PlaybackSpeedMenu from './PlaybackSpeedMenu';
 import {useTranslation} from 'react-i18next';
 import {audioEngine} from '../audio/AudioEngine';
 import {formatBarBeat} from '../tempo/tempo';
-
-const StyledFab = styled(Fab)({
-  position: 'absolute',
-  zIndex: 1,
-  top: -30,
-  left: 0,
-  right: 0,
-  margin: '0 auto',
-});
-
-// const SmallFab = styled(Fab)(({ theme }) => ({
-//   position: 'absolute',
-//   zIndex: 1,
-//   top: -20,
-//   width: 40,
-//   height: 40,
-//   minHeight: 40,
-//   backgroundColor: theme.palette.background.paper,
-//   color: theme.palette.text.secondary,
-//   boxShadow: theme.shadows[2],
-//   '&:hover': {
-//     backgroundColor: theme.palette.mode === 'dark'
-//       ? theme.palette.action.hover
-//       : theme.palette.grey[100],
-//   },
-//   '&.Mui-disabled': {
-//     backgroundColor: theme.palette.background.paper,
-//     color: theme.palette.action.disabled,
-//   },
-// }));
+import classes from './Bars.module.css';
 
 const BottomControlBar = () => {
   const { t } = useTranslation();
@@ -67,9 +39,7 @@ const BottomControlBar = () => {
   const isAnyTrackArmed = tracks.some((t) => t.isArmed);
   const isRecording = tracks.some((t) => t.recordingState === 'recording');
 
-  const [speedDrawerOpen, setSpeedDrawerOpen] = useState(false);
   const [tempMasterVolume, setTempMasterVolume] = useState(masterVolume);
-  const [volumeAnchorEl, setVolumeAnchorEl] = useState<HTMLButtonElement | null>(null);
 
   // Throttled master volume update (max 20 updates/sec = 50ms)
   const throttledSetMasterVolume = useThrottle((volume: number) => {
@@ -77,7 +47,7 @@ const BottomControlBar = () => {
   }, 50);
 
   // Wheel over the master volume slider: 2% per step
-  const masterWheelRef = useWheelAdjust<HTMLSpanElement>((steps) => {
+  const masterWheelRef = useWheelAdjust<HTMLDivElement>((steps) => {
     const volume = useAudioStore.getState().masterVolume;
     setMasterVolume(Math.max(0, Math.min(1, Math.round((volume + steps * 0.02) * 100) / 100)));
   });
@@ -338,263 +308,167 @@ const BottomControlBar = () => {
 
   const hasLoadedTracks = tracks.length > 0 && tracks.every((t) => t.file !== null);
 
-  return (
-    <AppBar
-      position="fixed"
-      color="default"
-      elevation={8}
-      sx={{
-        top: 'auto',
-        bottom: 0,
-        bgcolor: 'background.paper',
+  const volumeSlider = (wheelRef?: (element: HTMLDivElement | null) => void) => (
+    <Slider
+      ref={wheelRef}
+      value={tempMasterVolume * 100}
+      onChange={(value) => {
+        const newValue = value / 100;
+        setTempMasterVolume(newValue);
+        throttledSetMasterVolume(newValue);
       }}
-    >
-      <Toolbar sx={{ gap: 2 }}>
-        {/* FAB Play/Pause centered on top of AppBar - Hidden if no tracks */}
+      onChangeEnd={(value) => {
+        setMasterVolume(value / 100);
+      }}
+      disabled={!hasLoadedTracks}
+      size="sm"
+      label={(value) => `${Math.round(value)}%`}
+      flex={1}
+      thumbProps={{ 'aria-label': t('controls.masterVolume') }}
+    />
+  );
+
+  return (
+    <>
+      <Group h="100%" px="md" gap="md" wrap="nowrap">
+        {/* FAB Play/Pause centered on top of the bar - Hidden if no tracks */}
         {hasLoadedTracks && (
-          <>
-            {/* Quick Rewind Button */}
-            {/*<SmallFab*/}
-            {/*  size="small"*/}
-            {/*  disabled={!hasLoadedTracks}*/}
-            {/*  onClick={() => handleQuickSeek(-1)}*/}
-            {/*  aria-label="Rewind 5 seconds"*/}
-            {/*  sx={{*/}
-            {/*    left: '50%',*/}
-            {/*    transform: 'translateX(calc(-100% - 42px))',*/}
-            {/*  }}*/}
-            {/*>*/}
-            {/*  <FastRewind fontSize="small" />*/}
-            {/*</SmallFab>*/}
-
-            {/* Play/Pause FAB */}
-            <Tooltip
-              title={
-                playbackState.isPlaying
-                  ? isRecording
-                    ? t('recording.pauseRecording')
-                    : t('controls.pause')
-                  : isAnyTrackArmed
-                  ? t('recording.startRecording')
-                  : t('controls.play')
-              }
+          <Tooltip
+            label={
+              playbackState.isPlaying
+                ? isRecording
+                  ? t('recording.pauseRecording')
+                  : t('controls.pause')
+                : isAnyTrackArmed
+                ? t('recording.startRecording')
+                : t('controls.play')
+            }
+          >
+            <ActionIcon
+              size={56}
+              radius="xl"
+              color={isAnyTrackArmed || isRecording ? 'red' : undefined}
+              className={classes.fab}
+              data-pulse={(!playbackState.isPlaying && isAnyTrackArmed) || undefined}
+              aria-label={playbackState.isPlaying ? t('controls.pause') : t('controls.play')}
+              onClick={() => (playbackState.isPlaying ? pause() : play())}
             >
-              <StyledFab
-                color={isAnyTrackArmed || isRecording ? 'error' : 'primary'}
-                aria-label={playbackState.isPlaying ? t('controls.pause') : t('controls.play')}
-                onClick={() => (playbackState.isPlaying ? pause() : play())}
-                sx={{
-                  animation: !playbackState.isPlaying && isAnyTrackArmed
-                    ? 'rec-pulse 2s ease-in-out infinite'
-                    : 'none',
-                  '@keyframes rec-pulse': {
-                    '0%, 100%': {
-                      transform: 'scale(1)',
-                      boxShadow: '0 0 0 0 rgba(244, 67, 54, 0.7)',
-                    },
-                    '50%': {
-                      transform: 'scale(1.05)',
-                      boxShadow: '0 0 0 10px rgba(244, 67, 54, 0)',
-                    },
-                  },
-                }}
-              >
-                {playbackState.isPlaying ? (
-                  <PauseIcon />
-                ) : isAnyTrackArmed ? (
-                  <FiberManualRecordIcon />
-                ) : (
-                  <PlayArrowIcon />
-                )}
-              </StyledFab>
-            </Tooltip>
-
-            {/* Quick Forward Button */}
-            {/*<SmallFab*/}
-            {/*  size="small"*/}
-            {/*  disabled={!hasLoadedTracks}*/}
-            {/*  onClick={() => handleQuickSeek(1)}*/}
-            {/*  aria-label="Forward 5 seconds"*/}
-            {/*  sx={{*/}
-            {/*    left: '50%',*/}
-            {/*    transform: 'translateX(42px)',*/}
-            {/*  }}*/}
-            {/*>*/}
-            {/*  <FastForward fontSize="small" />*/}
-            {/*</SmallFab>*/}
-          </>
+              {playbackState.isPlaying ? (
+                <IconPlayerPauseFilled size={26} />
+              ) : isAnyTrackArmed ? (
+                <IconCircleFilled size={22} />
+              ) : (
+                <IconPlayerPlayFilled size={26} />
+              )}
+            </ActionIcon>
+          </Tooltip>
         )}
 
         {/* Time display with skip to start button */}
-        <Stack direction="row" spacing={1} alignItems="center">
-          <IconButton
-            size="small"
+        <Group gap="xs" wrap="nowrap">
+          <ActionIcon
+            variant="subtle"
+            color="gray"
             onClick={handleSkipToStart}
             disabled={!hasLoadedTracks || isRecording}
             aria-label={t('controls.skipToStart')}
           >
-            <SkipPreviousIcon />
-          </IconButton>
-          <IconButton
-            size="small"
+            <IconPlayerSkipBackFilled size={20} />
+          </ActionIcon>
+          <ActionIcon
+            variant="subtle"
+            color="gray"
             onPointerDown={handleRewindPointerDown}
             onPointerUp={handleRewindPointerUp}
             onPointerLeave={handleRewindPointerUp}
             onPointerCancel={handleRewindPointerUp}
             disabled={!hasLoadedTracks || isRecording}
             aria-label={t('controls.rewind5')}
-            sx={{ touchAction: 'none' }}
+            style={{ touchAction: 'none' }}
           >
-            <FastRewindIcon />
-          </IconButton>
-          <IconButton
-            size="small"
+            <IconPlayerTrackPrevFilled size={20} />
+          </ActionIcon>
+          <ActionIcon
+            variant="subtle"
+            color="gray"
             onPointerDown={handleForwardPointerDown}
             onPointerUp={handleForwardPointerUp}
             onPointerLeave={handleForwardPointerUp}
             onPointerCancel={handleForwardPointerUp}
             disabled={!hasLoadedTracks || isRecording}
             aria-label={t('controls.forward5')}
-            sx={{ touchAction: 'none' }}
+            style={{ touchAction: 'none' }}
           >
-            <FastForwardIcon />
-          </IconButton>
-          <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: { xs: 'auto', sm: 120 } }}>
-            <Typography variant="body2" data-testid="current-time">
+            <IconPlayerTrackNextFilled size={20} />
+          </ActionIcon>
+          <Group gap="xs" wrap="nowrap" miw={{ base: 'auto', xs: 120 }}>
+            <Text size="sm" data-testid="current-time">
               {formatTime(currentTime)}
-            </Typography>
+            </Text>
             {/* Desktop only - total time */}
-            <Box sx={{ display: { xs: 'none', sm: 'flex' }, gap: 1 }}>
-              <Typography variant="body2" color="text.secondary">
+            <Group gap="xs" visibleFrom="xs">
+              <Text size="sm" c="dimmed">
                 /
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
+              </Text>
+              <Text size="sm" c="dimmed">
                 {formatTime(playbackState.duration)}
-              </Typography>
-            </Box>
+              </Text>
+            </Group>
             {/* Bar.beat when the ruler counts bars (not on mobile: the bar is full) */}
             {barsTempo && (
-              <Typography
-                variant="body2"
-                color="text.secondary"
+              <Text
+                size="sm"
+                c="dimmed"
                 data-testid="current-bar"
                 // Desktop only, discreet, like the time next to it
-                sx={{ display: { xs: 'none', sm: 'block' }, fontVariantNumeric: 'tabular-nums', lineHeight: 'inherit' }}
+                visibleFrom="xs"
+                style={{ fontVariantNumeric: 'tabular-nums' }}
               >
                 {formatBarBeat(currentTime, barsTempo)}
-              </Typography>
+              </Text>
             )}
-          </Stack>
-        </Stack>
+          </Group>
+        </Group>
 
-        <Box sx={{ flexGrow: 1 }} />
+        <Box flex={1} />
 
         {/* Master Volume - Desktop: inline slider, Mobile: popover */}
-        {/* Desktop version (md and up) */}
-        <Stack
-          direction="row"
-          spacing={1}
-          alignItems="center"
-          sx={{
-            minWidth: 200,
-            display: { xs: 'none', md: 'flex' }
-          }}
-        >
-          <VolumeUpIcon fontSize="small" />
-          <Slider
-            ref={masterWheelRef}
-            value={tempMasterVolume * 100}
-            onChange={(_, value) => {
-              const newValue = (value as number) / 100;
-              setTempMasterVolume(newValue);
-              throttledSetMasterVolume(newValue);
-            }}
-            onChangeCommitted={(_, value) => {
-              setMasterVolume((value as number) / 100);
-            }}
-            disabled={!hasLoadedTracks}
-            size="small"
-            color="secondary"
-            valueLabelDisplay="auto"
-            valueLabelFormat={(value) => `${Math.round(value)}%`}
-            sx={{ flex: 1 }}
-            aria-label={t('controls.masterVolume')}
-          />
-        </Stack>
+        <Group gap="xs" wrap="nowrap" miw={200} visibleFrom="md">
+          <IconVolume size={20} />
+          {volumeSlider(masterWheelRef)}
+        </Group>
 
-        {/* Mobile version (xs to sm) - just icon button */}
-        <IconButton
-          size="small"
-          onClick={(e) => setVolumeAnchorEl(e.currentTarget)}
-          disabled={!hasLoadedTracks}
-          sx={{ display: { xs: 'flex', md: 'none' } }}
-          aria-label={t('controls.masterVolume')}
-        >
-          <VolumeUpIcon />
-        </IconButton>
-
-        {/* Volume Popover for mobile */}
-        <Popover
-          open={Boolean(volumeAnchorEl)}
-          anchorEl={volumeAnchorEl}
-          onClose={() => setVolumeAnchorEl(null)}
-          anchorOrigin={{
-            vertical: 'top',
-            horizontal: 'center',
-          }}
-          transformOrigin={{
-            vertical: 'bottom',
-            horizontal: 'center',
-          }}
-        >
-          <Box sx={{ p: 2, width: 250 }}>
-            <Typography variant="caption" color="text.secondary" gutterBottom display="block">
+        <Popover position="top" shadow="md">
+          <Popover.Target>
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              disabled={!hasLoadedTracks}
+              hiddenFrom="md"
+              aria-label={t('controls.masterVolume')}
+            >
+              <IconVolume size={22} />
+            </ActionIcon>
+          </Popover.Target>
+          <Popover.Dropdown p="md" w={250}>
+            <Text size="xs" c="dimmed" mb="xs">
               {t('controls.masterVolume')}
-            </Typography>
-            <Stack direction="row" spacing={1} alignItems="center">
-              <VolumeUpIcon fontSize="small" />
-              <Slider
-                value={tempMasterVolume * 100}
-                onChange={(_, value) => {
-                  const newValue = (value as number) / 100;
-                  setTempMasterVolume(newValue);
-                  throttledSetMasterVolume(newValue);
-                }}
-                onChangeCommitted={(_, value) => {
-                  setMasterVolume((value as number) / 100);
-                }}
-                size="small"
-                color="secondary"
-                valueLabelDisplay="auto"
-                valueLabelFormat={(value) => `${Math.round(value)}%`}
-                sx={{ flex: 1 }}
-              />
-            </Stack>
-          </Box>
+            </Text>
+            <Group gap="xs" wrap="nowrap">
+              <IconVolume size={18} />
+              {volumeSlider()}
+            </Group>
+          </Popover.Dropdown>
         </Popover>
 
         {/* Playback speed */}
-        <Button
-          startIcon={<SpeedIcon />}
-          onClick={() => setSpeedDrawerOpen(true)}
+        <PlaybackSpeedMenu
+          currentRate={playbackState.playbackRate}
           disabled={!hasLoadedTracks}
-          variant="outlined"
-          size="small"
-          color="secondary"
-          sx={{ minWidth: 100, textTransform: 'none' }}
-        >
-          {playbackState.playbackRate.toFixed(2)}x
-        </Button>
-      </Toolbar>
-
-      {/* Playback Speed Drawer */}
-      <PlaybackSpeedDrawer
-        open={speedDrawerOpen}
-        currentRate={playbackState.playbackRate}
-        onClose={() => setSpeedDrawerOpen(false)}
-        onRateChange={setPlaybackRate}
-      />
-    </AppBar>
+          onRateChange={setPlaybackRate}
+        />
+      </Group>
+    </>
   );
 };
 

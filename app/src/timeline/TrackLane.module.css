@@ -1,0 +1,18 @@
+.lane {
+  position: relative;
+  flex-shrink: 0;
+  user-select: none;
+  border-bottom: 1px solid var(--mantine-color-default-border);
+  outline-offset: -1px;
+}
+
+.armed {
+  background-color: alpha(var(--mantine-color-error), 0.06);
+  outline: 1px dashed alpha(var(--mantine-color-error), 0.6);
+}
+
+@media (hover: hover) {
+  .lane:hover [data-clip] {
+    border-color: var(--clip-border);
+  }
+}

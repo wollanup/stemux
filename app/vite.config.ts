@@ -114,34 +114,6 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'google-fonts-cache',
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
-          },
-          {
-            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'gstatic-fonts-cache',
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
-          },
-          {
             urlPattern: /\.(mp3|wav|ogg|m4a|flac|aac)$/i,
             handler: 'CacheFirst',
             options: {
@@ -184,7 +156,7 @@ export default defineConfig({
         codeSplitting: {
           groups: [
             { name: 'react-vendor', test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/ },
-            { name: 'mui-vendor', test: /node_modules[\\/](@mui|@emotion)[\\/]/ },
+            { name: 'ui-vendor', test: /node_modules[\\/](@mantine|@tabler|@floating-ui)[\\/]/ },
             { name: 'i18n-vendor', test: /node_modules[\\/](i18next|react-i18next)[\\/]/ },
           ],
         },

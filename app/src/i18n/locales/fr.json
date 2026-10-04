@@ -235,9 +235,7 @@
     "custom": "Personnalisée",
     "faster": "Plus rapide",
     "normal": "Normal",
-    "presets": "Préréglages rapides",
-    "slower": "Plus lent",
-    "title": "Vitesse de lecture"
+    "slower": "Plus lent"
   },
   "tempo": {
     "barOne": "La mesure 1 commence à",
@@ -301,7 +299,6 @@
   },
   "upload": {
     "description": "Déposez des fichiers audio ici ou cliquez pour sélectionner",
-    "dropHere": "Déposez vos fichiers ici",
-    "title": "Ajouter des pistes audio"
+    "dropHere": "Déposez vos fichiers ici"
   }
 }

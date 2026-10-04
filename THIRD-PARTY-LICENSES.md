@@ -9,10 +9,15 @@ This project uses the following third-party libraries:
 - **Copyright**: Copyright (c) Meta Platforms, Inc. and affiliates.
 - **URL**: https://github.com/facebook/react
 
-### Material-UI (@mui/material)
+### Mantine (@mantine/core, @mantine/hooks)
 - **License**: MIT License
-- **Copyright**: Copyright (c) 2014 Call-Em-All
-- **URL**: https://github.com/mui/material-ui
+- **Copyright**: Copyright (c) 2021 Vitaly Rtishchev
+- **URL**: https://github.com/mantinedev/mantine
+
+### Tabler Icons (@tabler/icons-react)
+- **License**: MIT License
+- **Copyright**: Copyright (c) 2020-2024 Paweł Kuna
+- **URL**: https://github.com/tabler/tabler-icons
 
 ### Zustand
 - **License**: MIT License
@@ -23,11 +28,6 @@ This project uses the following third-party libraries:
 - **License**: MIT License
 - **Copyright**: Copyright (c) 2022 i18next
 - **URL**: https://github.com/i18next/i18next
-
-### @emotion/react & @emotion/styled
-- **License**: MIT License
-- **Copyright**: Copyright (c) Emotion team and other contributors
-- **URL**: https://github.com/emotion-js/emotion
 
 ### Signalsmith Stretch (signalsmith-stretch)
 - **License**: MIT License

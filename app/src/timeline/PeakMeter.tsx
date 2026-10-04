@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useRef } from 'react';
-import { Box, useTheme } from '@mui/material';
+import { useAppPalette } from '../theme/palette';
 import { useTranslation } from 'react-i18next';
 import { audioEngine } from '../audio/AudioEngine';
 import { DANGER_DB, formatDb, meterPosition, METER_FLOOR_DB, silentMeter, stepMeter, toDb, WARN_DB, type ChannelMeter } from './meterMath';
@@ -15,7 +15,7 @@ export const PEAK_METER_WIDTH = 9;
 const CLIP_LIGHT_PX = 3;
 
 export default function PeakMeter({ trackId }: { trackId: string }) {
-  const theme = useTheme();
+  const palette = useAppPalette();
   const { t } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const maxDb = useRef(METER_FLOOR_DB);
@@ -29,7 +29,7 @@ export default function PeakMeter({ trackId }: { trackId: string }) {
     let last = performance.now();
     let lastTitle = 0;
     let raf = 0;
-    const colors = { ok: theme.palette.success.main, warn: theme.palette.warning.main, danger: theme.palette.error.main };
+    const colors = { ok: palette.success, warn: palette.warning, danger: palette.error };
 
     const draw = (now: number) => {
       raf = requestAnimationFrame(draw);
@@ -65,13 +65,13 @@ export default function PeakMeter({ trackId }: { trackId: string }) {
       const barWidth = (width - gap * (channels - 1)) / channels;
 
       // Clip light: the track reached 0 dBFS since the last reset
-      g.fillStyle = maxDb.current >= 0 ? colors.danger : theme.palette.action.selected;
+      g.fillStyle = maxDb.current >= 0 ? colors.danger : palette.surface;
       g.fillRect(0, 0, width, CLIP_LIGHT_PX);
 
       for (let i = 0; i < channels; i++) {
         const x = i * (barWidth + gap);
         const meter = meters[i] ?? silentMeter();
-        g.fillStyle = theme.palette.action.selected;
+        g.fillStyle = palette.surface;
         g.fillRect(x, barsTop, barWidth, barsHeight);
         // Bar in three zones: safe, loud, about to clip
         const zones: Array<[number, number, string]> = [
@@ -86,18 +86,17 @@ export default function PeakMeter({ trackId }: { trackId: string }) {
           g.fillRect(x, top, barWidth, y(from) - top);
         }
         if (meter.hold > METER_FLOOR_DB) {
-          g.fillStyle = meter.hold >= DANGER_DB ? colors.danger : theme.palette.text.primary;
+          g.fillStyle = meter.hold >= DANGER_DB ? colors.danger : palette.text;
           g.fillRect(x, Math.round(y(meter.hold)), barWidth, 1.5);
         }
       }
     };
     raf = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(raf);
-  }, [trackId, theme, t]);
+  }, [trackId, palette, t]);
 
   return (
-    <Box
-      component="canvas"
+    <canvas
       ref={canvasRef}
       data-peak-meter={trackId}
       aria-label={t('track.meter')}
@@ -107,7 +106,7 @@ export default function PeakMeter({ trackId }: { trackId: string }) {
         maxDb.current = METER_FLOOR_DB;
         if (canvasRef.current) canvasRef.current.dataset.drawn = '';
       }}
-      sx={{ display: 'block', width: PEAK_METER_WIDTH, height: '100%', cursor: 'pointer' }}
+      style={{ display: 'block', width: PEAK_METER_WIDTH, height: '100%', cursor: 'pointer' }}
     />
   );
 }

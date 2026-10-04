@@ -1,0 +1,101 @@
+.header {
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  /* Content at the top: it stays in place whatever the lane height */
+  justify-content: flex-start;
+  gap: 2px;
+  position: relative;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  /* Opaque: the playhead and loop overlay pass under the headers */
+  background-color: var(--mantine-color-body);
+  border-left: 4px solid;
+  border-bottom: 1px solid var(--mantine-color-default-border);
+}
+
+.header[data-variant='column'] {
+  gap: 0;
+  border-right: 1px solid var(--mantine-color-default-border);
+}
+
+.header[data-armed] {
+  background-image: linear-gradient(alpha(var(--mantine-color-error), 0.12), alpha(var(--mantine-color-error), 0.12));
+}
+
+/* Dim the content only: the background must stay opaque */
+.header[data-dimmed] > * {
+  opacity: 0.6;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.dragHandle {
+  touch-action: none;
+  opacity: 0.6;
+}
+
+.dragHandle:hover {
+  opacity: 1;
+}
+
+.name {
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.name:hover {
+  color: var(--mantine-primary-color-filled);
+}
+
+.nameInput {
+  flex: 1;
+  min-width: 0;
+}
+
+.collapse {
+  opacity: 0.6;
+  transition: transform 0.2s;
+}
+
+.volume {
+  flex: 1;
+  min-width: 48px;
+  margin-inline: 8px;
+}
+
+.tooltipAnchor {
+  display: inline-flex;
+}
+
+.hoverDanger:hover {
+  color: var(--mantine-color-error);
+}
+
+.hoverPrimary:hover {
+  color: var(--mantine-primary-color-filled);
+}
+
+.blink {
+  color: var(--mantine-color-error);
+  flex-shrink: 0;
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0;
+  }
+}

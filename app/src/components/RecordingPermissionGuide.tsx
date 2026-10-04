@@ -1,106 +1,72 @@
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  Typography,
-  Box,
-  Alert,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  useMediaQuery,
-  useTheme,
-} from '@mui/material';
+import { Alert, Button, Group, List, Modal, Text } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
-import PhoneAndroidIcon from '@mui/icons-material/PhoneAndroid';
-import MicIcon from '@mui/icons-material/Mic';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import { IconCircleCheck, IconDeviceMobile, IconMicrophone } from '@tabler/icons-react';
+import { useSmallerThan } from '../theme/palette';
 
 interface RecordingPermissionGuideProps {
   open: boolean;
   onClose: () => void;
 }
 
+const Step = ({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) => (
+  <List.Item icon={icon}>
+    <Text>{title}</Text>
+    <Text size="sm" c="dimmed">
+      {description}
+    </Text>
+  </List.Item>
+);
+
 const RecordingPermissionGuide = ({ open, onClose }: RecordingPermissionGuideProps) => {
   const { t } = useTranslation();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMobile = useSmallerThan('xs');
 
   return (
-    <Dialog 
-      open={open} 
+    <Modal
+      opened={open}
       onClose={onClose}
       fullScreen={isMobile}
-      maxWidth="sm"
-      fullWidth
+      size="lg"
+      title={t('recordingGuide.title')}
     >
-      <DialogTitle>{t('recordingGuide.title')}</DialogTitle>
-      
-      <DialogContent>
-        <Alert severity="info" sx={{ mb: 3 }}>
-          <Typography variant="body2">
-            {t('recordingGuide.intro')}
-          </Typography>
-        </Alert>
+      <Alert color="blue" mb="lg">
+        {t('recordingGuide.intro')}
+      </Alert>
 
-        <Typography variant="subtitle2" gutterBottom sx={{ mt: 2 }}>
-          {t('recordingGuide.stepsTitle')}
-        </Typography>
+      <Text size="sm" fw={600} mt="md" mb="xs">
+        {t('recordingGuide.stepsTitle')}
+      </Text>
 
-        <List>
-          <ListItem>
-            <ListItemIcon>
-              <PhoneAndroidIcon color="primary" />
-            </ListItemIcon>
-            <ListItemText
-              primary={t('recordingGuide.step1Title')}
-              secondary={t('recordingGuide.step1Description')}
-            />
-          </ListItem>
+      <List spacing="md" center>
+        <Step
+          icon={<IconDeviceMobile size={24} color="var(--mantine-primary-color-filled)" />}
+          title={t('recordingGuide.step1Title')}
+          description={t('recordingGuide.step1Description')}
+        />
+        <Step
+          icon={<IconMicrophone size={24} color="var(--mantine-primary-color-filled)" />}
+          title={t('recordingGuide.step2Title')}
+          description={t('recordingGuide.step2Description')}
+        />
+        <Step
+          icon={<IconCircleCheck size={24} color="var(--mantine-color-green-filled)" />}
+          title={t('recordingGuide.step3Title')}
+          description={t('recordingGuide.step3Description')}
+        />
+      </List>
 
-          <ListItem>
-            <ListItemIcon>
-              <MicIcon color="primary" />
-            </ListItemIcon>
-            <ListItemText
-              primary={t('recordingGuide.step2Title')}
-              secondary={t('recordingGuide.step2Description')}
-            />
-          </ListItem>
+      <Alert color="orange" mt="lg">
+        {t('recordingGuide.troubleshoot')}
+      </Alert>
 
-          <ListItem>
-            <ListItemIcon>
-              <CheckCircleIcon color="success" />
-            </ListItemIcon>
-            <ListItemText
-              primary={t('recordingGuide.step3Title')}
-              secondary={t('recordingGuide.step3Description')}
-            />
-          </ListItem>
-        </List>
+      <Text size="xs" c="dimmed" mt="md">
+        {t('recordingGuide.footer')}
+      </Text>
 
-        <Alert severity="warning" sx={{ mt: 3 }}>
-          <Typography variant="body2">
-            {t('recordingGuide.troubleshoot')}
-          </Typography>
-        </Alert>
-
-        <Box sx={{ mt: 2 }}>
-          <Typography variant="caption" color="text.secondary">
-            {t('recordingGuide.footer')}
-          </Typography>
-        </Box>
-      </DialogContent>
-      
-      <DialogActions>
-        <Button onClick={onClose} variant="contained">
-          {t('recordingGuide.understood')}
-        </Button>
-      </DialogActions>
-    </Dialog>
+      <Group justify="flex-end" mt="lg">
+        <Button onClick={onClose}>{t('recordingGuide.understood')}</Button>
+      </Group>
+    </Modal>
   );
 };
 

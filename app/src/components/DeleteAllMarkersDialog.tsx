@@ -1,8 +1,8 @@
 /** Confirmation before deleting every marker and loop of the piece (undoable with Ctrl+Z) */
 
-import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { useAudioStore } from '../hooks/useAudioStore';
+import ConfirmDialog from './ConfirmDialog';
 
 export default function DeleteAllMarkersDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { t } = useTranslation();
@@ -19,19 +19,14 @@ export default function DeleteAllMarkersDialog({ open, onClose }: { open: boolea
   };
 
   return (
-    <Dialog open={open} onClose={onClose}>
-      <DialogTitle>{t('markers.deleteAllConfirmTitle')}</DialogTitle>
-      <DialogContent>
-        <DialogContentText>
-          {t('markers.deleteAllConfirmMessage', { markerCount: loopState.markers.length, loopCount: loopState.loops.length })}
-        </DialogContentText>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>{t('markers.deleteAllDialogCancel')}</Button>
-        <Button onClick={deleteAll} color="error" autoFocus>
-          {t('markers.deleteAllDialogConfirm')}
-        </Button>
-      </DialogActions>
-    </Dialog>
+    <ConfirmDialog
+      opened={open}
+      onClose={onClose}
+      onConfirm={deleteAll}
+      title={t('markers.deleteAllConfirmTitle')}
+      message={t('markers.deleteAllConfirmMessage', { markerCount: loopState.markers.length, loopCount: loopState.loops.length })}
+      cancelLabel={t('markers.deleteAllDialogCancel')}
+      confirmLabel={t('markers.deleteAllDialogConfirm')}
+    />
   );
 }

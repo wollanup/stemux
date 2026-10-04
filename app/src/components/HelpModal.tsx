@@ -1,18 +1,22 @@
+import { Box, Divider, Group, Kbd, Modal, Stack, Text, ThemeIcon, Title } from '@mantine/core';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  IconButton,
-  Typography,
-  Box,
-  Stack,
-  Divider,
-  Chip,
-  useMediaQuery,
-} from '@mui/material';
-import { Close, Headset, VolumeUp, Loop, Speed, OpenWith, SwapHoriz, PanTool, MoreVert, GraphicEq, MusicNote, TouchApp, AutoAwesome, Straighten } from '@mui/icons-material';
-import MagnetIcon from './MagnetIcon';
+  IconArrowsLeftRight,
+  IconArrowsMove,
+  IconDotsVertical,
+  IconGauge,
+  IconHandFinger,
+  IconHandStop,
+  IconHeadphones,
+  IconMagnet,
+  IconMusic,
+  IconRepeat,
+  IconRuler,
+  IconSparkles,
+  IconVolume,
+  IconWaveSine,
+} from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
+import { useSmallerThan } from '../theme/palette';
 
 interface HelpModalProps {
   open: boolean;
@@ -21,12 +25,18 @@ interface HelpModalProps {
 
 // Helper components defined OUTSIDE of render to avoid recreation
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
-  <Box mb={3}>
-    <Typography variant="h6" gutterBottom color="primary" fontWeight={600}>
+  <Box mb="lg">
+    <Title order={4} c="var(--mantine-primary-color-filled)" mb="xs">
       {title}
-    </Typography>
+    </Title>
     {children}
   </Box>
+);
+
+const Subtitle = ({ children, mt }: { children: React.ReactNode; mt?: string }) => (
+  <Text fw={600} mb={4} mt={mt}>
+    {children}
+  </Text>
 );
 
 const ControlItem = ({
@@ -38,271 +48,165 @@ const ControlItem = ({
   title: string;
   description: string;
 }) => (
-  <Stack direction="row" spacing={2} mb={2} alignItems="flex-start">
-    <Box
-      sx={{
-        minWidth: 40,
-        height: 40,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        bgcolor: 'primary.main',
-        color: 'white',
-        borderRadius: 1,
-      }}
-    >
+  <Group gap="md" mb="md" align="flex-start" wrap="nowrap">
+    <ThemeIcon size={40} radius="sm">
       {icon}
-    </Box>
+    </ThemeIcon>
     <Box flex={1}>
-      <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+      <Text size="sm" fw={600} mb={4}>
         {title}
-      </Typography>
-      <Typography variant="body2" color="text.secondary">
+      </Text>
+      <Text size="sm" c="dimmed">
         {description}
-      </Typography>
+      </Text>
     </Box>
-  </Stack>
+  </Group>
 );
+
+const Shortcut = ({ keys, children }: { keys: string; children: React.ReactNode }) => (
+  <Group gap="xs">
+    <Kbd>{keys}</Kbd>
+    <Text size="sm">{children}</Text>
+  </Group>
+);
+
+const ICON = 22;
 
 const HelpModal = ({ open, onClose }: HelpModalProps) => {
   const { t } = useTranslation();
+  const fullScreen = useSmallerThan('xs');
 
   return (
-    <Dialog
-      open={open}
+    <Modal
+      opened={open}
       onClose={onClose}
-      maxWidth="md"
-      fullWidth
-      fullScreen={useMediaQuery('(max-width:600px)')}
-      scroll="paper"
+      size="xl"
+      fullScreen={fullScreen}
+      title={<Title order={3}>{t('help.title')}</Title>}
     >
-      <DialogTitle>
-        <Stack direction="row" alignItems="center" justifyContent="space-between">
-          <Typography variant="h5" fontWeight={600}>
-            {t('help.title')}
-          </Typography>
-          <IconButton onClick={onClose} size="small">
-            <Close />
-          </IconButton>
+      {/* Welcome */}
+      <Section title={t('help.sections.welcome.title')}>
+        <Text>{t('help.sections.welcome.description')}</Text>
+      </Section>
+
+      <Divider my="lg" />
+
+      {/* Pieces Management */}
+      <Section title={t('help.sections.pieces.title')}>
+        <Text size="sm" c="dimmed">
+          {t('help.sections.pieces.description')}
+        </Text>
+      </Section>
+
+      <Divider my="lg" />
+
+      {/* Getting Started */}
+      <Section title={t('help.sections.basics.title')}>
+        <Subtitle>{t('help.sections.basics.uploadTitle')}</Subtitle>
+        <Text size="sm" c="dimmed">
+          {t('help.sections.basics.uploadDesc')}
+        </Text>
+
+        <Subtitle mt="md">{t('help.sections.basics.playbackTitle')}</Subtitle>
+        <Text size="sm" c="dimmed">
+          {t('help.sections.basics.playbackDesc')}
+        </Text>
+      </Section>
+
+      <Divider my="lg" />
+
+      {/* Track Controls */}
+      <Section title={t('help.sections.tracks.title')}>
+        <ControlItem icon={<IconHeadphones size={ICON} />} title={t('help.sections.tracks.soloTitle')} description="" />
+        <Stack gap="xs" ml={56} mb="md">
+          <Text size="sm">• {t('help.sections.tracks.soloShort')}</Text>
+          <Text size="sm">• {t('help.sections.tracks.soloLong')}</Text>
         </Stack>
-      </DialogTitle>
 
-      <DialogContent dividers>
-        {/* Welcome */}
-        <Section title={t('help.sections.welcome.title')}>
-          <Typography variant="body1" >
-            {t('help.sections.welcome.description')}
-          </Typography>
-        </Section>
+        <ControlItem icon={<IconVolume size={ICON} />} title={t('help.sections.tracks.muteTitle')} description="" />
+        <Stack gap="xs" ml={56} mb="md">
+          <Text size="sm">• {t('help.sections.tracks.muteShort')}</Text>
+          <Text size="sm">• {t('help.sections.tracks.muteLong')}</Text>
+        </Stack>
 
-        <Divider sx={{ my: 3 }} />
+        <ControlItem icon={<IconGauge size={ICON} />} title={t('help.sections.tracks.volumeTitle')} description={t('help.sections.tracks.volumeDesc')} />
+        <ControlItem icon={<IconWaveSine size={ICON} />} title={t('help.sections.tracks.meterTitle')} description={t('help.sections.tracks.meterDesc')} />
+        <ControlItem icon={<IconDotsVertical size={ICON} />} title={t('help.sections.tracks.menuTitle')} description={t('help.sections.tracks.menuDesc')} />
+      </Section>
 
-        {/* Pieces Management */}
-        <Section title={t('help.sections.pieces.title')}>
-          <Typography variant="body2" color="text.secondary">
-            {t('help.sections.pieces.description')}
-          </Typography>
-        </Section>
+      <Divider my="lg" />
 
-        <Divider sx={{ my: 3 }} />
+      {/* Clips */}
+      <Section title={t('help.sections.clips.title')}>
+        <ControlItem icon={<IconHandStop size={ICON} />} title={t('help.sections.clips.scrollTitle')} description={t('help.sections.clips.scrollDesc')} />
+        <ControlItem icon={<IconArrowsMove size={ICON} />} title={t('help.sections.clips.moveTitle')} description={t('help.sections.clips.moveDesc')} />
+        <ControlItem icon={<IconArrowsLeftRight size={ICON} />} title={t('help.sections.clips.trimTitle')} description={t('help.sections.clips.trimDesc')} />
+        <ControlItem icon={<IconMagnet size={ICON} />} title={t('help.sections.clips.snapTitle')} description={t('help.sections.clips.snapDesc')} />
+      </Section>
 
-        {/* Getting Started */}
-        <Section title={t('help.sections.basics.title')}>
-          <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-            {t('help.sections.basics.uploadTitle')}
-          </Typography>
-          <Typography variant="body2"  color="text.secondary">
-            {t('help.sections.basics.uploadDesc')}
-          </Typography>
+      <Divider my="lg" />
 
-          <Typography variant="subtitle1" fontWeight={600} gutterBottom mt={2}>
-            {t('help.sections.basics.playbackTitle')}
-          </Typography>
-          <Typography variant="body2"  color="text.secondary">
-            {t('help.sections.basics.playbackDesc')}
-          </Typography>
-        </Section>
+      {/* Loop System */}
+      <Section title={t('help.sections.loops.title')}>
+        <ControlItem icon={<IconRepeat size={ICON} />} title={t('help.sections.loops.openTitle')} description={t('help.sections.loops.openDesc')} />
 
-        <Divider sx={{ my: 3 }} />
+        <Subtitle mt="lg">{t('help.sections.loops.editTitle')}</Subtitle>
+        <Text size="sm" c="dimmed" mb="md">
+          {t('help.sections.loops.editDesc')}
+        </Text>
 
-        {/* Track Controls */}
-        <Section title={t('help.sections.tracks.title')}>
-          <ControlItem
-            icon={<Headset />}
-            title={t('help.sections.tracks.soloTitle')}
-            description=""
-          />
-          <Box ml={7} mb={2}>
-            <Stack spacing={1}>
-              <Typography variant="body2">
-                • {t('help.sections.tracks.soloShort')}
-              </Typography>
-              <Typography variant="body2">
-                • {t('help.sections.tracks.soloLong')}
-              </Typography>
-            </Stack>
-          </Box>
+        <Subtitle>{t('help.sections.loops.manageTitle')}</Subtitle>
+        <Text size="sm" c="dimmed" mb="md">
+          {t('help.sections.loops.manageDesc')}
+        </Text>
 
-          <ControlItem
-            icon={<VolumeUp />}
-            title={t('help.sections.tracks.muteTitle')}
-            description=""
-          />
-          <Box ml={7} mb={2}>
-            <Stack spacing={1}>
-              <Typography variant="body2">
-                • {t('help.sections.tracks.muteShort')}
-              </Typography>
-              <Typography variant="body2">
-                • {t('help.sections.tracks.muteLong')}
-              </Typography>
-            </Stack>
-          </Box>
+        <Subtitle>{t('help.sections.loops.activeTitle')}</Subtitle>
+        <Text size="sm" c="dimmed">
+          {t('help.sections.loops.activeDesc')}
+        </Text>
+      </Section>
 
-          <ControlItem
-            icon={<Speed />}
-            title={t('help.sections.tracks.volumeTitle')}
-            description={t('help.sections.tracks.volumeDesc')}
-          />
-          <ControlItem icon={<GraphicEq />} title={t('help.sections.tracks.meterTitle')} description={t('help.sections.tracks.meterDesc')} />
-          <ControlItem icon={<MoreVert />} title={t('help.sections.tracks.menuTitle')} description={t('help.sections.tracks.menuDesc')} />
-        </Section>
+      <Divider my="lg" />
 
-        <Divider sx={{ my: 3 }} />
+      {/* Tempo */}
+      <Section title={t('help.sections.tempo.title')}>
+        <ControlItem icon={<IconMusic size={ICON} />} title={t('help.sections.tempo.setTitle')} description={t('help.sections.tempo.setDesc')} />
+        <ControlItem icon={<IconHandFinger size={ICON} />} title={t('help.sections.tempo.tapTitle')} description={t('help.sections.tempo.tapDesc')} />
+        <ControlItem icon={<IconSparkles size={ICON} />} title={t('help.sections.tempo.detectTitle')} description={t('help.sections.tempo.detectDesc')} />
+        <ControlItem icon={<IconRuler size={ICON} />} title={t('help.sections.tempo.barsTitle')} description={t('help.sections.tempo.barsDesc')} />
+      </Section>
 
-        {/* Clips */}
-        <Section title={t('help.sections.clips.title')}>
-          <ControlItem icon={<PanTool />} title={t('help.sections.clips.scrollTitle')} description={t('help.sections.clips.scrollDesc')} />
-          <ControlItem icon={<OpenWith />} title={t('help.sections.clips.moveTitle')} description={t('help.sections.clips.moveDesc')} />
-          <ControlItem icon={<SwapHoriz />} title={t('help.sections.clips.trimTitle')} description={t('help.sections.clips.trimDesc')} />
-          <ControlItem icon={<MagnetIcon />} title={t('help.sections.clips.snapTitle')} description={t('help.sections.clips.snapDesc')} />
-        </Section>
+      <Divider my="lg" />
 
-        <Divider sx={{ my: 3 }} />
+      {/* Keyboard Shortcuts */}
+      <Section title={t('help.sections.keyboard.title')}>
+        <Stack gap="xs" mb="md">
+          <Shortcut keys="SPACE">{t('help.sections.keyboard.space')}</Shortcut>
+          <Shortcut keys="←">{t('help.sections.keyboard.arrowLeft')}</Shortcut>
+          <Shortcut keys="→">{t('help.sections.keyboard.arrowRight')}</Shortcut>
+          <Shortcut keys="Ctrl + ←">{t('help.sections.keyboard.ctrlLeft')}</Shortcut>
+          <Shortcut keys="Ctrl + 🖱️">{t('help.sections.keyboard.ctrlWheel')}</Shortcut>
+          <Shortcut keys="Shift + 🖱️">{t('help.sections.keyboard.altWheel')}</Shortcut>
+          <Shortcut keys="Ctrl + Z">{t('help.sections.keyboard.undo')}</Shortcut>
+          <Shortcut keys="Ctrl + Shift + Z">{t('help.sections.keyboard.redo')}</Shortcut>
+          <Shortcut keys="Alt">{t('help.sections.keyboard.altSnap')}</Shortcut>
+        </Stack>
+        <Text size="xs" c="dimmed" fs="italic">
+          {t('help.sections.keyboard.more')}
+        </Text>
+      </Section>
 
-        {/* Loop System */}
-        <Section title={t('help.sections.loops.title')}>
-          <ControlItem
-            icon={<Loop />}
-            title={t('help.sections.loops.openTitle')}
-            description={t('help.sections.loops.openDesc')}
-          />
+      <Divider my="lg" />
 
-          <Typography variant="subtitle1" fontWeight={600} gutterBottom mt={3}>
-            {t('help.sections.loops.editTitle')}
-          </Typography>
-          <Typography variant="body2" color="text.secondary" mb={2}>
-            {t('help.sections.loops.editDesc')}
-          </Typography>
-
-          <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-            {t('help.sections.loops.manageTitle')}
-          </Typography>
-          <Typography variant="body2" color="text.secondary" mb={2}>
-            {t('help.sections.loops.manageDesc')}
-          </Typography>
-
-          <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-            {t('help.sections.loops.activeTitle')}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {t('help.sections.loops.activeDesc')}
-          </Typography>
-        </Section>
-
-        <Divider sx={{ my: 3 }} />
-
-        {/* Tempo */}
-        <Section title={t('help.sections.tempo.title')}>
-          <ControlItem icon={<MusicNote />} title={t('help.sections.tempo.setTitle')} description={t('help.sections.tempo.setDesc')} />
-          <ControlItem icon={<TouchApp />} title={t('help.sections.tempo.tapTitle')} description={t('help.sections.tempo.tapDesc')} />
-          <ControlItem icon={<AutoAwesome />} title={t('help.sections.tempo.detectTitle')} description={t('help.sections.tempo.detectDesc')} />
-          <ControlItem icon={<Straighten />} title={t('help.sections.tempo.barsTitle')} description={t('help.sections.tempo.barsDesc')} />
-        </Section>
-
-        <Divider sx={{ my: 3 }} />
-
-        {/* Keyboard Shortcuts */}
-        <Section title={t('help.sections.keyboard.title')}>
-          <Stack spacing={1} mb={2}>
-            <Stack direction="row" spacing={1} alignItems="center">
-              <Chip label="SPACE" size="small" />
-              <Typography variant="body2">
-                {t('help.sections.keyboard.space')}
-              </Typography>
-            </Stack>
-            <Stack direction="row" spacing={1} alignItems="center">
-              <Chip label="←" size="small" />
-              <Typography variant="body2">
-                {t('help.sections.keyboard.arrowLeft')}
-              </Typography>
-            </Stack>
-            <Stack direction="row" spacing={1} alignItems="center">
-              <Chip label="→" size="small" />
-              <Typography variant="body2">
-                {t('help.sections.keyboard.arrowRight')}
-              </Typography>
-            </Stack>
-            <Stack direction="row" spacing={1} alignItems="center">
-              <Chip label="Ctrl + ←" size="small" />
-              <Typography variant="body2">
-                {t('help.sections.keyboard.ctrlLeft')}
-              </Typography>
-            </Stack>
-            <Stack direction="row" spacing={1} alignItems="center">
-              <Chip label="Ctrl + 🖱️" size="small" />
-              <Typography variant="body2">
-                {t('help.sections.keyboard.ctrlWheel')}
-              </Typography>
-            </Stack>
-            <Stack direction="row" spacing={1} alignItems="center">
-              <Chip label="Shift + 🖱️" size="small" />
-              <Typography variant="body2">
-                {t('help.sections.keyboard.altWheel')}
-              </Typography>
-            </Stack>
-            <Stack direction="row" spacing={1} alignItems="center">
-              <Chip label="Ctrl + Z" size="small" />
-              <Typography variant="body2">
-                {t('help.sections.keyboard.undo')}
-              </Typography>
-            </Stack>
-            <Stack direction="row" spacing={1} alignItems="center">
-              <Chip label="Ctrl + Shift + Z" size="small" />
-              <Typography variant="body2">
-                {t('help.sections.keyboard.redo')}
-              </Typography>
-            </Stack>
-            <Stack direction="row" spacing={1} alignItems="center">
-              <Chip label="Alt" size="small" />
-              <Typography variant="body2">
-                {t('help.sections.keyboard.altSnap')}
-              </Typography>
-            </Stack>
-          </Stack>
-          <Typography variant="caption" color="text.secondary" fontStyle="italic">
-            {t('help.sections.keyboard.more')}
-          </Typography>
-        </Section>
-
-        <Divider sx={{ my: 3 }} />
-
-        {/* Tips */}
-        <Section title={t('help.sections.tips.title')}>
-          <Stack spacing={1}>
-            <Typography variant="body2">
-              💡 {t('help.sections.tips.tip1')}
-            </Typography>
-            <Typography variant="body2">
-              💾 {t('help.sections.tips.tip2')}
-            </Typography>
-            <Typography variant="body2">
-              🖱️ {t('help.sections.tips.tip4')}
-            </Typography>
-          </Stack>
-        </Section>
-      </DialogContent>
-    </Dialog>
+      {/* Tips */}
+      <Section title={t('help.sections.tips.title')}>
+        <Stack gap="xs">
+          <Text size="sm">💡 {t('help.sections.tips.tip1')}</Text>
+          <Text size="sm">💾 {t('help.sections.tips.tip2')}</Text>
+          <Text size="sm">🖱️ {t('help.sections.tips.tip4')}</Text>
+        </Stack>
+      </Section>
+    </Modal>
   );
 };
 

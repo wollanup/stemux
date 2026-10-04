@@ -1,0 +1,27 @@
+/* Play / pause button, centered on top of the footer */
+.fab {
+  position: absolute;
+  z-index: 1;
+  top: -30px;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  box-shadow: var(--mantine-shadow-md);
+}
+
+.fab[data-pulse] {
+  animation: rec-pulse 2s ease-in-out infinite;
+}
+
+@keyframes rec-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 alpha(var(--mantine-color-red-filled), 0.7);
+  }
+
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 10px alpha(var(--mantine-color-red-filled), 0);
+  }
+}

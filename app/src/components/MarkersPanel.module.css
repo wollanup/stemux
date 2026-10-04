@@ -1,0 +1,89 @@
+.panel {
+  padding: var(--mantine-spacing-xs) var(--mantine-spacing-md);
+  border-bottom: 1px solid var(--mantine-color-default-border);
+}
+
+.chip {
+  cursor: pointer;
+  user-select: none;
+}
+
+.chip[data-dashed] {
+  border-style: dashed;
+}
+
+/* Playing loop: equalizer bars bounce; hovering shows what a click does (pause) */
+.playingIcon {
+  display: inline-flex;
+}
+
+.loopPlaying {
+  width: 14px;
+  height: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.loopPlaying span {
+  width: 3px;
+  height: 11px;
+  border-radius: 1.5px;
+  background-color: currentColor;
+  transform-origin: bottom;
+  animation: loop-eq 1s ease-in-out infinite;
+}
+
+.loopPlaying span:nth-of-type(1) {
+  animation-delay: -0.2s;
+}
+
+.loopPlaying span:nth-of-type(2) {
+  animation-delay: -0.6s;
+  animation-duration: 0.9s;
+}
+
+.loopPlaying span:nth-of-type(3) {
+  animation-delay: -0.4s;
+  animation-duration: 1.1s;
+}
+
+@keyframes loop-eq {
+  0%,
+  100% {
+    transform: scaleY(0.3);
+  }
+
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loopPlaying span {
+    animation: none;
+  }
+
+  .loopPlaying span:nth-of-type(1) {
+    transform: scaleY(0.6);
+  }
+
+  .loopPlaying span:nth-of-type(3) {
+    transform: scaleY(0.4);
+  }
+}
+
+.loopPause {
+  display: none;
+}
+
+@media (hover: hover) {
+  .chip:hover .loopPlaying {
+    display: none;
+  }
+
+  .chip:hover .loopPause {
+    display: inline-block;
+  }
+}

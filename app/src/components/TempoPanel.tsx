@@ -3,23 +3,19 @@
  * is, and whether the ruler counts seconds or bars.
  */
 
-import { useRef, useState } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
+import { ActionIcon, Box, Button, Group, Loader, Popover, SegmentedControl, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core';
 import {
-  Box,
-  Button,
-  CircularProgress,
-  IconButton,
-  MenuItem,
-  Popover,
-  Select,
-  Stack,
-  TextField,
-  ToggleButton,
-  ToggleButtonGroup,
-  Tooltip,
-  Typography,
-} from '@mui/material';
-import { Add, AutoAwesome, ChevronLeft, ChevronRight, Delete, MusicNote, Place, Remove, TouchApp } from '@mui/icons-material';
+  IconChevronLeft,
+  IconChevronRight,
+  IconHandFinger,
+  IconMapPin,
+  IconMinus,
+  IconMusic,
+  IconPlus,
+  IconSparkles,
+  IconTrash,
+} from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { useAudioStore } from '../hooks/useAudioStore';
 import { audioEngine } from '../audio/AudioEngine';
@@ -42,19 +38,20 @@ const formatSeconds = (seconds: number) => {
 interface TempoPanelProps {
   disabled: boolean;
   compact: boolean;
-  /** Opened from elsewhere (mobile menu): no button of its own, the panel shows next to this element */
-  anchorEl?: HTMLElement | null;
+  /** Opened from elsewhere (mobile menu): no button of its own, the panel shows under `children` */
+  opened?: boolean;
   onClose?: () => void;
+  children?: ReactNode;
 }
 
-export default function TempoPanel({ disabled, compact, anchorEl, onClose }: TempoPanelProps) {
+export default function TempoPanel({ disabled, compact, opened, onClose, children }: TempoPanelProps) {
   const { t } = useTranslation();
   const tempo = useAudioStore((s) => s.tempo);
   const rulerMode = useAudioStore((s) => s.rulerMode);
   const { setTempo, setRulerMode } = useAudioStore();
-  const [ownAnchor, setAnchor] = useState<HTMLElement | null>(null);
-  const controlled = anchorEl !== undefined;
-  const anchor = controlled ? anchorEl : ownAnchor;
+  const [ownOpened, setOwnOpened] = useState(false);
+  const controlled = opened !== undefined;
+  const isOpen = controlled ? opened : ownOpened;
   const [bpmText, setBpmText] = useState<string | null>(null);
   const [detecting, setDetecting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -110,180 +107,183 @@ export default function TempoPanel({ disabled, compact, anchorEl, onClose }: Tem
 
   const label = tempo ? `${Math.round(tempo.bpm * 10) / 10}${compact ? '' : ' BPM'}` : compact ? '' : t('tempo.title');
 
+  const close = () => {
+    commitBpm();
+    setOwnOpened(false);
+    onClose?.();
+  };
+
   return (
-    <>
-      {!controlled && (
-        <Tooltip title={t('tempo.title')}>
-          <span>
-            <Button
-              color={tempo ? 'primary' : 'inherit'}
-              onClick={(e) => setAnchor(e.currentTarget)}
-              disabled={disabled}
-              startIcon={<MusicNote />}
-              aria-label={t('tempo.title')}
-              data-tempo-button
-              sx={{ textTransform: 'none', minWidth: 0, mr: 0.5, whiteSpace: 'nowrap', '& .MuiButton-startIcon': compact && !label ? { m: 0 } : {} }}
-            >
-              {label}
-            </Button>
+    <Popover opened={isOpen} onDismiss={close} position="bottom" shadow="md" trapFocus returnFocus>
+      <Popover.Target>
+        {controlled ? (
+          <span style={{ display: 'inline-flex' }}>{children}</span>
+        ) : (
+          <span style={{ display: 'inline-flex', marginRight: 4 }}>
+            <Tooltip label={t('tempo.title')}>
+              <Button
+                variant="subtle"
+                color={tempo ? undefined : 'gray'}
+                c={tempo ? undefined : 'var(--mantine-color-text)'}
+                onClick={() => (ownOpened ? close() : setOwnOpened(true))}
+                disabled={disabled}
+                leftSection={<IconMusic size={20} />}
+                aria-label={t('tempo.title')}
+                data-tempo-button
+                px={compact && !label ? 'xs' : undefined}
+                styles={compact && !label ? { section: { marginInlineEnd: 0 } } : undefined}
+              >
+                {label}
+              </Button>
+            </Tooltip>
           </span>
-        </Tooltip>
-      )}
-      <Popover
-        open={Boolean(anchor)}
-        anchorEl={anchor}
-        onClose={() => {
-          commitBpm();
-          setAnchor(null);
-          onClose?.();
-        }}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        transformOrigin={{ vertical: 'top', horizontal: 'center' }}
-      >
-        <Stack spacing={2} sx={{ p: 2, width: 300, maxWidth: 'calc(100vw - 32px)' }} data-tempo-panel>
-          <Typography variant="subtitle1" fontWeight={600}>
-            {t('tempo.title')}
-          </Typography>
+        )}
+      </Popover.Target>
+      <Popover.Dropdown p="md">
+        <Stack gap="md" w={300} maw="calc(100vw - 32px)" data-tempo-panel>
+          <Text fw={600}>{t('tempo.title')}</Text>
 
           {/* BPM: typed, - / +, halved / doubled */}
-          <Stack direction="row" alignItems="center" spacing={0.5}>
-            <IconButton size="small" aria-label={t('tempo.slower')} onClick={() => update({ bpm: clampBpm(Math.round(current.bpm) - 1) })}>
-              <Remove fontSize="small" />
-            </IconButton>
-            <TextField
-              size="small"
+          <Group gap={4} wrap="nowrap">
+            <ActionIcon variant="subtle" color="gray" aria-label={t('tempo.slower')} onClick={() => update({ bpm: clampBpm(Math.round(current.bpm) - 1) })}>
+              <IconMinus size={18} />
+            </ActionIcon>
+            <TextInput
+              size="sm"
+              w={80}
               value={bpmText ?? String(current.bpm)}
-              onChange={(e) => setBpmText(e.target.value)}
+              onChange={(e) => setBpmText(e.currentTarget.value)}
               onBlur={commitBpm}
               onKeyDown={(e) => e.key === 'Enter' && commitBpm()}
-              slotProps={{ htmlInput: { inputMode: 'decimal', 'aria-label': t('tempo.bpm'), min: MIN_BPM, max: MAX_BPM, style: { textAlign: 'center' } } }}
-              sx={{ width: 80 }}
+              inputMode="decimal"
+              min={MIN_BPM}
+              max={MAX_BPM}
+              aria-label={t('tempo.bpm')}
+              styles={{ input: { textAlign: 'center' } }}
             />
-            <IconButton size="small" aria-label={t('tempo.faster')} onClick={() => update({ bpm: clampBpm(Math.round(current.bpm) + 1) })}>
-              <Add fontSize="small" />
-            </IconButton>
-            <Typography variant="body2" color="text.secondary" sx={{ flex: 1 }}>
+            <ActionIcon variant="subtle" color="gray" aria-label={t('tempo.faster')} onClick={() => update({ bpm: clampBpm(Math.round(current.bpm) + 1) })}>
+              <IconPlus size={18} />
+            </ActionIcon>
+            <Text size="sm" c="dimmed" flex={1}>
               BPM
-            </Typography>
-            <Button size="small" sx={{ minWidth: 0 }} onClick={() => update({ bpm: clampBpm(current.bpm / 2) })} aria-label={t('tempo.half')}>
+            </Text>
+            <Button variant="subtle" size="compact-sm" onClick={() => update({ bpm: clampBpm(current.bpm / 2) })} aria-label={t('tempo.half')}>
               ÷2
             </Button>
-            <Button size="small" sx={{ minWidth: 0 }} onClick={() => update({ bpm: clampBpm(current.bpm * 2) })} aria-label={t('tempo.double')}>
+            <Button variant="subtle" size="compact-sm" onClick={() => update({ bpm: clampBpm(current.bpm * 2) })} aria-label={t('tempo.double')}>
               ×2
             </Button>
-          </Stack>
+          </Group>
 
           {/* Tap and automatic detection */}
-          <Stack direction="row" spacing={1}>
-            <Tooltip title={t('tempo.tapHint')} placement="top">
-              <Button variant="outlined" startIcon={<TouchApp />} onClick={onTap} sx={{ flex: 1 }}>
+          <Group gap="xs" grow>
+            <Tooltip label={t('tempo.tapHint')} position="top">
+              <Button variant="outline" leftSection={<IconHandFinger size={18} />} onClick={onTap}>
                 {t('tempo.tap')}
                 {tapCount > 1 ? ` (${tapCount})` : ''}
               </Button>
             </Tooltip>
-            <Tooltip title={t('tempo.detectHint')} placement="top">
-              <span style={{ flex: 1, display: 'flex' }}>
-                <Button
-                  variant="outlined"
-                  startIcon={detecting ? <CircularProgress size={16} /> : <AutoAwesome />}
-                  // Not disabled while busy: it would lose the focus, and Escape would no longer close the panel
-                  onClick={() => !detecting && onDetect()}
-                  aria-busy={detecting}
-                  sx={{ flex: 1 }}
-                >
-                  {t('tempo.detect')}
-                </Button>
-              </span>
+            <Tooltip label={t('tempo.detectHint')} position="top">
+              <Button
+                variant="outline"
+                leftSection={detecting ? <Loader size={16} /> : <IconSparkles size={18} />}
+                // Not disabled while busy: it would lose the focus, and Escape would no longer close the panel
+                onClick={() => !detecting && onDetect()}
+                aria-busy={detecting}
+              >
+                {t('tempo.detect')}
+              </Button>
             </Tooltip>
-          </Stack>
+          </Group>
           {message && (
-            <Typography variant="body2" color="text.secondary" data-tempo-message>
+            <Text size="sm" c="dimmed" data-tempo-message>
               {message}
-            </Typography>
+            </Text>
           )}
 
           {/* Time signature */}
-          <Stack direction="row" alignItems="center" spacing={1}>
-            <Typography variant="body2" sx={{ flex: 1 }}>
+          <Group gap="xs" wrap="nowrap">
+            <Text size="sm" flex={1}>
               {t('tempo.signature')}
-            </Typography>
+            </Text>
             <Select
-              size="small"
-              value={current.beatsPerBar}
-              onChange={(e) => update({ beatsPerBar: Number(e.target.value) })}
-              inputProps={{ 'aria-label': t('tempo.beatsPerBar') }}
-            >
-              {BEATS_PER_BAR.map((n) => (
-                <MenuItem key={n} value={n}>
-                  {n}
-                </MenuItem>
-              ))}
-            </Select>
-            <Typography>/</Typography>
+              size="sm"
+              w={72}
+              data={BEATS_PER_BAR.map(String)}
+              value={String(current.beatsPerBar)}
+              onChange={(value) => value && update({ beatsPerBar: Number(value) })}
+              allowDeselect={false}
+              aria-label={t('tempo.beatsPerBar')}
+              // In the panel: a click on an option is not a click outside it
+              comboboxProps={{ withinPortal: false }}
+            />
+            <Text>/</Text>
             <Select
-              size="small"
-              value={current.beatUnit}
-              onChange={(e) => update({ beatUnit: Number(e.target.value) })}
-              inputProps={{ 'aria-label': t('tempo.beatUnit') }}
-            >
-              {BEAT_UNITS.map((n) => (
-                <MenuItem key={n} value={n}>
-                  {n}
-                </MenuItem>
-              ))}
-            </Select>
-          </Stack>
+              size="sm"
+              w={72}
+              data={BEAT_UNITS.map(String)}
+              value={String(current.beatUnit)}
+              onChange={(value) => value && update({ beatUnit: Number(value) })}
+              allowDeselect={false}
+              aria-label={t('tempo.beatUnit')}
+              comboboxProps={{ withinPortal: false }}
+            />
+          </Group>
 
           {/* Bar 1 */}
-          <Stack direction="row" alignItems="center" spacing={0.5}>
-            <Box sx={{ flex: 1 }}>
-              <Typography variant="body2">{t('tempo.barOne')}</Typography>
-              <Typography variant="caption" color="text.secondary" data-tempo-offset>
+          <Group gap={4} wrap="nowrap">
+            <Box flex={1}>
+              <Text size="sm">{t('tempo.barOne')}</Text>
+              <Text size="xs" c="dimmed" data-tempo-offset>
                 {formatSeconds(current.offset)}
-              </Typography>
+              </Text>
             </Box>
-            <IconButton size="small" aria-label={t('tempo.earlier')} onClick={() => update({ offset: Math.max(0, current.offset - NUDGE_S) })}>
-              <ChevronLeft fontSize="small" />
-            </IconButton>
-            <IconButton size="small" aria-label={t('tempo.later')} onClick={() => update({ offset: current.offset + NUDGE_S })}>
-              <ChevronRight fontSize="small" />
-            </IconButton>
-            <Tooltip title={t('tempo.barOneHereHint')}>
-              <Button size="small" startIcon={<Place />} onClick={() => update({ offset: audioEngine.getCurrentTime() })}>
+            <ActionIcon variant="subtle" color="gray" aria-label={t('tempo.earlier')} onClick={() => update({ offset: Math.max(0, current.offset - NUDGE_S) })}>
+              <IconChevronLeft size={18} />
+            </ActionIcon>
+            <ActionIcon variant="subtle" color="gray" aria-label={t('tempo.later')} onClick={() => update({ offset: current.offset + NUDGE_S })}>
+              <IconChevronRight size={18} />
+            </ActionIcon>
+            <Tooltip label={t('tempo.barOneHereHint')}>
+              <Button variant="subtle" size="compact-sm" leftSection={<IconMapPin size={16} />} onClick={() => update({ offset: audioEngine.getCurrentTime() })}>
                 {t('tempo.barOneHere')}
               </Button>
             </Tooltip>
-          </Stack>
+          </Group>
 
           {/* Ruler */}
-          <Stack direction="row" alignItems="center" spacing={1}>
-            <Typography variant="body2" sx={{ flex: 1 }}>
+          <Group gap="xs" wrap="nowrap">
+            <Text size="sm" flex={1}>
               {t('tempo.ruler')}
-            </Typography>
-            <ToggleButtonGroup size="small" exclusive value={rulerMode} onChange={(_, mode) => mode && setRulerMode(mode)}>
-              <ToggleButton value="time">{t('tempo.rulerTime')}</ToggleButton>
-              <ToggleButton value="bars" disabled={!tempo}>
-                {t('tempo.rulerBars')}
-              </ToggleButton>
-            </ToggleButtonGroup>
-          </Stack>
+            </Text>
+            <SegmentedControl
+              size="xs"
+              value={rulerMode}
+              onChange={(mode) => setRulerMode(mode as typeof rulerMode)}
+              data={[
+                { value: 'time', label: t('tempo.rulerTime') },
+                { value: 'bars', label: t('tempo.rulerBars'), disabled: !tempo },
+              ]}
+            />
+          </Group>
 
           {tempo && (
             <Button
-              color="error"
-              size="small"
-              startIcon={<Delete />}
+              variant="subtle"
+              color="red"
+              size="compact-sm"
+              leftSection={<IconTrash size={16} />}
               onClick={() => {
                 setTempo(null);
                 setRulerMode('time');
               }}
-              sx={{ alignSelf: 'flex-start' }}
+              style={{ alignSelf: 'flex-start' }}
             >
               {t('tempo.remove')}
             </Button>
           )}
         </Stack>
-      </Popover>
-    </>
+      </Popover.Dropdown>
+    </Popover>
   );
 }

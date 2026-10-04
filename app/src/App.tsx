@@ -1,24 +1,5 @@
-import {useEffect, useMemo, useState} from 'react';
-import {
-    Box,
-    Button,
-    CircularProgress,
-    createTheme,
-    CssBaseline,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogContentText,
-    DialogTitle,
-    ThemeProvider,
-    Toolbar,
-    Typography,
-    useMediaQuery,
-    Radio,
-    RadioGroup,
-    FormControlLabel,
-    FormControl,
-} from '@mui/material';
+import {useEffect, useState} from 'react';
+import {AppShell, Box, Button, Group, Loader, Modal, Radio, Stack, Text, Title, useComputedColorScheme, useMantineColorScheme, type MantineColorScheme} from '@mantine/core';
 import {restoreTracks, useAudioStore} from './hooks/useAudioStore';
 import TrackAdder from './components/TrackAdder';
 import FullScreenDropZone from './components/FullScreenDropZone';
@@ -35,6 +16,9 @@ import RecordingPermissionGuide from './components/RecordingPermissionGuide';
 import {useTranslation} from 'react-i18next';
 import {logger} from './utils/logger';
 import TopBar from "./components/TopBar.tsx";
+import ConfirmDialog from './components/ConfirmDialog';
+import {useSmallerThan} from './theme/palette';
+import classes from './App.module.css';
 
 // Declarations for version info (defined by Vite, may be used later)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -78,99 +62,11 @@ function App() {
         }
     }), []);
 
-    // Detect system theme preference
-    const systemPrefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)');
-    const [themeMode, setThemeMode] = useState<'light' | 'dark' | 'system'>(() => {
-        const saved = localStorage.getItem('themeMode');
-        return (saved === 'light' || saved === 'dark' || saved === 'system') ? saved : 'system';
-    });
-    const prefersDarkMode = themeMode === 'system' ? systemPrefersDarkMode : themeMode === 'dark';
+    // Light / dark / system (saved by Mantine under 'themeMode')
+    const {colorScheme, setColorScheme} = useMantineColorScheme();
+    const prefersDarkMode = useComputedColorScheme('light', {getInitialValueInEffect: false}) === 'dark';
 
-    // Detect screen size for responsive scaling
-    const isLargeScreen = useMediaQuery('(min-width:1920px)'); // 4K, 1440p+
-    const isMediumScreen = useMediaQuery('(min-width:1280px) and (max-width:1919px)'); // 1080p-1440p
-    const isMobile = useMediaQuery('(max-width:899px)'); // Mobile/tablet breakpoint
-
-    const theme = useMemo(
-        () =>
-            createTheme({
-                palette: {
-                    mode: prefersDarkMode ? 'dark' : 'light',
-                    primary: {
-                        main: '#1976d2'
-                    },
-                    ...(prefersDarkMode
-                        ? {
-                            background: {
-                                default: '#121212',
-                                paper: '#1e1e1e'
-                            }
-                        }
-                        : {
-                            background: {
-                                default: '#f5f5f5'
-                            }
-                        })
-                },
-                typography: {
-                    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
-                    // Scale everything based on screen size
-                    fontSize: isLargeScreen ? 16 : isMediumScreen ? 14 : 14,
-                    h6: {
-                        fontSize: isLargeScreen ? '1.5rem' : '1.25rem'
-                    },
-                    body1: {
-                        fontSize: isLargeScreen ? '1.1rem' : '1rem'
-                    },
-                    body2: {
-                        fontSize: isLargeScreen ? '1rem' : '0.875rem'
-                    },
-                    button: {
-                        fontSize: isLargeScreen ? '1rem' : '0.875rem'
-                    }
-                },
-                components: {
-                    MuiButton: {
-                        styleOverrides: {
-                            root: {
-                                minHeight: isLargeScreen ? 48 : 40,
-                                fontSize: isLargeScreen ? '1rem' : '0.875rem'
-                            },
-                            sizeSmall: {
-                                minHeight: isLargeScreen ? 40 : 32
-                            }
-                        }
-                    },
-                    MuiIconButton: {
-                        styleOverrides: {
-                            root: {
-                                padding: isLargeScreen ? 12 : 8
-                            },
-                            sizeSmall: {
-                                padding: isLargeScreen ? 8 : 4
-                            }
-                        }
-                    },
-                    MuiFab: {
-                        styleOverrides: {
-                            root: {
-                                width: isLargeScreen ? 72 : 56,
-                                height: isLargeScreen ? 72 : 56
-                            }
-                        }
-                    },
-                    MuiSlider: {
-                        styleOverrides: {
-                            thumb: {
-                                width: isLargeScreen ? 24 : 20,
-                                height: isLargeScreen ? 24 : 20
-                            }
-                        }
-                    }
-                }
-            }),
-        [prefersDarkMode, isLargeScreen, isMediumScreen]
-    );
+    const isMobile = useSmallerThan('md'); // Mobile/tablet breakpoint
 
     useEffect(() => {
         const loadApp = async () => {
@@ -256,11 +152,9 @@ function App() {
     }, [tracks.length]);
 
     return (
-        <ThemeProvider theme={theme}>
-            <CssBaseline/>
+        <AppShell header={{height: 60}} footer={{height: 64}} padding={0}>
             <PWAUpdatePrompt/>
-            <Box sx={{display: 'flex', flexDirection: 'column', height: '100dvh'}}>
-                {/* Top App Bar */}
+            <AppShell.Header>
                 <TopBar
                     hasLoadedTracks={hasLoadedTracks}
                     zoomLevel={zoomLevel}
@@ -281,119 +175,78 @@ function App() {
                     onOpenDeleteAllDialog={() => setDeleteAllDialogOpen(true)}
                     onOpenPiecesManager={() => setPiecesManagerOpen(true)}
                 />
+            </AppShell.Header>
 
+            {/* Help Modal */}
+            <HelpModal open={helpModalOpen} onClose={() => setHelpModalOpen(false)}/>
+            <PiecesManager open={piecesManagerOpen} onClose={() => setPiecesManagerOpen(false)} />
+            <RecordingPermissionGuide
+                open={recordingGuideOpen}
+                onClose={() => setRecordingGuideOpen(false)}
+            />
 
-                {/* Help Modal */}
-                <HelpModal open={helpModalOpen} onClose={() => setHelpModalOpen(false)}/>
-                <SettingsUI open={settingsModalOpen} onClose={() => setSettingsModalOpen(false)}/>
-                <PiecesManager open={piecesManagerOpen} onClose={() => setPiecesManagerOpen(false)} />
-                <RecordingPermissionGuide 
-                    open={recordingGuideOpen} 
-                    onClose={() => setRecordingGuideOpen(false)} 
-                />
+            {/* Interface Settings Modal */}
+            <SettingsUI open={settingsModalOpen} onClose={() => setSettingsModalOpen(false)}/>
 
-                {/* Interface Settings Modal */}
-                <SettingsUI open={settingsModalOpen} onClose={() => setSettingsModalOpen(false)}/>
-
-                {/* Theme Selection Dialog */}
-                <Dialog
-                    open={themeDialogOpen}
-                    onClose={() => setThemeDialogOpen(false)}
-                    maxWidth="xs"
-                    fullWidth
+            {/* Theme Selection Dialog */}
+            <Modal
+                opened={themeDialogOpen}
+                onClose={() => setThemeDialogOpen(false)}
+                title={t('menu.themeDialog.title')}
+            >
+                <Radio.Group
+                    value={colorScheme}
+                    onChange={(value) => {
+                        const newMode = value as MantineColorScheme;
+                        setColorScheme(newMode);
+                        logger.log(`🎨 Theme mode changed to: ${newMode}`);
+                    }}
                 >
-                    <DialogTitle>{t('menu.themeDialog.title')}</DialogTitle>
-                    <DialogContent>
-                        <FormControl component="fieldset" fullWidth sx={{mt: 1}}>
-                            <RadioGroup
-                                value={themeMode}
-                                onChange={(e) => {
-                                    const newMode = e.target.value as 'light' | 'dark' | 'system';
-                                    setThemeMode(newMode);
-                                    localStorage.setItem('themeMode', newMode);
-                                    logger.log(`🎨 Theme mode changed to: ${newMode}`);
-                                }}
-                            >
-                                <FormControlLabel
-                                    value="system"
-                                    control={<Radio/>}
-                                    label={t('menu.themeDialog.system')}
-                                />
-                                <FormControlLabel
-                                    value="light"
-                                    control={<Radio/>}
-                                    label={t('menu.themeDialog.light')}
-                                />
-                                <FormControlLabel
-                                    value="dark"
-                                    control={<Radio/>}
-                                    label={t('menu.themeDialog.dark')}
-                                />
-                            </RadioGroup>
-                        </FormControl>
-                    </DialogContent>
-                    <DialogActions>
-                        <Button onClick={() => setThemeDialogOpen(false)}>
-                            {t('menu.themeDialog.close')}
-                        </Button>
-                    </DialogActions>
-                </Dialog>
+                    <Stack gap="sm" mt="xs">
+                        <Radio value="auto" label={t('menu.themeDialog.system')}/>
+                        <Radio value="light" label={t('menu.themeDialog.light')}/>
+                        <Radio value="dark" label={t('menu.themeDialog.dark')}/>
+                    </Stack>
+                </Radio.Group>
+                <Group justify="flex-end" mt="lg">
+                    <Button variant="subtle" onClick={() => setThemeDialogOpen(false)}>
+                        {t('menu.themeDialog.close')}
+                    </Button>
+                </Group>
+            </Modal>
 
-                {/* Delete All Tracks Confirmation Dialog */}
-                <Dialog
-                    open={deleteAllDialogOpen}
-                    onClose={() => setDeleteAllDialogOpen(false)}
-                >
-                    <DialogTitle>{t('menu.deleteAllConfirmTitle')}</DialogTitle>
-                    <DialogContent>
-                        <DialogContentText>
-                            {t('menu.deleteAllConfirmMessage')}
-                        </DialogContentText>
-                    </DialogContent>
-                    <DialogActions>
-                        <Button onClick={() => setDeleteAllDialogOpen(false)}>
-                            {t('track.cancelButton')}
-                        </Button>
-                        <Button
-                            onClick={async () => {
-                                await removeAllTracks();
-                                setDeleteAllDialogOpen(false);
-                            }}
-                            color="error"
-                            variant="contained"
-                        >
-                            {t('menu.deleteAllConfirmButton')}
-                        </Button>
-                    </DialogActions>
-                </Dialog>
+            {/* Delete All Tracks Confirmation Dialog */}
+            <ConfirmDialog
+                opened={deleteAllDialogOpen}
+                onClose={() => setDeleteAllDialogOpen(false)}
+                onConfirm={async () => {
+                    await removeAllTracks();
+                    setDeleteAllDialogOpen(false);
+                }}
+                title={t('menu.deleteAllConfirmTitle')}
+                message={t('menu.deleteAllConfirmMessage')}
+                cancelLabel={t('track.cancelButton')}
+                confirmLabel={t('menu.deleteAllConfirmButton')}
+            />
 
-                {/* Main content, between the top and bottom bars */}
-                <Toolbar/>
+            {/* Main content, between the top and bottom bars */}
+            <AppShell.Main className={classes.main}>
                 {isLoadingStorage ? (
-                    <Box
-                        sx={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            flex: 1,
-                            gap: 2
-                        }}
-                    >
-                        <CircularProgress size={48}/>
-                        <Typography variant="body2" color="text.secondary">
+                    <Stack align="center" justify="center" flex={1} gap="md">
+                        <Loader size={48}/>
+                        <Text size="sm" c="dimmed">
                             {t('loading.tracks')}
-                        </Typography>
-                    </Box>
+                        </Text>
+                    </Stack>
                 ) : tracks.length === 0 ? (
-                    <Box sx={{flex: 1, overflowY: 'auto', pt: 4}}>
-                        <Box sx={{textAlign: 'center', py: 4, mb: 4}}>
-                            <Typography variant="h5" color="text.secondary" gutterBottom>
+                    <Box flex={1} pt="xl" style={{overflowY: 'auto'}}>
+                        <Box ta="center" py="xl" mb="xl">
+                            <Title order={3} c="dimmed" fw={400} mb="xs">
                                 {t('app.noTracksTitle')}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
+                            </Title>
+                            <Text size="sm" c="dimmed">
                                 {t('app.noTracksMessage')}
-                            </Typography>
+                            </Text>
                         </Box>
                         <TrackAdder/>
                     </Box>
@@ -404,18 +257,19 @@ function App() {
                         <Timeline/>
                     </>
                 )}
-                <Toolbar/>
+            </AppShell.Main>
 
-                {/* Full-screen dropzone when dragging files */}
-                <FullScreenDropZone 
-                    isDragging={isDraggingFile} 
-                    onDragLeave={() => setIsDraggingFile(false)}
-                />
+            {/* Full-screen dropzone when dragging files */}
+            <FullScreenDropZone
+                isDragging={isDraggingFile}
+                onDragLeave={() => setIsDraggingFile(false)}
+            />
 
-                {/* Bottom control bar */}
+            {/* Bottom control bar */}
+            <AppShell.Footer>
                 <BottomControlBar/>
-            </Box>
-        </ThemeProvider>
+            </AppShell.Footer>
+        </AppShell>
     );
 }
 
