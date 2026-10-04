@@ -173,6 +173,19 @@
     "tracks_many": "{{count}} pistes",
     "tracks_other": "{{count}} pistes"
   },
+  "pitch": {
+    "cents": "cents",
+    "centsDown": "{{step}} cents plus bas",
+    "centsInput": "Accord fin en cents",
+    "centsUp": "{{step}} cents plus haut",
+    "hint": "100 cents = 1 demi-ton. Le tempo ne change pas.",
+    "reset": "Hauteur d'origine",
+    "semitoneDown": "Un demi-ton plus bas",
+    "semitones": "demi-tons",
+    "semitonesInput": "Transposition en demi-tons",
+    "semitoneUp": "Un demi-ton plus haut",
+    "title": "Hauteur"
+  },
   "pwa": {
     "reload": "Recharger",
     "updateAvailable": "Nouvelle version disponible ! Cliquez pour recharger."

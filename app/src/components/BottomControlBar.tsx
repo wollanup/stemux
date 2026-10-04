@@ -14,10 +14,12 @@ import {usePlaybackTime} from '../hooks/usePlaybackTime';
 import {useThrottle} from '../hooks/useThrottle';
 import {useWheelAdjust} from '../hooks/useWheelAdjust';
 import PlaybackSpeedMenu from './PlaybackSpeedMenu';
+import PitchMenu from './PitchMenu';
 import {useTranslation} from 'react-i18next';
 import {audioEngine} from '../audio/AudioEngine';
 import {formatBarBeat} from '../tempo/tempo';
 import classes from './Bars.module.css';
+import { useSmallerThan } from '../theme/palette';
 
 const BottomControlBar = () => {
   const { t } = useTranslation();
@@ -33,6 +35,7 @@ const BottomControlBar = () => {
   } = useAudioStore();
 
   const currentTime = usePlaybackTime(); // Use lightweight time tracker
+  const isPhone = useSmallerThan('xs');
   const barsTempo = useAudioStore((s) => (s.rulerMode === 'bars' ? s.tempo : null));
   
   // Check if any track is armed or recording
@@ -330,7 +333,7 @@ const BottomControlBar = () => {
 
   return (
     <>
-      <Group h="100%" px="md" gap="md" wrap="nowrap">
+      <Group h="100%" px="md" gap={isPhone ? 'xs' : 'md'} wrap="nowrap">
         {/* FAB Play/Pause centered on top of the bar - Hidden if no tracks */}
         {hasLoadedTracks && (
           <Tooltip
@@ -461,7 +464,8 @@ const BottomControlBar = () => {
           </Popover.Dropdown>
         </Popover>
 
-        {/* Playback speed */}
+        {/* Pitch and playback speed */}
+        <PitchMenu disabled={!hasLoadedTracks} />
         <PlaybackSpeedMenu
           currentRate={playbackState.playbackRate}
           disabled={!hasLoadedTracks}
