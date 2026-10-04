@@ -18,6 +18,7 @@
 import SignalsmithStretch, { type StretchNode } from 'signalsmith-stretch';
 import { logger } from '../utils/logger';
 import { normalizePitch } from './pitch';
+import { generateImpulseResponse } from './reverb';
 
 /** Delay between a transport command and the moment audio actually starts */
 const START_LEAD = 0.05;
@@ -52,6 +53,8 @@ interface EngineTrack {
   gain: GainNode;
   /** Level meter tap after the gain: one analyser per channel (L, R) */
   meter: { splitter: ChannelSplitterNode; analysers: AnalyserNode[]; data: Float32Array<ArrayBuffer> };
+  /** Reverb send after the gain (created on first use) */
+  reverbSend: GainNode | null;
   sources: Set<AudioBufferSourceNode>;
   stretch: StretchNode | null;
   stretchPromise: Promise<StretchNode> | null;
@@ -71,6 +74,9 @@ export class AudioEngine {
   private master: GainNode | null = null;
   private tracks = new Map<string, EngineTrack>();
   private gains = new Map<string, number>();
+  private reverbSends = new Map<string, number>();
+  /** Shared reverb: every track sends to the same convolver (created on first use) */
+  private reverbBus: GainNode | null = null;
   private decodeCache = new WeakMap<Blob, Promise<AudioBuffer>>();
   private listeners = new Map<EngineEvent, Set<Listener>>();
 
@@ -169,12 +175,14 @@ export class AudioEngine {
       ...window,
       gain,
       meter: AudioEngine.createMeter(ctx, gain),
+      reverbSend: null,
       sources: new Set(),
       stretch: null,
       stretchPromise: null,
       stretchActive: false,
     };
     this.tracks.set(id, track);
+    this.applyReverbSend(track);
 
     if (this.playing) {
       // Joins in sync: its offset is computed from the shared clock
@@ -290,6 +298,43 @@ export class AudioEngine {
     if (track && this.ctx) {
       track.gain.gain.setTargetAtTime(value, this.ctx.currentTime, 0.01);
     }
+  }
+
+  /** Reverb amount of a track (0 = dry, 1 = as loud as the dry signal), after its volume */
+  setTrackReverb(id: string, value: number) {
+    if ((this.reverbSends.get(id) ?? 0) === value) return;
+    this.reverbSends.set(id, value);
+    const track = this.tracks.get(id);
+    if (track) this.applyReverbSend(track);
+  }
+
+  private applyReverbSend(track: EngineTrack) {
+    const value = this.reverbSends.get(track.id) ?? 0;
+    if (!track.reverbSend) {
+      if (value === 0) return;
+      const ctx = this.getContext();
+      track.reverbSend = ctx.createGain();
+      track.reverbSend.gain.value = 0;
+      track.gain.connect(track.reverbSend);
+      track.reverbSend.connect(this.getReverbBus());
+    }
+    track.reverbSend.gain.setTargetAtTime(value, this.ctx!.currentTime, 0.02);
+  }
+
+  private getReverbBus(): GainNode {
+    if (!this.reverbBus) {
+      const ctx = this.getContext();
+      const [left, right] = generateImpulseResponse(ctx.sampleRate);
+      const impulse = ctx.createBuffer(2, left.length, ctx.sampleRate);
+      impulse.copyToChannel(left, 0);
+      impulse.copyToChannel(right, 1);
+      const convolver = ctx.createConvolver();
+      convolver.buffer = impulse; // normalized: about as loud as its input
+      this.reverbBus = ctx.createGain();
+      this.reverbBus.connect(convolver);
+      convolver.connect(this.master!);
+    }
+    return this.reverbBus;
   }
 
   setMasterVolume(value: number) {

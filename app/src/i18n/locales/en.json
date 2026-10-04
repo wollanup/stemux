@@ -15,6 +15,12 @@
     "rewind5": "Rewind 5 seconds (hold for continuous)",
     "skipToStart": "Skip to start"
   },
+  "fx": {
+    "close": "Close",
+    "reverb": "Reverb",
+    "title": "Effects",
+    "titleFor": "Effects · {{name}}"
+  },
   "help": {
     "sections": {
       "basics": {

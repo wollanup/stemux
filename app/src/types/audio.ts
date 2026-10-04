@@ -7,6 +7,8 @@ export interface AudioTrack {
   name: string;
   file?: File; // Optional for recordable tracks
   volume: number; // 0-1
+  reverb?: number; // Reverb send 0-1, recording tracks only (undefined: none)
+  reverbEnabled?: boolean; // Reverb on/off, keeps the amount (undefined: on)
   isMuted: boolean;
   isSolo: boolean;
   color: string;
@@ -72,6 +74,8 @@ export interface PieceSettings {
     id: string;
     name: string;
     volume: number;
+    reverb?: number;
+    reverbEnabled?: boolean;
     isMuted: boolean;
     isSolo: boolean;
     color: string;
@@ -153,6 +157,7 @@ export interface AudioStore {
   updateTrack: (id: string, updates: Partial<AudioTrack>) => void;
   reorderTracks: (fromIndex: number, toIndex: number) => void;
   setVolume: (id: string, volume: number) => void;
+  setReverb: (id: string, reverb: number) => void;
   toggleMute: (id: string) => void;
   toggleSolo: (id: string) => void;
   exclusiveSolo: (id: string) => void;

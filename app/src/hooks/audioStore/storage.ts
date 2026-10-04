@@ -42,6 +42,8 @@ export const saveTrackSettingsToPiece = async (
       id: t.id,
       name: t.name,
       volume: t.volume,
+      reverb: t.reverb,
+      reverbEnabled: t.reverbEnabled,
       isMuted: t.isMuted,
       isSolo: t.isSolo,
       color: t.color,

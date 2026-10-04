@@ -15,6 +15,12 @@
     "rewind5": "Reculer de 5 secondes (maintenir pour continu)",
     "skipToStart": "Retour au début"
   },
+  "fx": {
+    "close": "Fermer",
+    "reverb": "Réverb",
+    "title": "Effets",
+    "titleFor": "Effets · {{name}}"
+  },
   "help": {
     "sections": {
       "basics": {

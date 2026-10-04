@@ -272,7 +272,7 @@ function App() {
             />
 
             {/* Bottom control bar */}
-            <AppShell.Footer>
+            <AppShell.Footer data-transport>
                 <BottomControlBar/>
             </AppShell.Footer>
         </AppShell>
