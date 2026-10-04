@@ -1,21 +1,103 @@
-import { Box, IconButton, Typography, Chip, Menu, MenuItem, ListItemIcon, ListItemText, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button } from '@mui/material';
-import { Close, MoreVert, Repeat as LoopIcon, Delete, PlayArrow, Pause, ArrowForward } from '@mui/icons-material';
+import { alpha, Box, ButtonBase, IconButton, Typography, Chip, Menu, MenuItem, ListItemIcon, ListItemText, useTheme } from '@mui/material';
+import { Close, ExpandLess, ExpandMore, MoreVert, Repeat as LoopIcon, Delete, PlayArrow, Pause, ArrowForward, Login, Check } from '@mui/icons-material';
 import { useAudioStore } from '../hooks/useAudioStore';
+import { LOOP_COLORS, loopColor, markerColor } from '../utils/colors';
+import ColorPalette, { ColorDot } from './ColorPalette';
 import { useState } from 'react';
 import {logger} from '../utils/logger';
 import { useTranslation } from 'react-i18next';
 
+const stopPropagation = (e: React.SyntheticEvent) => e.stopPropagation();
+
+/** Chip buttons: menu (⋮) and delete (×), without triggering the chip itself */
+const ChipActions = ({ onMenu, onDelete, menuLabel, deleteLabel }: {
+  onMenu: (e: React.MouseEvent<HTMLElement>) => void;
+  onDelete: () => void;
+  menuLabel: string;
+  deleteLabel: string;
+}) => (
+  <Box component="span" sx={{ display: 'flex', alignItems: 'center', ml: 0.5, mr: -0.75 }} onPointerDown={stopPropagation}>
+    <IconButton
+      size="small"
+      aria-label={menuLabel}
+      onClick={(e) => {
+        e.stopPropagation();
+        onMenu(e);
+      }}
+      sx={{ p: 0.25, color: 'inherit', opacity: 0.7, '&:hover': { opacity: 1 } }}
+    >
+      <MoreVert sx={{ fontSize: 16, display: 'block' }} />
+    </IconButton>
+    <IconButton
+      size="small"
+      aria-label={deleteLabel}
+      data-delete-chip
+      onClick={(e) => {
+        e.stopPropagation();
+        onDelete();
+      }}
+      sx={{ p: 0.25, color: 'inherit', opacity: 0.7, '&:hover': { opacity: 1, color: 'error.main' } }}
+    >
+      <Close sx={{ fontSize: 16, display: 'block' }} />
+    </IconButton>
+  </Box>
+);
+
+/** Leading icon, text, ⋮ and × centered on one axis */
+const chipLayout = {
+  '& .MuiChip-icon': { display: 'flex', alignItems: 'center', ml: '6px', mr: '-2px' },
+  '& .MuiChip-label': { display: 'flex', alignItems: 'center', lineHeight: 1 },
+};
+
+/** Count in a small grey pill, like the badges of app notifications */
+const CountBadge = ({ count, testId }: { count: number; testId: string }) => (
+  <Box
+    component="span"
+    data-testid={testId}
+    sx={{
+      minWidth: 20,
+      height: 20,
+      px: 0.75,
+      boxSizing: 'border-box',
+      borderRadius: 10,
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      bgcolor: 'action.selected',
+      color: 'text.secondary',
+      fontSize: 12,
+      fontWeight: 600,
+      lineHeight: 1,
+      fontVariantNumeric: 'tabular-nums',
+    }}
+  >
+    {count}
+  </Box>
+);
+
+/** Delete / Backspace on a focused chip deletes it */
+const onDeleteKey = (action: () => void) => (e: React.KeyboardEvent) => {
+  if (e.target !== e.currentTarget) return;
+  if (e.key === 'Delete' || e.key === 'Backspace') {
+    e.preventDefault();
+    action();
+  }
+};
+
 const MarkersPanel = () => {
   const { t } = useTranslation();
-  const { loopState, removeMarker, removeLoop, seek, createLoop, setActiveLoop, play, toggleLoopPlayback } = useAudioStore();
+  const theme = useTheme();
+  const { loopState, removeMarker, removeLoop, seek, createLoop, setActiveLoop, play, toggleLoopPlayback, armLoop, setLoopColor } = useAudioStore();
   const isPlaying = useAudioStore((s) => s.playbackState.isPlaying);
+  const armedLoopId = useAudioStore((s) => s.armedLoopId);
+  const panelOpen = useAudioStore((s) => s.loopsPanelOpen);
+  const setLoopsPanelOpen = useAudioStore((s) => s.setLoopsPanelOpen);
   const [menuAnchor, setMenuAnchor] = useState<{ element: HTMLElement; markerId: string } | null>(null);
   const [loopMenuAnchor, setLoopMenuAnchor] = useState<{ element: HTMLElement; loopId: string } | null>(null);
   const [loopStartMarker, setLoopStartMarker] = useState<string | null>(null);
   const [longPressTimer, setLongPressTimer] = useState<number | null>(null);
-  const [deleteAllDialogOpen, setDeleteAllDialogOpen] = useState(false);
+  const [colorAnchor, setColorAnchor] = useState<{ element: HTMLElement; loopId: string } | null>(null);
 
-  if (loopState.markers.length === 0) return null;
 
   const handleMarkerClick = (time: number) => {
     // Disable loop when clicking on a marker (cleaner UX)
@@ -116,15 +198,18 @@ const MarkersPanel = () => {
     handleLoopMenuClose();
   };
 
+  // Loops once the playhead gets in; a second click cancels
+  const handleLoopOnEntry = (loopId: string) => {
+    armLoop(armedLoopId === loopId ? null : loopId);
+    handleLoopMenuClose();
+  };
+
   const isLoopPlaying = (loopId: string) =>
     isPlaying && loopState.activeLoopId === loopId && loopState.loops.some((l) => l.id === loopId && l.enabled);
 
-  const handleDeleteAll = () => {
-    // Remove all loops first
-    loopState.loops.forEach(loop => removeLoop(loop.id));
-    // Then remove all markers
-    loopState.markers.forEach(marker => removeMarker(marker.id));
-    setDeleteAllDialogOpen(false);
+  const loopColorOf = (loopId: string) => {
+    const loop = loopState.loops.find((l) => l.id === loopId);
+    return loop ? loopColor(loop, loopState.loops) : LOOP_COLORS[0];
   };
 
   const getMarkerNumber = (markerId: string) => {
@@ -132,8 +217,32 @@ const MarkersPanel = () => {
     return index !== -1 ? index + 1 : '?';
   };
 
+  // Hidden: one thin row with the counts, a click shows the lists again
+  if (!panelOpen) {
+    return (
+      <ButtonBase
+        onClick={() => setLoopsPanelOpen(true)}
+        aria-label={t('markers.showPanel')}
+        aria-expanded={false}
+        data-loops-panel="closed"
+        sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 2, py: 1, bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider', justifyContent: 'flex-start' }}
+      >
+        <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: '20px' }}>
+          {t('markers.markersTitle')}
+        </Typography>
+        <CountBadge count={loopState.markers.length} testId="markers-count" />
+        <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: '20px', ml: 1 }}>
+          {t('markers.loopsTitle')}
+        </Typography>
+        <CountBadge count={loopState.loops.length} testId="loops-count" />
+        <ExpandMore fontSize="small" sx={{ ml: 'auto', color: 'text.secondary', display: 'block' }} />
+      </ButtonBase>
+    );
+  }
+
   return (
     <Box
+      data-loops-panel="open"
       sx={{
         display: 'flex',
         flexDirection: 'column',
@@ -150,6 +259,11 @@ const MarkersPanel = () => {
         <Typography variant="body2" sx={{ color: 'text.secondary', mr: 1 }}>
           {t('markers.markers')}
         </Typography>
+        {loopState.markers.length === 0 && (
+          <Typography variant="body2" sx={{ color: 'text.secondary', fontStyle: 'italic' }}>
+            {t('markers.emptyHint')}
+          </Typography>
+        )}
         {loopState.markers.map((marker, index) => {
           const isInActiveLoop = loopState.loops.find(
             l => l.enabled && (l.startMarkerId === marker.id || l.endMarkerId === marker.id)
@@ -160,41 +274,53 @@ const MarkersPanel = () => {
           );
 
           const isLoopStartSelection = loopStartMarker === marker.id;
+          const color = markerColor(marker.id, loopState);
 
           return (
             <Chip
               key={marker.id}
-              label={`${index + 1} - ${formatTime(marker.time)}`}
+              label={
+                <>
+                  <span>{`${index + 1} - ${formatTime(marker.time)}`}</span>
+                  <ChipActions
+                    menuLabel={t('markers.markerMenu')}
+                    deleteLabel={t('markers.deleteMarker')}
+                    onMenu={(e) => handleMenuClick(e, marker.id)}
+                    onDelete={() => handleDelete(marker.id)}
+                  />
+                </>
+              }
               size="small"
+              data-marker-chip={marker.id}
+              onKeyDown={onDeleteKey(() => handleDelete(marker.id))}
               icon={<PlayArrow fontSize="small" />}
               variant={isLoopEndpoint ? 'outlined' : 'filled'}
-              color={isInActiveLoop ? 'warning' : 'default'}
               onClick={() => handleMarkerClick(marker.time)}
               onPointerDown={(e) => handlePointerDown(e, marker.id)}
               onPointerUp={handlePointerUp}
               onPointerCancel={handlePointerUp}
-              onDelete={(e) => handleMenuClick(e as React.MouseEvent<HTMLElement>, marker.id)}
-              deleteIcon={<MoreVert fontSize="small" />}
               sx={{
                 cursor: 'pointer',
-                bgcolor: isLoopStartSelection ? 'warning.main' : undefined,
-                color: isLoopStartSelection ? 'warning.contrastText' : undefined,
+                ...chipLayout,
+                // Loop ends take the color of their loop
+                ...(isLoopEndpoint && { borderColor: color, '& .MuiChip-icon': { color } }),
+                ...(isInActiveLoop && {
+                  bgcolor: color,
+                  color: theme.palette.getContrastText(color),
+                  '& .MuiChip-icon': { color: 'inherit' },
+                }),
+                ...(isLoopStartSelection && { bgcolor: 'warning.main', color: 'warning.contrastText' }),
                 '&:hover': {
-                  bgcolor: !isLoopEndpoint && isInActiveLoop ? 'warning.dark' : 'action.hover',
+                  bgcolor: isInActiveLoop ? alpha(color, 0.8) : 'action.hover',
                 },
               }}
             />
           );
         })}
         
-        {/* Delete all button */}
-        <IconButton
-          size="small"
-          onClick={() => setDeleteAllDialogOpen(true)}
-          disabled={loopState.markers.length === 0 && loopState.loops.length === 0}
-          sx={{ ml: 'auto' }}
-        >
-          <Close fontSize="small" />
+        {/* Hide the lists: the loop strip becomes thin and read-only */}
+        <IconButton size="small" onClick={() => setLoopsPanelOpen(false)} aria-label={t('markers.hidePanel')} aria-expanded sx={{ ml: 'auto' }}>
+          <ExpandLess fontSize="small" />
         </IconButton>
       </Box>
 
@@ -209,12 +335,25 @@ const MarkersPanel = () => {
             const endNum = getMarkerNumber(loop.endMarkerId);
             const isActive = loop.enabled;
             const isPlayingLoop = isLoopPlaying(loop.id);
+            const isArmed = armedLoopId === loop.id;
+            const color = loopColor(loop, loopState.loops);
 
             return (
               <Chip
                 key={loop.id}
-                label={`${startNum} → ${endNum}`}
+                label={
+                  <>
+                    <span>{`${startNum} → ${endNum}`}</span>
+                    <ChipActions
+                      menuLabel={t('markers.loopMenu')}
+                      deleteLabel={t('markers.deleteLoop')}
+                      onMenu={(e) => handleLoopMenuClick(e, loop.id)}
+                      onDelete={() => removeLoop(loop.id)}
+                    />
+                  </>
+                }
                 size="small"
+                onKeyDown={onDeleteKey(() => removeLoop(loop.id))}
                 icon={
                   isPlayingLoop ? (
                     // Playing: equalizer bars bounce; hovering shows what a click does (pause)
@@ -226,19 +365,30 @@ const MarkersPanel = () => {
                       </Box>
                       <Pause fontSize="small" className="loop-pause" />
                     </Box>
+                  ) : isArmed ? (
+                    <Login fontSize="small" />
                   ) : (
                     <LoopIcon fontSize="small" />
                   )
                 }
-                color={isActive ? 'warning' : 'default'}
+                variant={isActive ? 'filled' : 'outlined'}
+                data-loop-chip={loop.id}
+                data-armed={isArmed || undefined}
                 aria-label={isPlayingLoop ? t('markers.pauseLoop') : t('markers.playLoop')}
                 onClick={() => toggleLoopPlayback(loop.id)}
-                onDelete={(e) => handleLoopMenuClick(e as React.MouseEvent<HTMLElement>, loop.id)}
-                deleteIcon={<MoreVert fontSize="small" />}
                 sx={{
                   cursor: 'pointer',
+                  ...chipLayout,
+                  // Colored like the loop in the ruler: filled when active, dashed when armed
+                  borderColor: color,
+                  borderStyle: isArmed ? 'dashed' : 'solid',
+                  '& .MuiChip-icon': { color: isActive ? 'inherit' : color },
+                  ...(isActive && {
+                    bgcolor: color,
+                    color: theme.palette.getContrastText(color),
+                  }),
                   '&:hover': {
-                    bgcolor: isActive ? 'warning.dark' : 'action.hover',
+                    bgcolor: isActive ? alpha(color, 0.8) : alpha(color, 0.12),
                   },
                   '& .loop-playing': {
                     width: 20,
@@ -317,6 +467,29 @@ const MarkersPanel = () => {
             <ListItemText>{t('markers.continueAfterLoop')}</ListItemText>
           </MenuItem>
         )}
+        {/* Not for the enabled loop: the playhead is already in it */}
+        {loopMenuAnchor && !loopState.loops.find((l) => l.id === loopMenuAnchor.loopId)?.enabled && (
+          <MenuItem onClick={() => handleLoopOnEntry(loopMenuAnchor.loopId)} selected={armedLoopId === loopMenuAnchor.loopId}>
+            <ListItemIcon>
+              <Login fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>{t('markers.loopOnEntry')}</ListItemText>
+            {armedLoopId === loopMenuAnchor.loopId && <Check fontSize="small" sx={{ ml: 2 }} />}
+          </MenuItem>
+        )}
+        {loopMenuAnchor && (
+          <MenuItem
+            onClick={() => {
+              setColorAnchor(loopMenuAnchor);
+              handleLoopMenuClose();
+            }}
+          >
+            <ListItemIcon>
+              <ColorDot color={loopColorOf(loopMenuAnchor.loopId)} />
+            </ListItemIcon>
+            <ListItemText>{t('colors.title')}</ListItemText>
+          </MenuItem>
+        )}
         <MenuItem onClick={() => loopMenuAnchor && handleDeleteLoop(loopMenuAnchor.loopId)}>
           <ListItemIcon>
             <Delete fontSize="small" />
@@ -325,29 +498,14 @@ const MarkersPanel = () => {
         </MenuItem>
       </Menu>
 
-      {/* Delete All Confirmation Dialog */}
-      <Dialog
-        open={deleteAllDialogOpen}
-        onClose={() => setDeleteAllDialogOpen(false)}
-      >
-        <DialogTitle>{t('markers.deleteAllConfirmTitle')}</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            {t('markers.deleteAllConfirmMessage', { 
-              markerCount: loopState.markers.length, 
-              loopCount: loopState.loops.length 
-            })}
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteAllDialogOpen(false)}>
-            {t('markers.deleteAllDialogCancel')}
-          </Button>
-          <Button onClick={handleDeleteAll} color="error" autoFocus>
-            {t('markers.deleteAllDialogConfirm')}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <ColorPalette
+        anchorEl={colorAnchor?.element ?? null}
+        colors={LOOP_COLORS}
+        value={colorAnchor ? loopColorOf(colorAnchor.loopId) : undefined}
+        onSelect={(color) => colorAnchor && setLoopColor(colorAnchor.loopId, color)}
+        onClose={() => setColorAnchor(null)}
+      />
+
     </Box>
   );
 };

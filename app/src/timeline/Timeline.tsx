@@ -18,12 +18,17 @@ import TrackRow from './TrackRow';
 import { clampScroll, contentWidth as computeContentWidth, followScroll, pxPerSecond, scrollForAnchor } from './timelineMath';
 import { getView, setView, setZoomAnchor, takeZoomAnchor } from './viewStore';
 import { zoomBy } from './zoomActions';
-import { clampHeaderWidth, HEADER_WIDTH_DEFAULT, loadHeaderWidth, RULER_HEIGHT, saveHeaderWidth } from './layout';
+import { clampHeaderWidth, HEADER_WIDTH_DEFAULT, loadHeaderWidth, saveHeaderWidth } from './layout';
+import { useRulerLayout } from './useRulerLayout';
 import ResizeHandle from './ResizeHandle';
 import TimelineScrollbar from './TimelineScrollbar';
+import GridLines from './GridLines';
 import { scrollbarColors } from './scrollbarColors';
 import { useTranslation } from 'react-i18next';
 import { MAX_ZOOM } from './zoom';
+import { useSnapGuide } from './snapGuide';
+import { applyMarkerPreview, useMarkerPreview } from './markerPreview';
+import { loopColor, markerColor } from '../utils/colors';
 
 /** No automatic follow for a while after the user scrolled by hand */
 const MANUAL_SCROLL_GRACE_MS = 3000;
@@ -66,8 +71,11 @@ export default function Timeline() {
   const duration = useAudioStore((s) => s.playbackState.duration);
   const zoomLevel = useAudioStore((s) => s.zoomLevel);
   const loopState = useAudioStore((s) => s.loopState);
+  const markerPreview = useMarkerPreview();
   const reorderTracks = useAudioStore((s) => s.reorderTracks);
 
+  const snapGuide = useSnapGuide();
+  const rulerHeight = useRulerLayout().height;
   const scrollRef = useRef<HTMLDivElement>(null);
   const rulerPlayheadRef = useRef<HTMLDivElement>(null);
   const lanePlayheadRef = useRef<HTMLDivElement>(null);
@@ -203,6 +211,25 @@ export default function Timeline() {
     };
   }, [headerWidth]);
 
+  // Undo / redo of markers, loops and clips
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      const target = e.target as HTMLElement | null;
+      if (target?.closest('input, textarea, [contenteditable="true"]')) return;
+      const key = e.key.toLowerCase();
+      if (key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        useAudioStore.getState().undo();
+      } else if ((key === 'z' && e.shiftKey) || key === 'y') {
+        e.preventDefault();
+        useAudioStore.getState().redo();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
+
   // Track reordering
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -220,10 +247,12 @@ export default function Timeline() {
   const hasSolo = tracks.some((t) => t.isSolo);
   const scrollbar = scrollbarColors(theme);
 
-  // Active loop and markers, drawn across all lanes
+  // Active loop and markers, drawn across all lanes (following a drag in the ruler)
+  const markers = applyMarkerPreview(loopState.markers, markerPreview);
   const activeLoop = loopState.loops.find((l) => l.id === loopState.activeLoopId && l.enabled);
-  const loopStart = activeLoop && loopState.markers.find((m) => m.id === activeLoop.startMarkerId)?.time;
-  const loopEnd = activeLoop && loopState.markers.find((m) => m.id === activeLoop.endMarkerId)?.time;
+  const activeLoopColor = activeLoop && loopColor(activeLoop, loopState.loops);
+  const loopStart = activeLoop && markers.find((m) => m.id === activeLoop.startMarkerId)?.time;
+  const loopEnd = activeLoop && markers.find((m) => m.id === activeLoop.endMarkerId)?.time;
 
   return (
     <Box
@@ -256,7 +285,7 @@ export default function Timeline() {
     >
       <Box sx={{ position: 'relative', width: headerWidth + width, minWidth: '100%' }}>
         {/* Ruler row */}
-        <Box sx={{ position: 'sticky', top: 0, zIndex: 5, display: 'flex', height: RULER_HEIGHT }}>
+        <Box sx={{ position: 'sticky', top: 0, zIndex: 5, display: 'flex', height: rulerHeight }}>
           {wide && (
             <Box
               sx={{
@@ -280,8 +309,9 @@ export default function Timeline() {
         <Box sx={{ position: 'relative' }}>
           {/* Overlay across all lanes: played area, active loop, markers, playhead */}
           <Box sx={{ position: 'absolute', top: 0, bottom: 0, left: headerWidth, width, zIndex: 2, pointerEvents: 'none', overflow: 'hidden' }}>
+            <GridLines />
             <Box ref={playedRef} sx={{ position: 'absolute', top: 0, bottom: 0, left: 0, bgcolor: alpha(theme.palette.background.default, 0.35) }} />
-            {loopStart !== undefined && loopEnd !== undefined && (
+            {activeLoopColor && loopStart !== undefined && loopEnd !== undefined && (
               <Box
                 sx={{
                   position: 'absolute',
@@ -289,16 +319,26 @@ export default function Timeline() {
                   bottom: 0,
                   left: Math.min(loopStart, loopEnd) * pps,
                   width: Math.abs(loopEnd - loopStart) * pps,
-                  bgcolor: alpha(theme.palette.warning.main, 0.08),
-                  borderLeft: `1px solid ${alpha(theme.palette.warning.main, 0.6)}`,
-                  borderRight: `1px solid ${alpha(theme.palette.warning.main, 0.6)}`,
+                  bgcolor: alpha(activeLoopColor, 0.08),
+                  borderLeft: `1px solid ${alpha(activeLoopColor, 0.6)}`,
+                  borderRight: `1px solid ${alpha(activeLoopColor, 0.6)}`,
                 }}
               />
             )}
-            {loopState.markers.map((m) => (
-              <Box key={m.id} sx={{ position: 'absolute', top: 0, bottom: 0, left: m.time * pps, width: '1px', bgcolor: alpha(theme.palette.warning.main, 0.35) }} />
+            {markers.map((m) => (
+              <Box
+                key={m.id}
+                data-marker-line={m.id}
+                sx={{ position: 'absolute', top: 0, bottom: 0, left: m.time * pps, width: '1px', bgcolor: alpha(markerColor(m.id, loopState), 0.35) }}
+              />
             ))}
             <Box ref={lanePlayheadRef} sx={{ position: 'absolute', top: 0, bottom: 0, left: -1, width: 2, bgcolor: 'primary.light', willChange: 'transform' }} />
+            {snapGuide !== null && (
+              <Box
+                data-snap-guide={snapGuide}
+                sx={{ position: 'absolute', top: 0, bottom: 0, left: snapGuide * pps - 1, width: 2, bgcolor: 'warning.light', boxShadow: `0 0 6px ${theme.palette.warning.light}` }}
+              />
+            )}
           </Box>
 
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>

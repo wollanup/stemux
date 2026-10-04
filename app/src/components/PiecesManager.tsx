@@ -8,7 +8,6 @@ import {
   TextField,
   List,
   ListItem,
-  ListItemButton,
   ListItemText,
   IconButton,
   Typography,
@@ -20,9 +19,7 @@ import {
   useTheme,
   CircularProgress,
 } from '@mui/material';
-import {
-  Delete,
-} from '@mui/icons-material';
+import { Delete, FolderOpen } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useAudioStore } from '../hooks/useAudioStore';
 import type { PieceWithStats } from '../types/audio';
@@ -305,28 +302,36 @@ const PiecesManager = ({ open, onClose }: PiecesManagerProps) => {
                       {pieces.map((piece) => (
                         <ListItem
                           key={piece.id}
-                          disablePadding
+                          data-piece={piece.name}
                           secondaryAction={
-                            <IconButton
-                              edge="end"
-                              aria-label={t('pieces.delete')}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setDeleteConfirm(piece.id);
-                              }}
-                            >
-                              <Delete />
-                            </IconButton>
+                            <Stack direction="row" gap={0.5} alignItems="center">
+                              {/* Opening a piece is explicit: a tap on the row does nothing */}
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                startIcon={<FolderOpen />}
+                                onClick={() => handleLoadPiece(piece.id)}
+                              >
+                                {t('pieces.open')}
+                              </Button>
+                              <IconButton
+                                edge="end"
+                                aria-label={t('pieces.delete')}
+                                onClick={() => setDeleteConfirm(piece.id)}
+                              >
+                                <Delete />
+                              </IconButton>
+                            </Stack>
                           }
+                          sx={{ pr: 18 }}
                         >
-                          <ListItemButton onClick={() => handleLoadPiece(piece.id)}>
-                            <ListItemText
-                              primary={piece.name}
-                              secondary={
-                                `${t('pieces.tracks', { count: piece.trackCount })} • ${formatBytes(piece.size, t)}`
-                              }
-                            />
-                          </ListItemButton>
+                          <ListItemText
+                            primary={piece.name}
+                            secondary={
+                              `${t('pieces.tracks', { count: piece.trackCount })} • ${formatBytes(piece.size, t)}`
+                            }
+                            slotProps={{ primary: { noWrap: true } }}
+                          />
                         </ListItem>
                       ))}
                     </List>

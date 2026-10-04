@@ -10,8 +10,11 @@ import { getView, subscribeView } from './viewStore';
 
 interface WaveformCanvasProps {
   source: PeakSource | null;
-  /** Position of the clip on the timeline (seconds) */
+  /** Timeline position of the first sample of the source (seconds) */
   offset: number;
+  /** Part of the timeline where the clip plays (seconds); default: the whole source */
+  clipStart?: number;
+  clipEnd?: number;
   color: string;
   height: number;
   barStyle: 'modern' | 'classic';
@@ -23,7 +26,7 @@ interface WaveformCanvasProps {
 const BAR_WIDTH = 3;
 const BAR_STEP = 5;
 
-export default function WaveformCanvas({ source, offset, color, height, barStyle, normalize, animate }: WaveformCanvasProps) {
+export default function WaveformCanvas({ source, offset, clipStart: clipFrom, clipEnd: clipTo, color, height, barStyle, normalize, animate }: WaveformCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const draw = useCallback(() => {
@@ -46,9 +49,9 @@ export default function WaveformCanvas({ source, offset, color, height, barStyle
     if (!source || source.length === 0 || pxPerSec <= 0) return;
 
     const scale = normalize && source.absMax > 0 ? 0.95 / source.absMax : 1;
-    // Never draw outside the clip
-    const clipStart = offset * pxPerSec - scrollLeft;
-    const clipEnd = clipStart + (source.length / source.sampleRate) * pxPerSec;
+    // Never draw outside the clip (the trimmed parts of the file are hidden)
+    const clipStart = (clipFrom ?? offset) * pxPerSec - scrollLeft;
+    const clipEnd = (clipTo ?? offset + source.length / source.sampleRate) * pxPerSec - scrollLeft;
     const mid = height / 2;
     const half = (height / 2) * 0.9;
     g.fillStyle = color;
@@ -83,7 +86,7 @@ export default function WaveformCanvas({ source, offset, color, height, barStyle
         g.fillRect(x, top, 1, Math.max(1, bottom - top));
       }
     }
-  }, [source, offset, color, height, barStyle, normalize]);
+  }, [source, offset, clipFrom, clipTo, color, height, barStyle, normalize]);
 
   useEffect(() => {
     draw();

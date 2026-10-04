@@ -1,6 +1,8 @@
 /**
  * One track on the timeline: its clip drawn at its position, empty lane
- * elsewhere. Clicking the lane moves the playhead.
+ * elsewhere. Clicking the lane moves the playhead; dragging it with the mouse
+ * scrolls the timeline, except on a clip in edit mode, where the clip is moved
+ * (body) or trimmed (edges).
  */
 
 import { useEffect, useRef, useState } from 'react';
@@ -13,7 +15,10 @@ import type { AudioTrack } from '../types/audio';
 import WaveformCanvas from './WaveformCanvas';
 import { LivePeaks, type PeakSource } from './peaks';
 import { getView } from './viewStore';
-import type { useTrackAudio } from './useTrackAudio';
+import { clipOf, type useTrackAudio } from './useTrackAudio';
+import { useClipDrag } from './useClipDrag';
+import { useLanePan } from './useLanePan';
+import type { ClipGeometry, ClipZone } from './clipEdit';
 
 interface TrackLaneProps {
   track: AudioTrack;
@@ -52,26 +57,38 @@ function useLiveTake(recording: boolean) {
 /**
  * Extent of a clip: a light tint, no name (it is in the track header) and no
  * border, except while hovering the lane, to see exactly where it starts/ends.
+ * The edge under the mouse gets a thick border: it can be dragged to trim.
  */
-function Clip({ left, width, color, start, duration }: { left: number; width: number; color: string; start: number; duration: number }) {
+function Clip({ geometry, pxPerSec, color, activeEdge }: { geometry: ClipGeometry; pxPerSec: number; color: string; activeEdge: ClipZone | null }) {
+  const edge = (side: 'start' | 'end') => (
+    <Box
+      data-clip-edge={side}
+      sx={{ position: 'absolute', top: 0, bottom: 0, [side === 'start' ? 'left' : 'right']: -1, width: 3, bgcolor: color }}
+    />
+  );
   return (
     <Box
       data-clip
-      data-clip-start={start}
-      data-clip-duration={duration}
+      data-clip-start={geometry.offset}
+      data-clip-duration={geometry.duration}
+      data-clip-trim={geometry.trimStart}
       sx={{
         position: 'absolute',
-        left,
-        width,
+        left: geometry.offset * pxPerSec,
+        width: geometry.duration * pxPerSec,
         top: 0,
         bottom: 0,
         bgcolor: alpha(color, 0.12),
         border: '1px solid transparent',
+        borderColor: activeEdge === 'body' ? alpha(color, 0.6) : 'transparent',
         '--clip-border': alpha(color, 0.6),
         pointerEvents: 'none',
         transition: 'border-color 0.15s',
       }}
-    />
+    >
+      {activeEdge === 'start' && edge('start')}
+      {activeEdge === 'end' && edge('end')}
+    </Box>
   );
 }
 
@@ -79,6 +96,7 @@ export default function TrackLane({ track, audio, width, height, pxPerSec, dimme
   const { t } = useTranslation();
   const theme = useTheme();
   const { seek, waveformStyle, waveformNormalize } = useAudioStore();
+  const editMode = useAudioStore((s) => s.editMode);
   const isRecording = track.recordingState === 'recording';
   const liveTake = useLiveTake(isRecording);
   const liveClipRef = useRef<HTMLDivElement>(null);
@@ -98,22 +116,41 @@ export default function TrackLane({ track, audio, width, height, pxPerSec, dimme
     return () => cancelAnimationFrame(raf);
   }, [isRecording, liveTake]);
 
+  // Clip window: where it is and which part of the file it plays
+  const window = clipOf(track);
+  const geometry: ClipGeometry | null = audio
+    ? { offset: window.offset, trimStart: window.trimStart, duration: window.duration ?? audio.duration - window.trimStart }
+    : null;
+  const clipDrag = useClipDrag({
+    trackId: track.id,
+    geometry,
+    sourceDuration: audio?.duration ?? 0,
+    pxPerSec,
+    disabled: !editMode || isRecording || track.isArmed === true,
+  });
+  const pan = useLanePan();
+  const shown = clipDrag.shown;
+
   const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Both are asked: each forgets its own gesture
+    const dragged = clipDrag.consumeClick();
+    if (pan.consumeClick() || dragged) return;
     const rect = e.currentTarget.getBoundingClientRect();
     seek(Math.max(0, (e.clientX - rect.left) / pxPerSec));
   };
 
   const waveColor = track.isMuted ? theme.palette.action.disabled : track.color;
-  const offset = track.clipOffset ?? 0;
   const recordStart = track.recordingStartOffset ?? 0;
   // Lane height minus its bottom separator; bars keep a margin of their own
   const drawHeight = height - 1;
 
-  const renderWave = (source: PeakSource | null, sourceOffset: number, animate = false) => (
+  const renderWave = (source: PeakSource | null, sourceOffset: number, animate = false, bounds?: { start: number; end: number }) => (
     <Box sx={{ position: 'absolute', left: 0, right: 0, top: 0, height: drawHeight, opacity: dimmed ? 0.35 : 1 }}>
       <WaveformCanvas
         source={source}
         offset={sourceOffset}
+        clipStart={bounds?.start}
+        clipEnd={bounds?.end}
         color={waveColor}
         height={drawHeight}
         barStyle={waveformStyle}
@@ -131,6 +168,22 @@ export default function TrackLane({ track, audio, width, height, pxPerSec, dimme
   return (
     <Box
       onClick={handleClick}
+      onPointerDown={(e) => {
+        if (!clipDrag.handlers.onPointerDown(e)) pan.handlers.onPointerDown(e);
+      }}
+      onPointerMove={(e) => {
+        clipDrag.handlers.onPointerMove(e);
+        pan.handlers.onPointerMove(e);
+      }}
+      onPointerUp={(e) => {
+        clipDrag.handlers.onPointerUp(e);
+        pan.handlers.onPointerUp(e);
+      }}
+      onPointerCancel={(e) => {
+        clipDrag.handlers.onPointerCancel();
+        pan.handlers.onPointerCancel(e);
+      }}
+      onPointerLeave={clipDrag.handlers.onPointerLeave}
       sx={{
         position: 'relative',
         '@media (hover: hover)': {
@@ -139,17 +192,16 @@ export default function TrackLane({ track, audio, width, height, pxPerSec, dimme
         width,
         height,
         flexShrink: 0,
-        cursor: 'pointer',
+        cursor: pan.panning ? 'grabbing' : (clipDrag.cursor ?? 'grab'),
+        userSelect: 'none',
         bgcolor: track.isArmed ? alpha(theme.palette.error.main, 0.06) : 'transparent',
         borderBottom: `1px solid ${theme.palette.divider}`,
         outline: track.isArmed ? `1px dashed ${alpha(theme.palette.error.main, 0.6)}` : 'none',
         outlineOffset: -1,
       }}
     >
-      {audio && (
-        <Clip left={offset * pxPerSec} width={audio.duration * pxPerSec} color={track.color} start={offset} duration={audio.duration} />
-      )}
-      {audio && renderWave(audio.pyramid, offset)}
+      {audio && shown && <Clip geometry={shown} pxPerSec={pxPerSec} color={track.color} activeEdge={clipDrag.zone} />}
+      {audio && shown && renderWave(audio.pyramid, shown.offset - shown.trimStart, false, { start: shown.offset, end: shown.offset + shown.duration })}
 
       {isRecording && liveTake && (
         <>

@@ -1,3 +1,6 @@
+import type { ClipGeometry } from '../timeline/clipEdit';
+import type { HistoryEntry } from '../hooks/audioStore/history';
+
 export interface AudioTrack {
   id: string;
   name: string;
@@ -17,6 +20,8 @@ export interface AudioTrack {
   recordingState?: 'idle' | 'armed' | 'recording' | 'stopped';
   recordingStartOffset?: number; // Piece position (seconds) of the first recorded sample
   clipOffset?: number; // Position of the clip on the timeline (seconds), 0 = start of the piece
+  trimStart?: number; // Seconds of the file skipped at the start of the clip
+  clipDuration?: number; // Seconds of the file played (undefined: until its end)
 }
 
 export interface PlaybackState {
@@ -40,12 +45,24 @@ export interface Loop {
   endMarkerId: string;
   enabled: boolean;
   createdAt: number;
+  color?: string; // From LOOP_COLORS; missing on loops saved before colors existed
 }
 
 export interface LoopState {
   markers: Marker[];
   loops: Loop[];
   activeLoopId: string | null;
+}
+
+/** Constant tempo of a piece (see tempo/tempo.ts) */
+export interface Tempo {
+  /** Beats per minute, a beat being the unit of the signature */
+  bpm: number;
+  /** Time signature: beats per bar / beat unit (4/4, 3/4, 6/8...) */
+  beatsPerBar: number;
+  beatUnit: number;
+  /** Time of the first beat of bar 1 (seconds) */
+  offset: number;
 }
 
 // Piece (morceau) types
@@ -61,6 +78,8 @@ export interface PieceSettings {
     height?: number;
     isRecordable?: boolean; // Track is a recording track
     clipOffset?: number; // Position of the clip on the timeline (seconds)
+    trimStart?: number;
+    clipDuration?: number;
   }>;
   loopState: {
     markers: Marker[];
@@ -69,6 +88,7 @@ export interface PieceSettings {
   };
   playbackRate: number;
   masterVolume: number;
+  tempo?: Tempo | null; // Missing on pieces saved before tempo existed
 }
 
 export interface Piece {
@@ -100,6 +120,30 @@ export interface AudioStore {
   // Recording state
   isRecordingSupported: boolean;
   loopBackup: { activeLoopId: string | null } | null;
+  /** Loop to enable when the playhead enters it (not saved) */
+  armedLoopId: string | null;
+
+  // Clip editing
+  snapEnabled: boolean;
+  /** Drag on a lane: move/trim clips (true) or scroll the timeline (false) */
+  editMode: boolean;
+  setEditMode: (enabled: boolean) => void;
+  updateClip: (trackId: string, clip: ClipGeometry) => void;
+  setSnapEnabled: (enabled: boolean) => void;
+
+  // Tempo grid of the piece (null: none) and ruler display
+  tempo: Tempo | null;
+  setTempo: (tempo: Tempo | null) => void;
+  rulerMode: 'time' | 'bars';
+  setRulerMode: (mode: 'time' | 'bars') => void;
+
+  // Undo / redo of markers, loops and clips
+  undoStack: HistoryEntry[];
+  redoStack: HistoryEntry[];
+  /** Run an edit (or several at once) and record it for undo */
+  edit: <T>(fn: () => T) => T;
+  undo: () => void;
+  redo: () => void;
   
   addTrack: (file: File) => Promise<void>;
   removeTrack: (id: string) => void;
@@ -131,15 +175,22 @@ export interface AudioStore {
   addMarker: (time: number, label?: string) => string;
   removeMarker: (id: string) => void;
   updateMarkerTime: (id: string, time: number) => void;
+  moveLoop: (id: string, delta: number) => void;
   createLoop: (startMarkerId: string, endMarkerId: string) => string;
   removeLoop: (id: string) => void;
+  setLoopColor: (id: string, color: string) => void;
   toggleLoopById: (id: string) => void;
   setActiveLoop: (id: string | null) => void;
   playLoop: (id: string) => void;
   toggleLoopPlayback: (id: string) => void;
+  armLoop: (id: string | null) => void;
+  enterArmedLoop: (time: number) => void;
 
   setWaveformStyle: (style: 'modern' | 'classic') => void;
   setWaveformNormalize: (normalize: boolean) => void;
+  /** Markers and loops panel shown: the loop strip is editable (read-only when hidden) */
+  loopsPanelOpen: boolean;
+  setLoopsPanelOpen: (open: boolean) => void;
   
   initAudioContext: () => void;
 

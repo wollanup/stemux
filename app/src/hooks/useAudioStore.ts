@@ -31,7 +31,11 @@ import { createTrackActions } from './audioStore/tracks';
 import { createLoopActions } from './audioStore/loops';
 import { createRecordingActions } from './audioStore/recording';
 import { createPieceActions } from './audioStore/pieces';
-import { createSettingsActions } from './audioStore/settings';
+import { createSettingsActions, loadLoopsPanelOpen } from './audioStore/settings';
+import { createClipActions, loadEditMode, loadSnapEnabled } from './audioStore/clips';
+import { createHistoryActions } from './audioStore/history';
+import { createTempoActions, loadRulerMode } from './audioStore/tempo';
+import { setTempoSource } from './audioStore/storage';
 
 // Re-export for backwards compatibility with existing code
 export { loadTrackSettings } from './audioStore/shared';
@@ -53,6 +57,7 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
   zoomLevel: 0,
   waveformStyle: loadWaveformStyle() as 'modern' | 'classic',
   waveformNormalize: loadWaveformNormalize(),
+  loopsPanelOpen: loadLoopsPanelOpen(),
   currentPieceId: loadCurrentPieceId(),
   currentPieceName: '',
 
@@ -61,6 +66,17 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
     !!navigator.mediaDevices &&
     typeof navigator.mediaDevices.getUserMedia === 'function',
   loopBackup: null,
+  armedLoopId: null,
+
+  // Clip editing
+  snapEnabled: loadSnapEnabled(),
+  editMode: loadEditMode(),
+  undoStack: [],
+  redoStack: [],
+
+  // Tempo
+  tempo: null,
+  rulerMode: loadRulerMode(),
 
   // Compose all action modules
   ...createPlaybackActions(set, get),
@@ -69,7 +85,13 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
   ...createRecordingActions(set, get),
   ...createPieceActions(set, get),
   ...createSettingsActions(set),
+  ...createClipActions(set, get),
+  ...createHistoryActions(set, get),
+  ...createTempoActions(set, get),
 }));
+
+// The tempo is saved with the other settings of the piece
+setTempoSource(() => useAudioStore.getState().tempo);
 
 // Function to restore tracks from IndexedDB on app init
 export const restoreTracks = async () => {
@@ -187,7 +209,11 @@ syncEngineMix(useAudioStore.getState());
 syncEngineLoop(useAudioStore.getState());
 void audioEngine.setPlaybackRate(useAudioStore.getState().playbackState.playbackRate);
 
-audioEngine.on('timeupdate', () => setPlaybackTime(audioEngine.getCurrentTime()));
+audioEngine.on('timeupdate', () => {
+  const time = audioEngine.getCurrentTime();
+  setPlaybackTime(time);
+  if (audioEngine.isPlaying()) useAudioStore.getState().enterArmedLoop(time);
+});
 
 audioEngine.on('durationchange', () => {
   const duration = audioEngine.getDuration();

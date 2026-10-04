@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cursorFor, HANDLE_WIDTH, hitTest, loopStartMarkerIds, MARKER_GRAB_PX, resolveGesture, scrubTime } from '../rulerGestures';
+import { cursorFor, HANDLE_WIDTH, hitTest, loopShift, loopStartMarkerIds, MARKER_GRAB_PX, resolveGesture, scrubTime } from '../rulerGestures';
 import { zoomInFrom, zoomOutFrom, sliderFromZoom, zoomFromSlider } from '../zoom';
 
 const PPS = 10;
@@ -35,12 +35,12 @@ describe('hitTest', () => {
 
   it('grabs a loop end by its handle, drawn on the right of the line', () => {
     expect(hitTest(200 + HANDLE_WIDTH - 1, true, state, PPS)).toMatchObject({ markerId: 'b' });
-    expect(hitTest(200 - MARKER_GRAB_PX - 2, true, state, PPS)).toMatchObject({ kind: 'strip' });
+    expect(hitTest(200 - MARKER_GRAB_PX - 2, true, state, PPS)).toMatchObject({ kind: 'loop', loopId: 'big' });
   });
 
-  it('knows the innermost loop under the pointer in the strip (double click plays it)', () => {
-    expect(hitTest(140, true, state, PPS)).toEqual({ kind: 'strip', loopId: 'small' });
-    expect(hitTest(185, true, state, PPS)).toEqual({ kind: 'strip', loopId: 'big' });
+  it('knows the innermost loop under the pointer in the strip, with its bounds', () => {
+    expect(hitTest(140, true, state, PPS)).toEqual({ kind: 'loop', loopId: 'small', start: 12, end: 16 });
+    expect(hitTest(185, true, state, PPS)).toEqual({ kind: 'loop', loopId: 'big', start: 10, end: 20 });
     expect(hitTest(400, true, state, PPS)).toEqual({ kind: 'strip' });
   });
 
@@ -68,8 +68,8 @@ describe('resolveGesture', () => {
     expect(scrubTime(123, PPS, 60)).toBe(12.3);
   });
 
-  it('loop strip: a click does nothing (no playhead move)', () => {
-    expect(resolveGesture({ kind: 'strip' }, 140, 141, PPS, 60)).toEqual({ type: 'none' });
+  it('loop strip: a click adds a marker (no playhead move)', () => {
+    expect(resolveGesture({ kind: 'strip' }, 140, 141, PPS, 60)).toEqual({ type: 'addMarker', time: 14.1 });
   });
 
   it('loop strip: a drag creates a loop, in either direction, within the piece', () => {
@@ -82,6 +82,21 @@ describe('resolveGesture', () => {
     expect(resolveGesture({ kind: 'strip' }, 1000, 1050, 1000, 60)).toEqual({ type: 'none' });
   });
 
+  it('loop: a click does nothing (a double click plays it), a drag moves it', () => {
+    const big = { kind: 'loop', loopId: 'big', start: 10, end: 20 } as const;
+    expect(resolveGesture(big, 150, 151, PPS, 60)).toEqual({ type: 'none' });
+    expect(resolveGesture(big, 150, 200, PPS, 60)).toEqual({ type: 'moveLoop', loopId: 'big', delta: 5 });
+    expect(resolveGesture(big, 150, 100, PPS, 60)).toEqual({ type: 'moveLoop', loopId: 'big', delta: -5 });
+  });
+
+  it('loop: a moved loop stays within the piece', () => {
+    const big = { kind: 'loop', loopId: 'big', start: 10, end: 20 } as const;
+    expect(loopShift(big, 150, -500, PPS, 60)).toBe(-10);
+    expect(loopShift(big, 150, 2000, PPS, 60)).toBe(40);
+    // Already at the start: dragging further left does nothing
+    expect(resolveGesture({ ...big, start: 0, end: 10 }, 50, 0, PPS, 60)).toEqual({ type: 'none' });
+  });
+
   it('marker handle: a click seeks to it, a drag moves it', () => {
     expect(resolveGesture({ kind: 'marker', markerId: 'a', time: 10 }, 103, 103, PPS, 60)).toEqual({ type: 'seek', time: 10 });
     expect(resolveGesture({ kind: 'marker', markerId: 'b', time: 20 }, 200, 230, PPS, 60)).toEqual({ type: 'moveMarker', markerId: 'b', time: 23 });
@@ -92,7 +107,14 @@ describe('cursorFor', () => {
   it('shows a horizontal arrow on handles and a hand on the graduation', () => {
     expect(cursorFor({ kind: 'marker', markerId: 'a', time: 10 })).toBe('ew-resize');
     expect(cursorFor({ kind: 'time' })).toBe('pointer');
-    expect(cursorFor({ kind: 'strip' })).toBe('default');
+    expect(cursorFor({ kind: 'strip' })).toBe('copy');
+  });
+
+  it('shows a grab hand on loops, a crosshair while drawing a new one', () => {
+    const loop = { kind: 'loop', loopId: 'big', start: 10, end: 20 } as const;
+    expect(cursorFor(loop)).toBe('grab');
+    expect(cursorFor(loop, true)).toBe('grabbing');
+    expect(cursorFor({ kind: 'strip' }, true)).toBe('crosshair');
   });
 });
 
@@ -110,5 +132,34 @@ describe('zoom presets', () => {
   it('goes back to fit when the previous preset is below it', () => {
     expect(zoomOutFrom(50, 6.3)).toBe(10);
     expect(zoomOutFrom(10, 6.3)).toBe(0);
+  });
+});
+
+describe('magnetism of ruler gestures', () => {
+  // Grid every 10s, reached within 1.5s
+  const snap = (t: number) => (Math.abs(t - Math.round(t / 10) * 10) <= 1.5 ? Math.round(t / 10) * 10 : t);
+
+  it('snaps new markers, moved markers and new loops', () => {
+    expect(resolveGesture({ kind: 'strip' }, 211, 211, PPS, 60, snap)).toEqual({ type: 'addMarker', time: 20 });
+    expect(resolveGesture({ kind: 'strip' }, 250, 250, PPS, 60, snap)).toEqual({ type: 'addMarker', time: 25 });
+    expect(resolveGesture({ kind: 'marker', markerId: 'm', time: 5 }, 50, 391, PPS, 60, snap)).toEqual({ type: 'moveMarker', markerId: 'm', time: 40 });
+    expect(resolveGesture({ kind: 'strip' }, 88, 312, PPS, 60, snap)).toEqual({ type: 'createLoop', start: 10, end: 30 });
+  });
+
+  it('moves a loop so that its closest edge sticks to the grid', () => {
+    const hit = { kind: 'loop' as const, loopId: 'l', start: 12, end: 25 };
+    // +7.2s: start at 19.2 (0.8 from 20), end at 32.2 (2.2 from 30): the start sticks
+    expect(loopShift(hit, 0, 72, PPS, 60, snap)).toBeCloseTo(8);
+    // +4.4s: start 16.4 (too far), end 29.4 (0.6 from 30): the end sticks
+    expect(loopShift(hit, 0, 44, PPS, 60, snap)).toBeCloseTo(5);
+  });
+});
+
+describe('handle sizes', () => {
+  it('wider handles are grabbed further from the line', () => {
+    const state = { markers: [{ id: 'm', time: 10, createdAt: 0 }], loops: [] };
+    expect(hitTest(100 + 25, true, state, PPS).kind).toBe('strip');
+    expect(hitTest(100 + 25, true, state, PPS, { handle: 30, grab: 12 })).toEqual({ kind: 'marker', markerId: 'm', time: 10 });
+    expect(hitTest(100 - 10, true, state, PPS, { handle: 30, grab: 12 }).kind).toBe('marker');
   });
 });
