@@ -65,13 +65,13 @@ export default function PeakMeter({ trackId }: { trackId: string }) {
       const barWidth = (width - gap * (channels - 1)) / channels;
 
       // Clip light: the track reached 0 dBFS since the last reset
-      g.fillStyle = maxDb.current >= 0 ? colors.danger : palette.selected;
+      g.fillStyle = maxDb.current >= 0 ? colors.danger : palette.surface;
       g.fillRect(0, 0, width, CLIP_LIGHT_PX);
 
       for (let i = 0; i < channels; i++) {
         const x = i * (barWidth + gap);
         const meter = meters[i] ?? silentMeter();
-        g.fillStyle = palette.selected;
+        g.fillStyle = palette.surface;
         g.fillRect(x, barsTop, barWidth, barsHeight);
         // Bar in three zones: safe, loud, about to clip
         const zones: Array<[number, number, string]> = [

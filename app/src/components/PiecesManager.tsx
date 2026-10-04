@@ -16,8 +16,7 @@ import { IconFolderOpen, IconTrash } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { useAudioStore } from '../hooks/useAudioStore';
 import type { PieceWithStats } from '../types/audio';
-import { useMedia } from '../theme/palette';
-import { MOBILE_QUERY } from '../theme/theme';
+import { useSmallerThan } from '../theme/palette';
 import ConfirmDialog from './ConfirmDialog';
 import classes from './PiecesManager.module.css';
 
@@ -41,7 +40,7 @@ const formatBytes = (bytes: number, t: (key: string) => string): string => {
 
 const PiecesManager = ({ open, onClose }: PiecesManagerProps) => {
   const { t } = useTranslation();
-  const isMobile = useMedia(MOBILE_QUERY);
+  const isMobile = useSmallerThan('xs');
   
   const {
     currentPieceId,
@@ -200,7 +199,7 @@ const PiecesManager = ({ open, onClose }: PiecesManagerProps) => {
         opened={open}
         onClose={onClose}
         fullScreen={isMobile}
-        size={600}
+        size="lg"
         title={t('pieces.title')}
       >
         {loading ? (

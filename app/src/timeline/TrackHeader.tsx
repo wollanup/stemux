@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { ActionIcon, Menu, Slider, Text, TextInput, Tooltip } from '@mantine/core';
+import { ActionIcon, Menu, Progress, Slider, Text, TextInput, Tooltip } from '@mantine/core';
 import {
   IconChevronDown,
   IconCircleFilled,
@@ -56,12 +56,8 @@ function LevelMeter() {
 
   const db = level > 0 ? 20 * Math.log10(level) : -60;
   const percent = Math.max(0, Math.min(100, ((db + 60) / 60) * 100));
-  const color = level > 0.9 ? 'var(--app-error)' : level > 0.5 ? 'var(--app-warning)' : 'var(--app-success)';
-  return (
-    <div className={classes.levelMeter}>
-      <div style={{ width: `${percent}%`, height: '100%', backgroundColor: color, transition: 'width 50ms linear' }} />
-    </div>
-  );
+  const color = level > 0.9 ? 'red' : level > 0.5 ? 'orange' : 'green';
+  return <Progress value={percent} color={color} size="sm" transitionDuration={50} flex={1} miw={24} />;
 }
 
 /** Short press: action; long press (500ms): alternative action */
@@ -326,7 +322,7 @@ export default function TrackHeader({ track, variant, height, dimmed, dragHandle
         height,
         // Column: room for the peak meter, clear of the width handle
         paddingRight: variant === 'column' ? PEAK_METER_WIDTH + METER_RIGHT_PX + 4 : 4,
-        borderLeftColor: track.isMuted ? 'var(--app-disabled)' : track.color,
+        borderLeftColor: track.isMuted ? 'var(--mantine-color-disabled-color)' : track.color,
       }}
     >
       {nameRow}

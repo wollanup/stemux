@@ -56,10 +56,10 @@ const FullScreenDropZone = ({ isDragging, onDragLeave }: FullScreenDropZoneProps
         alignItems: 'center',
         justifyContent: 'center',
         pointerEvents: 'all',
-        border: '4px dashed var(--app-primary)',
+        border: '4px dashed var(--mantine-primary-color-filled)',
       }}
     >
-      <IconCloudUpload size={120} color="var(--app-primary)" style={{ marginBottom: 24 }} />
+      <IconCloudUpload size={120} color="var(--mantine-primary-color-filled)" style={{ marginBottom: 24 }} />
       <Title order={1} c="white" mb="xs">
         {t('upload.dropHere')}
       </Title>

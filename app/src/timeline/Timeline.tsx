@@ -8,8 +8,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { alpha } from '@mantine/core';
-import { useAppPalette, useMedia } from '../theme/palette';
-import { WIDE_QUERY } from '../theme/theme';
+import { useAppPalette, useSmallerThan } from '../theme/palette';
 import classes from './Timeline.module.css';
 import { closestCenter, DndContext, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
@@ -39,7 +38,7 @@ const MANUAL_SCROLL_GRACE_MS = 3000;
 export default function Timeline() {
   const palette = useAppPalette();
   const { t } = useTranslation();
-  const wide = useMedia(WIDE_QUERY);
+  const wide = !useSmallerThan('md');
 
   // Header column width: resizable, remembered in this browser
   const [savedHeaderWidth, setSavedHeaderWidth] = useState(loadHeaderWidth);
@@ -278,9 +277,9 @@ export default function Timeline() {
                 zIndex: 6,
                 width: headerWidth,
                 flexShrink: 0,
-                backgroundColor: 'var(--app-paper)',
-                borderRight: '1px solid var(--app-divider)',
-                borderBottom: '1px solid var(--app-divider)',
+                backgroundColor: 'var(--mantine-color-body)',
+                borderRight: '1px solid var(--mantine-color-default-border)',
+                borderBottom: '1px solid var(--mantine-color-default-border)',
               }}
             >
               <ResizeHandle axis="x" label={t('track.resizeHeaders')} {...headerResize} />
@@ -294,7 +293,7 @@ export default function Timeline() {
           {/* Overlay across all lanes: played area, active loop, markers, playhead */}
           <div style={{ position: 'absolute', top: 0, bottom: 0, left: headerWidth, width, zIndex: 2, pointerEvents: 'none', overflow: 'hidden' }}>
             <GridLines />
-            <div ref={playedRef} className={classes.fill} style={{ left: 0, backgroundColor: alpha(palette.background, 0.35) }} />
+            <div ref={playedRef} className={classes.fill} style={{ left: 0, backgroundColor: alpha(palette.body, 0.35) }} />
             {activeLoopColor && loopStart !== undefined && loopEnd !== undefined && (
               <div
                 className={classes.fill}
@@ -315,12 +314,12 @@ export default function Timeline() {
                 style={{ left: m.time * pps, width: 1, backgroundColor: alpha(markerColor(m.id, loopState), 0.35) }}
               />
             ))}
-            <div ref={lanePlayheadRef} className={classes.fill} style={{ left: -1, width: 2, backgroundColor: 'var(--app-primary-light)', willChange: 'transform' }} />
+            <div ref={lanePlayheadRef} className={classes.fill} style={{ left: -1, width: 2, backgroundColor: 'var(--mantine-primary-color-filled)', willChange: 'transform' }} />
             {snapGuide !== null && (
               <div
                 data-snap-guide={snapGuide}
                 className={classes.fill}
-                style={{ left: snapGuide * pps - 1, width: 2, backgroundColor: 'var(--app-warning-light)', boxShadow: '0 0 6px var(--app-warning-light)' }}
+                style={{ left: snapGuide * pps - 1, width: 2, backgroundColor: 'var(--mantine-color-yellow-filled)', boxShadow: '0 0 6px var(--mantine-color-yellow-filled)' }}
               />
             )}
           </div>

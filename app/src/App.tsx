@@ -1,5 +1,5 @@
 import {useEffect, useState} from 'react';
-import {Box, Button, Group, Loader, Modal, Radio, Stack, Text, Title, useComputedColorScheme, useMantineColorScheme, type MantineColorScheme} from '@mantine/core';
+import {AppShell, Box, Button, Group, Loader, Modal, Radio, Stack, Text, Title, useComputedColorScheme, useMantineColorScheme, type MantineColorScheme} from '@mantine/core';
 import {restoreTracks, useAudioStore} from './hooks/useAudioStore';
 import TrackAdder from './components/TrackAdder';
 import FullScreenDropZone from './components/FullScreenDropZone';
@@ -17,7 +17,7 @@ import {useTranslation} from 'react-i18next';
 import {logger} from './utils/logger';
 import TopBar from "./components/TopBar.tsx";
 import ConfirmDialog from './components/ConfirmDialog';
-import {useMedia} from './theme/palette';
+import {useSmallerThan} from './theme/palette';
 import classes from './App.module.css';
 
 // Declarations for version info (defined by Vite, may be used later)
@@ -66,7 +66,7 @@ function App() {
     const {colorScheme, setColorScheme} = useMantineColorScheme();
     const prefersDarkMode = useComputedColorScheme('light', {getInitialValueInEffect: false}) === 'dark';
 
-    const isMobile = useMedia('(max-width:899px)'); // Mobile/tablet breakpoint
+    const isMobile = useSmallerThan('md'); // Mobile/tablet breakpoint
 
     useEffect(() => {
         const loadApp = async () => {
@@ -152,10 +152,9 @@ function App() {
     }, [tracks.length]);
 
     return (
-        <>
+        <AppShell header={{height: 60}} footer={{height: 64}} padding={0}>
             <PWAUpdatePrompt/>
-            <Box style={{display: 'flex', flexDirection: 'column', height: '100dvh'}}>
-                {/* Top App Bar */}
+            <AppShell.Header>
                 <TopBar
                     hasLoadedTracks={hasLoadedTracks}
                     zoomLevel={zoomLevel}
@@ -176,63 +175,62 @@ function App() {
                     onOpenDeleteAllDialog={() => setDeleteAllDialogOpen(true)}
                     onOpenPiecesManager={() => setPiecesManagerOpen(true)}
                 />
+            </AppShell.Header>
 
+            {/* Help Modal */}
+            <HelpModal open={helpModalOpen} onClose={() => setHelpModalOpen(false)}/>
+            <PiecesManager open={piecesManagerOpen} onClose={() => setPiecesManagerOpen(false)} />
+            <RecordingPermissionGuide
+                open={recordingGuideOpen}
+                onClose={() => setRecordingGuideOpen(false)}
+            />
 
-                {/* Help Modal */}
-                <HelpModal open={helpModalOpen} onClose={() => setHelpModalOpen(false)}/>
-                <PiecesManager open={piecesManagerOpen} onClose={() => setPiecesManagerOpen(false)} />
-                <RecordingPermissionGuide
-                    open={recordingGuideOpen}
-                    onClose={() => setRecordingGuideOpen(false)}
-                />
+            {/* Interface Settings Modal */}
+            <SettingsUI open={settingsModalOpen} onClose={() => setSettingsModalOpen(false)}/>
 
-                {/* Interface Settings Modal */}
-                <SettingsUI open={settingsModalOpen} onClose={() => setSettingsModalOpen(false)}/>
-
-                {/* Theme Selection Dialog */}
-                <Modal
-                    opened={themeDialogOpen}
-                    onClose={() => setThemeDialogOpen(false)}
-                    size="xs"
-                    title={t('menu.themeDialog.title')}
-                >
-                    <Radio.Group
-                        value={colorScheme}
-                        onChange={(value) => {
-                            const newMode = value as MantineColorScheme;
-                            setColorScheme(newMode);
-                            logger.log(`🎨 Theme mode changed to: ${newMode}`);
-                        }}
-                    >
-                        <Stack gap="sm" mt="xs">
-                            <Radio value="auto" label={t('menu.themeDialog.system')}/>
-                            <Radio value="light" label={t('menu.themeDialog.light')}/>
-                            <Radio value="dark" label={t('menu.themeDialog.dark')}/>
-                        </Stack>
-                    </Radio.Group>
-                    <Group justify="flex-end" mt="lg">
-                        <Button variant="subtle" onClick={() => setThemeDialogOpen(false)}>
-                            {t('menu.themeDialog.close')}
-                        </Button>
-                    </Group>
-                </Modal>
-
-                {/* Delete All Tracks Confirmation Dialog */}
-                <ConfirmDialog
-                    opened={deleteAllDialogOpen}
-                    onClose={() => setDeleteAllDialogOpen(false)}
-                    onConfirm={async () => {
-                        await removeAllTracks();
-                        setDeleteAllDialogOpen(false);
+            {/* Theme Selection Dialog */}
+            <Modal
+                opened={themeDialogOpen}
+                onClose={() => setThemeDialogOpen(false)}
+                title={t('menu.themeDialog.title')}
+            >
+                <Radio.Group
+                    value={colorScheme}
+                    onChange={(value) => {
+                        const newMode = value as MantineColorScheme;
+                        setColorScheme(newMode);
+                        logger.log(`🎨 Theme mode changed to: ${newMode}`);
                     }}
-                    title={t('menu.deleteAllConfirmTitle')}
-                    message={t('menu.deleteAllConfirmMessage')}
-                    cancelLabel={t('track.cancelButton')}
-                    confirmLabel={t('menu.deleteAllConfirmButton')}
-                />
+                >
+                    <Stack gap="sm" mt="xs">
+                        <Radio value="auto" label={t('menu.themeDialog.system')}/>
+                        <Radio value="light" label={t('menu.themeDialog.light')}/>
+                        <Radio value="dark" label={t('menu.themeDialog.dark')}/>
+                    </Stack>
+                </Radio.Group>
+                <Group justify="flex-end" mt="lg">
+                    <Button variant="subtle" onClick={() => setThemeDialogOpen(false)}>
+                        {t('menu.themeDialog.close')}
+                    </Button>
+                </Group>
+            </Modal>
 
-                {/* Main content, between the top and bottom bars */}
-                <div className={classes.toolbarSpacer}/>
+            {/* Delete All Tracks Confirmation Dialog */}
+            <ConfirmDialog
+                opened={deleteAllDialogOpen}
+                onClose={() => setDeleteAllDialogOpen(false)}
+                onConfirm={async () => {
+                    await removeAllTracks();
+                    setDeleteAllDialogOpen(false);
+                }}
+                title={t('menu.deleteAllConfirmTitle')}
+                message={t('menu.deleteAllConfirmMessage')}
+                cancelLabel={t('track.cancelButton')}
+                confirmLabel={t('menu.deleteAllConfirmButton')}
+            />
+
+            {/* Main content, between the top and bottom bars */}
+            <AppShell.Main className={classes.main}>
                 {isLoadingStorage ? (
                     <Stack align="center" justify="center" flex={1} gap="md">
                         <Loader size={48}/>
@@ -259,18 +257,19 @@ function App() {
                         <Timeline/>
                     </>
                 )}
-                <div className={classes.toolbarSpacer}/>
+            </AppShell.Main>
 
-                {/* Full-screen dropzone when dragging files */}
-                <FullScreenDropZone
-                    isDragging={isDraggingFile}
-                    onDragLeave={() => setIsDraggingFile(false)}
-                />
+            {/* Full-screen dropzone when dragging files */}
+            <FullScreenDropZone
+                isDragging={isDraggingFile}
+                onDragLeave={() => setIsDraggingFile(false)}
+            />
 
-                {/* Bottom control bar */}
+            {/* Bottom control bar */}
+            <AppShell.Footer>
                 <BottomControlBar/>
-            </Box>
-        </>
+            </AppShell.Footer>
+        </AppShell>
     );
 }
 

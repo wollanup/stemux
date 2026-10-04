@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { ActionIcon, alpha, Menu, Text, UnstyledButton } from '@mantine/core';
+import { ActionIcon, Badge, CloseButton, Group, Menu, Stack, Text, UnstyledButton, type BadgeVariant } from '@mantine/core';
 import {
   IconArrowRight,
   IconCheck,
@@ -11,14 +11,12 @@ import {
   IconPlayerPlayFilled,
   IconRepeat,
   IconTrash,
-  IconX,
 } from '@tabler/icons-react';
 import { useAudioStore } from '../hooks/useAudioStore';
 import { LOOP_COLORS, loopColor, markerColor } from '../utils/colors';
 import ColorPalette, { ColorDot } from './ColorPalette';
 import {logger} from '../utils/logger';
 import { useTranslation } from 'react-i18next';
-import { contrastText } from '../theme/palette';
 import classes from './MarkersPanel.module.css';
 
 const stopPropagation = (e: React.SyntheticEvent) => e.stopPropagation();
@@ -35,48 +33,55 @@ const ChipActions = ({ menu, onDelete, menuLabel, deleteLabel, wrapMenu = (node)
   /** Wraps the ⋮ button, for a popover anchored to it */
   wrapMenu?: (node: ReactNode) => ReactNode;
 }) => (
-  <span className={classes.actions} onPointerDown={stopPropagation} onClick={stopPropagation} onKeyDown={stopPropagation}>
+  <Group gap={0} wrap="nowrap" onPointerDown={stopPropagation} onClick={stopPropagation} onKeyDown={stopPropagation}>
     {wrapMenu(
       <Menu position="bottom-start" shadow="md">
         <Menu.Target>
-          <UnstyledButton aria-label={menuLabel} className={classes.action}>
-            <IconDotsVertical size={16} />
-          </UnstyledButton>
+          <ActionIcon variant="transparent" size="sm" c="inherit" aria-label={menuLabel}>
+            <IconDotsVertical size={14} />
+          </ActionIcon>
         </Menu.Target>
         <Menu.Dropdown>{menu}</Menu.Dropdown>
       </Menu>
     )}
-    <UnstyledButton aria-label={deleteLabel} data-delete-chip onClick={onDelete} className={`${classes.action} ${classes.deleteAction}`}>
-      <IconX size={16} />
-    </UnstyledButton>
-  </span>
+    <CloseButton size="sm" variant="transparent" c="inherit" aria-label={deleteLabel} data-delete-chip onClick={onDelete} />
+  </Group>
 );
 
-/** Count in a small grey pill, like the badges of app notifications */
+/** Count in a small grey badge */
 const CountBadge = ({ count, testId }: { count: number; testId: string }) => (
-  <span data-testid={testId} className={classes.count}>
+  <Badge data-testid={testId} variant="light" color="gray" circle>
     {count}
-  </span>
+  </Badge>
 );
 
 /**
- * Clickable chip (a div: it holds buttons). Enter / Space activate it,
+ * Clickable badge (a div: it holds buttons). Enter / Space activate it,
  * Delete / Backspace delete it.
  */
-const Chip = ({ icon, children, onActivate, onDelete, colors, dashed, ...rest }: {
+const Chip = ({ icon, label, actions, onActivate, onDelete, variant, color, dashed, ...rest }: {
   icon: ReactNode;
-  children: ReactNode;
+  label: string;
+  actions: ReactNode;
   onActivate: () => void;
   onDelete: () => void;
-  colors: Record<string, string>;
+  variant: BadgeVariant;
+  color: string;
   dashed?: boolean;
-} & Omit<React.HTMLAttributes<HTMLDivElement>, 'onClick' | 'onKeyDown' | 'children'> & Record<`data-${string}`, unknown>) => (
-  <div
+} & Omit<React.HTMLAttributes<HTMLDivElement>, 'onClick' | 'onKeyDown' | 'children' | 'color'> & Record<`data-${string}`, unknown>) => (
+  <Badge
+    component="div"
     role="button"
     tabIndex={0}
+    size="lg"
+    tt="none"
+    variant={variant}
+    color={color}
+    autoContrast
+    leftSection={icon}
+    rightSection={actions}
     className={classes.chip}
     data-dashed={dashed || undefined}
-    style={colors as React.CSSProperties}
     onClick={onActivate}
     onKeyDown={(e) => {
       if (e.target !== e.currentTarget) return;
@@ -90,9 +95,8 @@ const Chip = ({ icon, children, onActivate, onDelete, colors, dashed, ...rest }:
     }}
     {...rest}
   >
-    <span className={classes.icon}>{icon}</span>
-    <span className={classes.label}>{children}</span>
-  </div>
+    {label}
+  </Badge>
 );
 
 const MarkersPanel = () => {
@@ -205,26 +209,28 @@ const MarkersPanel = () => {
         aria-label={t('markers.showPanel')}
         aria-expanded={false}
         data-loops-panel="closed"
-        className={classes.collapsed}
+        className={classes.panel}
       >
-        <Text size="sm" c="dimmed" lh="20px">
-          {t('markers.markersTitle')}
-        </Text>
-        <CountBadge count={loopState.markers.length} testId="markers-count" />
-        <Text size="sm" c="dimmed" lh="20px" ml={8}>
-          {t('markers.loopsTitle')}
-        </Text>
-        <CountBadge count={loopState.loops.length} testId="loops-count" />
-        <IconChevronDown size={18} className={classes.collapsedChevron} />
+        <Group gap="xs">
+          <Text size="sm" c="dimmed">
+            {t('markers.markersTitle')}
+          </Text>
+          <CountBadge count={loopState.markers.length} testId="markers-count" />
+          <Text size="sm" c="dimmed" ml="xs">
+            {t('markers.loopsTitle')}
+          </Text>
+          <CountBadge count={loopState.loops.length} testId="loops-count" />
+          <IconChevronDown size={18} color="var(--mantine-color-dimmed)" style={{ marginLeft: 'auto' }} />
+        </Group>
       </UnstyledButton>
     );
   }
 
   return (
-    <div data-loops-panel="open" className={classes.panel}>
+    <Stack data-loops-panel="open" gap="xs" className={classes.panel}>
       {/* Markers Section */}
-      <div className={classes.section}>
-        <Text size="sm" c="dimmed" mr={8}>
+      <Group gap="xs">
+        <Text size="sm" c="dimmed" mr="xs">
           {t('markers.markers')}
         </Text>
         {loopState.markers.length === 0 && (
@@ -244,44 +250,42 @@ const MarkersPanel = () => {
           const isLoopStartSelection = loopStartMarker === marker.id;
           const color = markerColor(marker.id, loopState);
 
-          // Loop ends take the color of their loop
-          const colors: Record<string, string> = {
-            '--chip-hover': isInActiveLoop ? alpha(color, 0.8) : 'var(--app-hover)',
-          };
-          if (isLoopEndpoint) Object.assign(colors, { '--chip-bg': 'transparent', '--chip-border': color, '--chip-icon': color });
-          if (isInActiveLoop) Object.assign(colors, { '--chip-bg': color, '--chip-fg': contrastText(color), '--chip-icon': 'inherit' });
-          if (isLoopStartSelection) Object.assign(colors, { '--chip-bg': 'var(--app-warning)', '--chip-fg': '#fff' });
+          // Loop ends take the color of their loop: filled while it plays
+          const variant: BadgeVariant = isInActiveLoop || isLoopStartSelection ? 'filled' : isLoopEndpoint ? 'outline' : 'light';
+          const chipColor = isLoopStartSelection ? 'orange' : isLoopEndpoint ? color : 'gray';
 
           return (
             <Chip
               key={marker.id}
               data-marker-chip={marker.id}
-              icon={<IconPlayerPlayFilled size={16} />}
-              colors={colors}
+              icon={<IconPlayerPlayFilled size={14} />}
+              label={`${index + 1} - ${formatTime(marker.time)}`}
+              variant={variant}
+              color={chipColor}
               onActivate={() => handleMarkerClick(marker.time)}
               onDelete={() => handleDelete(marker.id)}
               onPointerDown={(e) => handlePointerDown(e, marker.id)}
               onPointerUp={handlePointerUp}
               onPointerCancel={handlePointerUp}
-            >
-              <span>{`${index + 1} - ${formatTime(marker.time)}`}</span>
-              <ChipActions
-                menuLabel={t('markers.markerMenu')}
-                deleteLabel={t('markers.deleteMarker')}
-                onDelete={() => handleDelete(marker.id)}
-                menu={
-                  <>
-                    <Menu.Item leftSection={<IconRepeat size={16} />} onClick={() => handleLoopEndpoint(marker.id)}>
-                      {loopStartMarker === marker.id ? t('markers.cancelLoopStart') :
-                       loopStartMarker ? t('markers.setLoopEnd') : t('markers.setLoopStart')}
-                    </Menu.Item>
-                    <Menu.Item leftSection={<IconTrash size={16} />} onClick={() => handleDelete(marker.id)}>
-                      {t('markers.deleteMarker')}
-                    </Menu.Item>
-                  </>
-                }
-              />
-            </Chip>
+              actions={
+                <ChipActions
+                  menuLabel={t('markers.markerMenu')}
+                  deleteLabel={t('markers.deleteMarker')}
+                  onDelete={() => handleDelete(marker.id)}
+                  menu={
+                    <>
+                      <Menu.Item leftSection={<IconRepeat size={16} />} onClick={() => handleLoopEndpoint(marker.id)}>
+                        {loopStartMarker === marker.id ? t('markers.cancelLoopStart') :
+                         loopStartMarker ? t('markers.setLoopEnd') : t('markers.setLoopStart')}
+                      </Menu.Item>
+                      <Menu.Item leftSection={<IconTrash size={16} />} onClick={() => handleDelete(marker.id)}>
+                        {t('markers.deleteMarker')}
+                      </Menu.Item>
+                    </>
+                  }
+                />
+              }
+            />
           );
         })}
 
@@ -289,12 +293,12 @@ const MarkersPanel = () => {
         <ActionIcon variant="subtle" color="gray" onClick={() => setLoopsPanelOpen(false)} aria-label={t('markers.hidePanel')} aria-expanded ml="auto">
           <IconChevronUp size={18} />
         </ActionIcon>
-      </div>
+      </Group>
 
       {/* Loops Section */}
       {loopState.loops.length > 0 && (
-        <div className={classes.section}>
-          <Text size="sm" c="dimmed" mr={8}>
+        <Group gap="xs">
+          <Text size="sm" c="dimmed" mr="xs">
             {t('markers.loops')}
           </Text>
           {loopState.loops.map((loop) => {
@@ -305,19 +309,17 @@ const MarkersPanel = () => {
             const isArmed = armedLoopId === loop.id;
             const color = loopColor(loop, loopState.loops);
 
-            // Colored like the loop in the ruler: filled when active, dashed when armed
-            const colors: Record<string, string> = isActive
-              ? { '--chip-bg': color, '--chip-fg': contrastText(color), '--chip-border': color, '--chip-icon': 'inherit', '--chip-hover': alpha(color, 0.8) }
-              : { '--chip-bg': 'transparent', '--chip-border': color, '--chip-icon': color, '--chip-hover': alpha(color, 0.12) };
-
             return (
               <Chip
                 key={loop.id}
                 data-loop-chip={loop.id}
                 data-armed={isArmed || undefined}
                 aria-label={isPlayingLoop ? t('markers.pauseLoop') : t('markers.playLoop')}
+                // Colored like the loop in the ruler: filled when active, dashed when armed
+                variant={isActive ? 'filled' : 'outline'}
+                color={color}
                 dashed={isArmed}
-                colors={colors}
+                label={`${startNum} → ${endNum}`}
                 onActivate={() => toggleLoopPlayback(loop.id)}
                 onDelete={() => removeLoop(loop.id)}
                 icon={
@@ -329,63 +331,63 @@ const MarkersPanel = () => {
                         <span />
                         <span />
                       </span>
-                      <IconPlayerPauseFilled size={16} className={classes.loopPause} />
+                      <IconPlayerPauseFilled size={14} className={classes.loopPause} />
                     </span>
                   ) : isArmed ? (
-                    <IconLogin size={16} />
+                    <IconLogin size={14} />
                   ) : (
-                    <IconRepeat size={16} />
+                    <IconRepeat size={14} />
                   )
                 }
-              >
-                <span>{`${startNum} → ${endNum}`}</span>
-                <ChipActions
-                  menuLabel={t('markers.loopMenu')}
-                  deleteLabel={t('markers.deleteLoop')}
-                  onDelete={() => removeLoop(loop.id)}
-                  wrapMenu={(node) => (
-                    <ColorPalette
-                      opened={colorLoopId === loop.id}
-                      colors={LOOP_COLORS}
-                      value={loopColorOf(loop.id)}
-                      onSelect={(c) => setLoopColor(loop.id, c)}
-                      onClose={() => setColorLoopId(null)}
-                    >
-                      {node}
-                    </ColorPalette>
-                  )}
-                  menu={
-                    <>
-                      {isPlayingLoop && (
-                        <Menu.Item leftSection={<IconArrowRight size={16} />} onClick={handleContinueAfterLoop}>
-                          {t('markers.continueAfterLoop')}
+                actions={
+                  <ChipActions
+                    menuLabel={t('markers.loopMenu')}
+                    deleteLabel={t('markers.deleteLoop')}
+                    onDelete={() => removeLoop(loop.id)}
+                    wrapMenu={(node) => (
+                      <ColorPalette
+                        opened={colorLoopId === loop.id}
+                        colors={LOOP_COLORS}
+                        value={loopColorOf(loop.id)}
+                        onSelect={(c) => setLoopColor(loop.id, c)}
+                        onClose={() => setColorLoopId(null)}
+                      >
+                        {node}
+                      </ColorPalette>
+                    )}
+                    menu={
+                      <>
+                        {isPlayingLoop && (
+                          <Menu.Item leftSection={<IconArrowRight size={16} />} onClick={handleContinueAfterLoop}>
+                            {t('markers.continueAfterLoop')}
+                          </Menu.Item>
+                        )}
+                        {/* Not for the enabled loop: the playhead is already in it */}
+                        {!loop.enabled && (
+                          <Menu.Item
+                            leftSection={<IconLogin size={16} />}
+                            rightSection={isArmed ? <IconCheck size={16} /> : undefined}
+                            onClick={() => handleLoopOnEntry(loop.id)}
+                          >
+                            {t('markers.loopOnEntry')}
+                          </Menu.Item>
+                        )}
+                        <Menu.Item leftSection={<ColorDot color={color} />} onClick={() => setColorLoopId(loop.id)}>
+                          {t('colors.title')}
                         </Menu.Item>
-                      )}
-                      {/* Not for the enabled loop: the playhead is already in it */}
-                      {!loop.enabled && (
-                        <Menu.Item
-                          leftSection={<IconLogin size={16} />}
-                          rightSection={isArmed ? <IconCheck size={16} /> : undefined}
-                          onClick={() => handleLoopOnEntry(loop.id)}
-                        >
-                          {t('markers.loopOnEntry')}
+                        <Menu.Item leftSection={<IconTrash size={16} />} onClick={() => removeLoop(loop.id)}>
+                          {t('markers.deleteLoop')}
                         </Menu.Item>
-                      )}
-                      <Menu.Item leftSection={<ColorDot color={color} />} onClick={() => setColorLoopId(loop.id)}>
-                        {t('colors.title')}
-                      </Menu.Item>
-                      <Menu.Item leftSection={<IconTrash size={16} />} onClick={() => removeLoop(loop.id)}>
-                        {t('markers.deleteLoop')}
-                      </Menu.Item>
-                    </>
-                  }
-                />
-              </Chip>
+                      </>
+                    }
+                  />
+                }
+              />
             );
           })}
-        </div>
+        </Group>
       )}
-    </div>
+    </Stack>
   );
 };
 

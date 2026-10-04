@@ -74,10 +74,10 @@ function Graduation({ top }: { top: number }) {
       for (const tick of gridTicks(from, to, pxPerSec, tempo)) {
         const x = Math.round(tick.time * pxPerSec - scrollLeft) + 0.5;
         const isBar = tick.bar !== undefined;
-        g.fillStyle = isBar && tick.label ? palette.textSecondary : palette.divider;
+        g.fillStyle = isBar && tick.label ? palette.dimmed : palette.border;
         g.fillRect(x, isBar ? (tick.label ? 0 : height / 2) : height - 6, 1, isBar ? height : 6);
         if (tick.label) {
-          g.fillStyle = palette.textSecondary;
+          g.fillStyle = palette.dimmed;
           g.fillText(String(tick.bar), x + 4, 4);
         }
       }
@@ -87,10 +87,10 @@ function Graduation({ top }: { top: number }) {
     const { major } = tickSpacing(pxPerSec);
     for (const tick of ticks(from, to, pxPerSec)) {
       const x = Math.round(tick.time * pxPerSec - scrollLeft) + 0.5;
-      g.fillStyle = tick.major ? palette.textSecondary : palette.divider;
+      g.fillStyle = tick.major ? palette.dimmed : palette.border;
       g.fillRect(x, tick.major ? 0 : height - 6, 1, tick.major ? height : 6);
       if (tick.major) {
-        g.fillStyle = palette.textSecondary;
+        g.fillStyle = palette.dimmed;
         g.fillText(formatTimeLabel(tick.time, major), x + 4, 4);
       }
     }
@@ -253,8 +253,8 @@ export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: Ti
         cursor,
         touchAction: 'none',
         userSelect: 'none',
-        backgroundColor: 'var(--app-paper)',
-        borderBottom: '1px solid var(--app-divider)',
+        backgroundColor: 'var(--mantine-color-body)',
+        borderBottom: '1px solid var(--mantine-color-default-border)',
       }}
     >
       {/* Loop strip */}
@@ -347,7 +347,7 @@ export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: Ti
         ref={playheadRef}
         style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: 0, pointerEvents: 'none', willChange: 'transform' }}
       >
-        <div style={{ position: 'absolute', top: strip, bottom: 0, left: -1, width: 2, backgroundColor: 'var(--app-primary-light)' }} />
+        <div style={{ position: 'absolute', top: strip, bottom: 0, left: -1, width: 2, backgroundColor: 'var(--mantine-primary-color-filled)' }} />
         <div
           style={{
             position: 'absolute',
@@ -357,7 +357,7 @@ export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: Ti
             height: 0,
             borderLeft: '6px solid transparent',
             borderRight: '6px solid transparent',
-            borderTop: '8px solid var(--app-primary-light)',
+            borderTop: '8px solid var(--mantine-primary-color-filled)',
             transform: 'translateY(-16px)',
           }}
         />

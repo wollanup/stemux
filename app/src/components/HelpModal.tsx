@@ -16,8 +16,7 @@ import {
   IconWaveSine,
 } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
-import { useMedia } from '../theme/palette';
-import { MOBILE_QUERY } from '../theme/theme';
+import { useSmallerThan } from '../theme/palette';
 
 interface HelpModalProps {
   open: boolean;
@@ -27,7 +26,7 @@ interface HelpModalProps {
 // Helper components defined OUTSIDE of render to avoid recreation
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <Box mb="lg">
-    <Title order={4} c="var(--app-primary)" mb="xs">
+    <Title order={4} c="var(--mantine-primary-color-filled)" mb="xs">
       {title}
     </Title>
     {children}
@@ -75,13 +74,13 @@ const ICON = 22;
 
 const HelpModal = ({ open, onClose }: HelpModalProps) => {
   const { t } = useTranslation();
-  const fullScreen = useMedia(MOBILE_QUERY);
+  const fullScreen = useSmallerThan('xs');
 
   return (
     <Modal
       opened={open}
       onClose={onClose}
-      size={900}
+      size="xl"
       fullScreen={fullScreen}
       title={<Title order={3}>{t('help.title')}</Title>}
     >

@@ -5,11 +5,10 @@
  */
 
 import type { ReactNode } from 'react';
-import { Popover, UnstyledButton } from '@mantine/core';
+import { ColorSwatch, Popover, SimpleGrid } from '@mantine/core';
 import { IconCheck } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { contrastText } from '../theme/palette';
-import classes from './ColorPalette.module.css';
 
 interface ColorPaletteProps {
   opened: boolean;
@@ -26,32 +25,34 @@ export default function ColorPalette({ opened, colors, value, onSelect, onClose,
   return (
     <Popover opened={opened} onDismiss={onClose} position="bottom-start" shadow="md" trapFocus returnFocus>
       <Popover.Target>
-        <span className={classes.anchor}>{children}</span>
+        <span style={{ display: 'inline-flex' }}>{children}</span>
       </Popover.Target>
-      <Popover.Dropdown p="sm">
-        <div role="listbox" aria-label={t('colors.title')} className={classes.grid}>
+      <Popover.Dropdown>
+        <SimpleGrid cols={4} spacing="xs" role="listbox" aria-label={t('colors.title')}>
           {colors.map((color, index) => {
             const selected = color.toLowerCase() === value?.toLowerCase();
             return (
-              <UnstyledButton
+              <ColorSwatch
                 key={color}
+                component="button"
+                color={color}
+                size={32}
                 role="option"
                 aria-selected={selected}
                 aria-label={t('colors.color', { number: index + 1 })}
                 data-color={color}
-                data-selected={selected || undefined}
-                className={classes.swatch}
-                style={{ backgroundColor: color, color: contrastText(color) }}
+                c={contrastText(color)}
+                style={{ cursor: 'pointer' }}
                 onClick={() => {
                   onSelect(color);
                   onClose();
                 }}
               >
                 {selected && <IconCheck size={18} />}
-              </UnstyledButton>
+              </ColorSwatch>
             );
           })}
-        </div>
+        </SimpleGrid>
       </Popover.Dropdown>
     </Popover>
   );
@@ -59,5 +60,5 @@ export default function ColorPalette({ opened, colors, value, onSelect, onClose,
 
 /** Small round swatch, for menu items */
 export function ColorDot({ color }: { color: string }) {
-  return <span className={classes.dot} style={{ backgroundColor: color }} />;
+  return <ColorSwatch color={color} size={16} />;
 }

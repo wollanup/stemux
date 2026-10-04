@@ -10,18 +10,18 @@
   padding-top: 4px;
   padding-bottom: 4px;
   /* Opaque: the playhead and loop overlay pass under the headers */
-  background-color: var(--app-paper);
+  background-color: var(--mantine-color-body);
   border-left: 4px solid;
-  border-bottom: 1px solid var(--app-divider);
+  border-bottom: 1px solid var(--mantine-color-default-border);
 }
 
 .header[data-variant='column'] {
   gap: 0;
-  border-right: 1px solid var(--app-divider);
+  border-right: 1px solid var(--mantine-color-default-border);
 }
 
 .header[data-armed] {
-  background-image: linear-gradient(alpha(var(--app-error), 0.12), alpha(var(--app-error), 0.12));
+  background-image: linear-gradient(alpha(var(--mantine-color-error), 0.12), alpha(var(--mantine-color-error), 0.12));
 }
 
 /* Dim the content only: the background must stay opaque */
@@ -52,7 +52,7 @@
 }
 
 .name:hover {
-  color: var(--app-primary);
+  color: var(--mantine-primary-color-filled);
 }
 
 .nameInput {
@@ -76,24 +76,15 @@
 }
 
 .hoverDanger:hover {
-  color: var(--app-error);
+  color: var(--mantine-color-error);
 }
 
 .hoverPrimary:hover {
-  color: var(--app-primary);
-}
-
-.levelMeter {
-  flex: 1;
-  min-width: 24px;
-  height: 6px;
-  background-color: var(--app-selected);
-  border-radius: 3px;
-  overflow: hidden;
+  color: var(--mantine-primary-color-filled);
 }
 
 .blink {
-  color: var(--app-error);
+  color: var(--mantine-color-error);
   flex-shrink: 0;
   animation: blink 1s infinite;
 }

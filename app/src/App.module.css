@@ -1,5 +1,6 @@
-/* Room taken by the fixed top and bottom bars */
-.toolbarSpacer {
-  flex-shrink: 0;
-  min-height: var(--app-toolbar-height);
+/* Between the header and the footer: the timeline takes the remaining height */
+.main {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
 }

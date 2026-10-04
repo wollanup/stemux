@@ -3,7 +3,7 @@
 }
 
 .name:hover {
-  color: var(--app-primary);
+  color: var(--mantine-primary-color-filled);
 }
 
 .piece {

@@ -2,8 +2,8 @@
   position: relative;
   height: 100%;
   background-color: var(--sb-track);
-  border-top: 1px solid var(--app-divider);
-  border-bottom: 1px solid var(--app-divider);
+  border-top: 1px solid var(--mantine-color-default-border);
+  border-bottom: 1px solid var(--mantine-color-default-border);
   box-sizing: border-box;
   touch-action: none;
   cursor: pointer;

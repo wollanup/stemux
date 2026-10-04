@@ -1,9 +1,8 @@
-import { Modal, Switch, Text } from '@mantine/core';
+import { Box, Group, Modal, Switch, Text, ThemeIcon } from '@mantine/core';
 import { IconChartBar, IconWaveSine } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { useAudioStore } from '../hooks/useAudioStore';
-import { useMedia } from '../theme/palette';
-import { MOBILE_QUERY } from '../theme/theme';
+import { useSmallerThan } from '../theme/palette';
 import RecordingLatencySetting from './RecordingLatencySetting';
 import classes from './Settings.module.css';
 
@@ -20,22 +19,24 @@ export function SettingRow({ icon, title, description, control }: {
   control: React.ReactNode;
 }) {
   return (
-    <div className={classes.line}>
-      <span className={classes.icon}>{icon}</span>
-      <div className={classes.text}>
+    <Group wrap="nowrap" gap="md">
+      <ThemeIcon variant="light" size="lg">
+        {icon}
+      </ThemeIcon>
+      <Box flex={1} miw={0}>
         <Text fw={500}>{title}</Text>
-        <Text size="sm" c="dimmed" mt={4}>
+        <Text size="sm" c="dimmed">
           {description}
         </Text>
-      </div>
+      </Box>
       {control}
-    </div>
+    </Group>
   );
 }
 
 export default function SettingsUI({ open, onClose }: SettingsUIProps) {
   const { t } = useTranslation();
-  const isMobile = useMedia(MOBILE_QUERY);
+  const isMobile = useSmallerThan('xs');
 
   const waveformStyle = useAudioStore(state => state.waveformStyle);
   const setWaveformStyle = useAudioStore(state => state.setWaveformStyle);
@@ -48,15 +49,14 @@ export default function SettingsUI({ open, onClose }: SettingsUIProps) {
       opened={open}
       onClose={onClose}
       fullScreen={isMobile}
-      size={600}
+      size="lg"
       returnFocus={false}
       title={t('settings.title')}
-      classNames={{ header: classes.header, body: classes.body }}
     >
       {/* Waveform Style */}
       <div className={classes.item}>
         <SettingRow
-          icon={<IconWaveSine size={22} />}
+          icon={<IconWaveSine size={20} />}
           title={t('settings.waveformStyle.title')}
           description={t('settings.waveformStyle.description')}
           control={
@@ -72,7 +72,7 @@ export default function SettingsUI({ open, onClose }: SettingsUIProps) {
       {/* Normalize */}
       <div className={classes.item}>
         <SettingRow
-          icon={<IconChartBar size={22} />}
+          icon={<IconChartBar size={20} />}
           title={t('settings.normalize.title')}
           description={t('settings.normalize.description')}
           control={

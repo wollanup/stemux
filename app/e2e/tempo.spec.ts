@@ -34,7 +34,8 @@ test.describe('tempo', () => {
     await expect(page.locator('[data-tempo-button]')).toHaveText('90 BPM');
     await page.locator('[data-tempo-button]').click();
     await expect(page.getByRole('combobox', { name: 'Beats per bar' })).toHaveValue('3');
-    await page.getByRole('button', { name: 'Time', exact: true }).click();
+    // Segmented control: the radio is hidden under its label
+    await page.locator('[data-tempo-panel]').getByText('Time', { exact: true }).click();
     await expect(page.locator('canvas[data-graduation]')).toHaveAttribute('data-graduation', 'time');
   });
 

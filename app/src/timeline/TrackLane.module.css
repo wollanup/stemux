@@ -2,13 +2,13 @@
   position: relative;
   flex-shrink: 0;
   user-select: none;
-  border-bottom: 1px solid var(--app-divider);
+  border-bottom: 1px solid var(--mantine-color-default-border);
   outline-offset: -1px;
 }
 
 .armed {
-  background-color: alpha(var(--app-error), 0.06);
-  outline: 1px dashed alpha(var(--app-error), 0.6);
+  background-color: alpha(var(--mantine-color-error), 0.06);
+  outline: 1px dashed alpha(var(--mantine-color-error), 0.6);
 }
 
 @media (hover: hover) {

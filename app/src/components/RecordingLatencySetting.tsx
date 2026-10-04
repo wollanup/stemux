@@ -45,7 +45,7 @@ export default function RecordingLatencySetting() {
   return (
     <div className={classes.item}>
       <SettingRow
-        icon={<IconStopwatch size={22} />}
+        icon={<IconStopwatch size={20} />}
         title={t('settings.latency.title')}
         description={isAuto ? t('settings.latency.autoDescription', { ms: estimateMs }) : t('settings.latency.manualDescription')}
         control={
@@ -59,7 +59,7 @@ export default function RecordingLatencySetting() {
       />
 
       {!isAuto && (
-        <Group gap="md" pl={38} pr={8} mt="xs" wrap="nowrap">
+        <Group gap="md" pl={50} mt="xs" wrap="nowrap">
           <Slider
             value={override}
             min={0}
@@ -75,7 +75,7 @@ export default function RecordingLatencySetting() {
         </Group>
       )}
 
-      <Box pl={38} mt="xs">
+      <Box pl={50} mt="xs">
         <Text size="sm" c="dimmed" mb="xs">
           {t('settings.latency.calibrationHelp')}
         </Text>

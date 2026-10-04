@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ActionIcon, Button, Menu, Progress, Slider, Text, Tooltip } from '@mantine/core';
+import { ActionIcon, Button, Group, Menu, Progress, Slider, Text, Tooltip } from '@mantine/core';
 import {
   IconArrowsMove,
   IconChevronDown,
@@ -26,7 +26,6 @@ import DeleteAllMarkersDialog from './DeleteAllMarkersDialog';
 import { usePlaybackTime } from '../hooks/usePlaybackTime';
 import { useAudioStore } from '../hooks/useAudioStore';
 import type { PieceWithStats } from '../types/audio';
-import classes from './Bars.module.css';
 
 interface TopBarProps {
   hasLoadedTracks: boolean;
@@ -172,8 +171,8 @@ const TopBar = ({
   );
 
   return (
-    <header className={`${classes.bar} ${classes.top}`}>
-      <div className={classes.toolbar}>
+    <>
+      <Group h="100%" px="md" gap={0} wrap="nowrap">
         <span style={{ marginRight: 16, display: 'flex', alignItems: 'center' }}>
           <StemuxIcon size={28} />
         </span>
@@ -211,7 +210,7 @@ const TopBar = ({
         {/* Drag on the lanes: scroll (hand, default) or edit clips (move arrows) */}
         {!isMobile && (
           <Tooltip label={editMode ? t('timeline.editModeOn') : t('timeline.editModeOff')}>
-            <span className={classes.tooltipAnchor} style={{ marginRight: 4 }}>
+            <span style={{ display: 'inline-flex', marginRight: 4 }}>
               <ActionIcon
                 variant="subtle"
                 color={editMode ? undefined : 'gray'}
@@ -229,7 +228,7 @@ const TopBar = ({
 
         {/* Magnetism for clip editing (Alt disables it during a drag) */}
         <Tooltip label={snapEnabled ? t('timeline.snapOn') : t('timeline.snapOff')}>
-          <span className={classes.tooltipAnchor} style={{ marginRight: 8 }}>
+          <span style={{ display: 'inline-flex', marginRight: 8 }}>
             <ActionIcon
               variant="subtle"
               color={snapEnabled ? undefined : 'gray'}
@@ -261,7 +260,6 @@ const TopBar = ({
           max={100}
           disabled={!hasLoadedTracks}
           size="sm"
-          color="grape"
           label={null}
           w={120}
           mx="xs"
@@ -279,20 +277,24 @@ const TopBar = ({
         ) : (
           mainMenu
         )}
-      </div>
+      </Group>
 
       <DeleteAllMarkersDialog open={deleteMarkersOpen} onClose={() => setDeleteMarkersOpen(false)} />
 
-      {/* Progress bar */}
+      {/* Progress bar, along the bottom border of the header */}
       <Progress
         value={progressPercent}
         size={3}
         radius={0}
         transitionDuration={0}
-        color={isPlaying ? 'var(--app-primary-light)' : 'var(--app-disabled)'}
-        styles={{ root: { backgroundColor: 'transparent' } }}
+        color={isPlaying ? undefined : 'gray'}
+        pos="absolute"
+        bottom={0}
+        left={0}
+        right={0}
+        bg="transparent"
       />
-    </header>
+    </>
   );
 };
 

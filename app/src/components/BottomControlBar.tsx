@@ -324,7 +324,6 @@ const BottomControlBar = () => {
       }}
       disabled={!hasLoadedTracks}
       size="sm"
-      color="grape"
       label={(value) => `${Math.round(value)}%`}
       flex={1}
       thumbProps={{ 'aria-label': t('controls.masterVolume') }}
@@ -332,8 +331,8 @@ const BottomControlBar = () => {
   );
 
   return (
-    <footer className={`${classes.bar} ${classes.bottom}`}>
-      <div className={classes.toolbar} style={{ gap: 16, position: 'relative' }}>
+    <>
+      <Group h="100%" px="md" gap="md" wrap="nowrap">
         {/* FAB Play/Pause centered on top of the bar - Hidden if no tracks */}
         {hasLoadedTracks && (
           <Tooltip
@@ -404,12 +403,12 @@ const BottomControlBar = () => {
           >
             <IconPlayerTrackNextFilled size={20} />
           </ActionIcon>
-          <Group gap="xs" wrap="nowrap" className={classes.time}>
+          <Group gap="xs" wrap="nowrap" miw={{ base: 'auto', xs: 120 }}>
             <Text size="sm" data-testid="current-time">
               {formatTime(currentTime)}
             </Text>
             {/* Desktop only - total time */}
-            <Group gap="xs" className={classes.smUp}>
+            <Group gap="xs" visibleFrom="xs">
               <Text size="sm" c="dimmed">
                 /
               </Text>
@@ -424,7 +423,7 @@ const BottomControlBar = () => {
                 c="dimmed"
                 data-testid="current-bar"
                 // Desktop only, discreet, like the time next to it
-                className={classes.smUp}
+                visibleFrom="xs"
                 style={{ fontVariantNumeric: 'tabular-nums' }}
               >
                 {formatBarBeat(currentTime, barsTempo)}
@@ -436,7 +435,7 @@ const BottomControlBar = () => {
         <Box flex={1} />
 
         {/* Master Volume - Desktop: inline slider, Mobile: popover */}
-        <Group gap="xs" wrap="nowrap" miw={200} className={classes.mdUp}>
+        <Group gap="xs" wrap="nowrap" miw={200} visibleFrom="md">
           <IconVolume size={20} />
           {volumeSlider(masterWheelRef)}
         </Group>
@@ -447,7 +446,7 @@ const BottomControlBar = () => {
               variant="subtle"
               color="gray"
               disabled={!hasLoadedTracks}
-              className={classes.mdDown}
+              hiddenFrom="md"
               aria-label={t('controls.masterVolume')}
             >
               <IconVolume size={22} />
@@ -471,12 +470,11 @@ const BottomControlBar = () => {
           disabled={!hasLoadedTracks}
           variant="outline"
           size="xs"
-          color="grape"
           miw={100}
         >
           {playbackState.playbackRate.toFixed(2)}x
         </Button>
-      </div>
+      </Group>
 
       {/* Playback Speed Drawer */}
       <PlaybackSpeedDrawer
@@ -485,7 +483,7 @@ const BottomControlBar = () => {
         onClose={() => setSpeedDrawerOpen(false)}
         onRateChange={setPlaybackRate}
       />
-    </footer>
+    </>
   );
 };
 

@@ -1,39 +1,4 @@
-/* Fixed app bars (top and bottom), like the former MUI AppBar */
-.bar {
-  position: fixed;
-  left: 0;
-  right: 0;
-  z-index: 100;
-  background-color: var(--app-paper);
-  color: var(--mantine-color-text);
-}
-
-.top {
-  top: 0;
-  box-shadow: var(--mantine-shadow-sm);
-}
-
-.bottom {
-  bottom: 0;
-  box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.toolbar {
-  display: flex;
-  align-items: center;
-  min-height: var(--app-toolbar-height);
-  padding: 0 16px;
-
-  @media (min-width: 600px) {
-    padding: 0 24px;
-  }
-}
-
-.tooltipAnchor {
-  display: inline-flex;
-}
-
-/* Play / pause button, centered on top of the bottom bar */
+/* Play / pause button, centered on top of the footer */
 .fab {
   position: absolute;
   z-index: 1;
@@ -52,36 +17,11 @@
   0%,
   100% {
     transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.7);
+    box-shadow: 0 0 0 0 alpha(var(--mantine-color-red-filled), 0.7);
   }
 
   50% {
     transform: scale(1.05);
-    box-shadow: 0 0 0 10px rgba(244, 67, 54, 0);
-  }
-}
-
-.time {
-  @media (min-width: 600px) {
-    min-width: 120px;
-  }
-}
-
-/* MUI breakpoints: sm = 600px, md = 900px */
-.smUp {
-  @media (max-width: 599.98px) {
-    display: none;
-  }
-}
-
-.mdUp {
-  @media (max-width: 899.98px) {
-    display: none;
-  }
-}
-
-.mdDown {
-  @media (min-width: 900px) {
-    display: none;
+    box-shadow: 0 0 0 10px alpha(var(--mantine-color-red-filled), 0);
   }
 }

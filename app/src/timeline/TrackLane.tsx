@@ -202,8 +202,8 @@ export default function TrackLane({ track, audio, width, height, pxPerSec, dimme
               top: 0,
               bottom: 0,
               width: 2,
-              backgroundColor: 'color-mix(in srgb, var(--app-error) 14%, transparent)',
-              border: '1px solid color-mix(in srgb, var(--app-error) 60%, transparent)',
+              backgroundColor: 'color-mix(in srgb, var(--mantine-color-error) 14%, transparent)',
+              border: '1px solid color-mix(in srgb, var(--mantine-color-error) 60%, transparent)',
               pointerEvents: 'none',
             }}
           />
@@ -212,7 +212,7 @@ export default function TrackLane({ track, audio, width, height, pxPerSec, dimme
       )}
 
       {track.isLoading && !audio && (
-        <div style={{ position: 'absolute', inset: 6, backgroundColor: 'var(--app-hover)', borderRadius: 4 }} />
+        <div style={{ position: 'absolute', inset: 6, backgroundColor: 'var(--mantine-color-default-hover)', borderRadius: 4 }} />
       )}
 
       {hint && (
@@ -225,7 +225,7 @@ export default function TrackLane({ track, audio, width, height, pxPerSec, dimme
             left: headerOffset + 12,
             display: 'inline-block',
             marginTop: height / 2 - 10,
-            color: track.isArmed ? 'var(--app-error)' : 'var(--app-text-secondary)',
+            color: track.isArmed ? 'var(--mantine-color-error)' : 'var(--mantine-color-dimmed)',
             pointerEvents: 'none',
           }}
         >

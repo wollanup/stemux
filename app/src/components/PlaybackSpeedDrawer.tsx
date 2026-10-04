@@ -62,8 +62,6 @@ const PlaybackSpeedDrawer = ({ open, currentRate, onClose, onRateChange }: Playb
       onClose={onClose}
       size="auto"
       title={t('speed.title')}
-      radius="lg"
-      styles={{ content: { maxHeight: '70vh' } }}
     >
       <Box
         // Space would toggle playback (global shortcut)

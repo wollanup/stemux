@@ -1,8 +1,7 @@
 import { Alert, Button, Group, List, Modal, Text } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
 import { IconCircleCheck, IconDeviceMobile, IconMicrophone } from '@tabler/icons-react';
-import { useMedia } from '../theme/palette';
-import { MOBILE_QUERY } from '../theme/theme';
+import { useSmallerThan } from '../theme/palette';
 
 interface RecordingPermissionGuideProps {
   open: boolean;
@@ -20,14 +19,14 @@ const Step = ({ icon, title, description }: { icon: React.ReactNode; title: stri
 
 const RecordingPermissionGuide = ({ open, onClose }: RecordingPermissionGuideProps) => {
   const { t } = useTranslation();
-  const isMobile = useMedia(MOBILE_QUERY);
+  const isMobile = useSmallerThan('xs');
 
   return (
     <Modal
       opened={open}
       onClose={onClose}
       fullScreen={isMobile}
-      size={600}
+      size="lg"
       title={t('recordingGuide.title')}
     >
       <Alert color="blue" mb="lg">
@@ -40,17 +39,17 @@ const RecordingPermissionGuide = ({ open, onClose }: RecordingPermissionGuidePro
 
       <List spacing="md" center>
         <Step
-          icon={<IconDeviceMobile size={24} color="var(--app-primary)" />}
+          icon={<IconDeviceMobile size={24} color="var(--mantine-primary-color-filled)" />}
           title={t('recordingGuide.step1Title')}
           description={t('recordingGuide.step1Description')}
         />
         <Step
-          icon={<IconMicrophone size={24} color="var(--app-primary)" />}
+          icon={<IconMicrophone size={24} color="var(--mantine-primary-color-filled)" />}
           title={t('recordingGuide.step2Title')}
           description={t('recordingGuide.step2Description')}
         />
         <Step
-          icon={<IconCircleCheck size={24} color="var(--app-success)" />}
+          icon={<IconCircleCheck size={24} color="var(--mantine-color-green-filled)" />}
           title={t('recordingGuide.step3Title')}
           description={t('recordingGuide.step3Description')}
         />

@@ -4,7 +4,7 @@
  */
 
 import { useRef, useState, type ReactNode } from 'react';
-import { ActionIcon, Box, Button, Group, Loader, Popover, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core';
+import { ActionIcon, Box, Button, Group, Loader, Popover, SegmentedControl, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core';
 import {
   IconChevronLeft,
   IconChevronRight,
@@ -256,25 +256,15 @@ export default function TempoPanel({ disabled, compact, opened, onClose, childre
             <Text size="sm" flex={1}>
               {t('tempo.ruler')}
             </Text>
-            <Button.Group>
-              <Button
-                size="xs"
-                variant={rulerMode === 'time' ? 'filled' : 'default'}
-                aria-pressed={rulerMode === 'time'}
-                onClick={() => setRulerMode('time')}
-              >
-                {t('tempo.rulerTime')}
-              </Button>
-              <Button
-                size="xs"
-                variant={rulerMode === 'bars' ? 'filled' : 'default'}
-                aria-pressed={rulerMode === 'bars'}
-                disabled={!tempo}
-                onClick={() => setRulerMode('bars')}
-              >
-                {t('tempo.rulerBars')}
-              </Button>
-            </Button.Group>
+            <SegmentedControl
+              size="xs"
+              value={rulerMode}
+              onChange={(mode) => setRulerMode(mode as typeof rulerMode)}
+              data={[
+                { value: 'time', label: t('tempo.rulerTime') },
+                { value: 'bars', label: t('tempo.rulerBars'), disabled: !tempo },
+              ]}
+            />
           </Group>
 
           {tempo && (
