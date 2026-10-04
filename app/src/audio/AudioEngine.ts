@@ -9,13 +9,15 @@
  * Transport position is derived from the AudioContext clock:
  *   pos(t) = anchor.pos + (t - anchor.ctxTime) * rate
  *
- * At rate 1 voices are plain AudioBufferSourceNodes (bit-transparent).
- * At any other rate voices are Signalsmith Stretch worklet nodes, which keep
- * the pitch and are scheduled on the same clock, so sync is preserved.
+ * At rate 1 and no pitch shift voices are plain AudioBufferSourceNodes
+ * (bit-transparent). Otherwise voices are Signalsmith Stretch worklet nodes,
+ * which change speed and pitch independently and are scheduled on the same
+ * clock, so sync is preserved.
  */
 
 import SignalsmithStretch, { type StretchNode } from 'signalsmith-stretch';
 import { logger } from '../utils/logger';
+import { normalizePitch } from './pitch';
 
 /** Delay between a transport command and the moment audio actually starts */
 const START_LEAD = 0.05;
@@ -73,8 +75,12 @@ export class AudioEngine {
   private listeners = new Map<EngineEvent, Set<Listener>>();
 
   private playing = false;
+  /** Applied speed and pitch shift (semitones) */
   private rate = 1;
-  private rateGeneration = 0;
+  private semitones = 0;
+  /** Latest requested ones: applied once the stretch nodes are ready */
+  private voiceTarget = { rate: 1, semitones: 0 };
+  private voiceGeneration = 0;
   private anchor: Anchor = { ctxTime: 0, pos: 0 };
   /** Pending loop jump, scheduled ahead of time */
   private nextAnchor: Anchor | null = null;
@@ -173,7 +179,7 @@ export class AudioEngine {
     if (this.playing) {
       // Joins in sync: its offset is computed from the shared clock
       this.startVoice(track, ctx.currentTime + this.lead());
-    } else if (this.rate !== 1) {
+    } else if (this.stretched) {
       void this.ensureStretch(track);
     }
     this.emit('durationchange');
@@ -245,7 +251,7 @@ export class AudioEngine {
     if (sliceChanged) this.destroyStretch(track);
     Object.assign(track, window);
     if (this.playing) this.startVoice(track, when);
-    else if (this.rate !== 1) void this.ensureStretch(track);
+    else if (this.stretched) void this.ensureStretch(track);
     this.emit('durationchange');
   }
 
@@ -299,6 +305,11 @@ export class AudioEngine {
 
   getPlaybackRate() {
     return this.rate;
+  }
+
+  /** Pitch shift (semitones) */
+  getPitch() {
+    return this.semitones;
   }
 
   /** Transport position (seconds) at a given AudioContext time */
@@ -361,31 +372,45 @@ export class AudioEngine {
     this.emit('timeupdate');
   }
 
-  async setPlaybackRate(rate: number) {
-    const generation = ++this.rateGeneration;
-    if (rate !== 1) {
+  setPlaybackRate(rate: number) {
+    return this.setVoice({ rate });
+  }
+
+  /** Transpose every track (semitones, fractional allowed), tempo unchanged */
+  setPitch(semitones: number) {
+    return this.setVoice({ semitones: normalizePitch(semitones) });
+  }
+
+  /** Speed and pitch changes: every track switches on the same clock time */
+  private async setVoice(change: { rate?: number; semitones?: number }) {
+    this.voiceTarget = { ...this.voiceTarget, ...change };
+    const { rate, semitones } = this.voiceTarget;
+    const generation = ++this.voiceGeneration;
+    if (rate !== 1 || semitones !== 0) {
       // Prepare every stretch node BEFORE switching, so all tracks switch together
       await Promise.all(Array.from(this.tracks.values()).map((t) => this.ensureStretch(t)));
-      if (generation !== this.rateGeneration) return;
+      if (generation !== this.voiceGeneration) return;
     }
-    if (rate === this.rate) return;
+    if (rate === this.rate && semitones === this.semitones) return;
 
-    const previousRate = this.rate;
+    const wasStretched = this.stretched;
     if (this.playing && this.ctx) {
       const when = this.ctx.currentTime + STRETCH_LEAD;
       const pos = this.positionAt(when);
       this.tracks.forEach((t) => this.stopVoice(t, when));
       this.rate = rate;
+      this.semitones = semitones;
       this.restartAt(pos, when);
     } else {
       this.rate = rate;
+      this.semitones = semitones;
     }
 
-    if (rate === 1 && previousRate !== 1) {
+    if (wasStretched && !this.stretched) {
       // Free the worklets (CPU + a copy of every buffer) once they stopped
       const tracks = Array.from(this.tracks.values());
       window.setTimeout(() => {
-        if (this.rate === 1) tracks.forEach((t) => this.destroyStretch(t));
+        if (!this.stretched) tracks.forEach((t) => this.destroyStretch(t));
       }, (STRETCH_LEAD + 0.1) * 1000);
     }
   }
@@ -406,8 +431,13 @@ export class AudioEngine {
 
   // ─── Internals ──────────────────────────────────────────────────────────
 
+  /** Voices are stretch nodes (speed or pitch changed), plain buffer sources otherwise */
+  private get stretched() {
+    return this.rate !== 1 || this.semitones !== 0;
+  }
+
   private lead() {
-    return this.rate === 1 ? START_LEAD : STRETCH_LEAD;
+    return this.stretched ? STRETCH_LEAD : START_LEAD;
   }
 
   private restartAt(pos: number, when: number) {
@@ -419,7 +449,7 @@ export class AudioEngine {
 
   private startVoice(track: EngineTrack, when: number, pos = this.positionAt(when)) {
     const ctx = this.getContext();
-    if (this.rate === 1) {
+    if (!this.stretched) {
       // Position inside the clip; a clip placed later on the timeline starts delayed
       const clipPos = pos - track.offset;
       if (clipPos >= track.length) return;
@@ -430,7 +460,7 @@ export class AudioEngine {
         source.disconnect();
         track.sources.delete(source);
       };
-      const startAt = Math.max(when, ctx.currentTime) + Math.max(0, -clipPos) / this.rate;
+      const startAt = Math.max(when, ctx.currentTime) + Math.max(0, -clipPos);
       const from = Math.max(0, clipPos);
       source.start(startAt, track.trimStart + from, track.length - from);
       track.sources.add(source);
@@ -440,7 +470,7 @@ export class AudioEngine {
     if (!track.stretch) {
       // Not ready yet: join as soon as it is (still in sync thanks to the shared clock)
       void this.ensureStretch(track).then(() => {
-        if (this.playing && this.rate !== 1 && this.tracks.get(track.id) === track && !track.stretchActive) {
+        if (this.playing && this.stretched && this.tracks.get(track.id) === track && !track.stretchActive) {
           this.startVoice(track, this.ctx!.currentTime + STRETCH_LEAD);
         }
       });
@@ -448,8 +478,13 @@ export class AudioEngine {
     }
     track.stretch.connect(track.gain);
     // Negative input positions are rendered as silence by the stretch node
-    void track.stretch.schedule({ active: true, output: when, input: pos - track.offset, rate: this.rate });
+    void track.stretch.schedule({ active: true, output: when, input: pos - track.offset, ...this.stretchVoice() });
     track.stretchActive = true;
+  }
+
+  /** Speed and pitch given to the stretch nodes */
+  private stretchVoice() {
+    return { rate: this.rate, semitones: this.semitones };
   }
 
   private stopVoice(track: EngineTrack, when: number) {
@@ -550,7 +585,7 @@ export class AudioEngine {
   private scheduleLoopJump(when: number, loopStart: number) {
     this.nextAnchor = { ctxTime: when, pos: loopStart };
     this.tracks.forEach((track) => {
-      if (this.rate === 1) {
+      if (!this.stretched) {
         track.sources.forEach((source) => {
           try {
             source.stop(when);
@@ -560,7 +595,7 @@ export class AudioEngine {
         });
         this.startVoice(track, when, loopStart);
       } else if (track.stretch) {
-        void track.stretch.schedule({ active: true, output: when, input: loopStart - track.offset, rate: this.rate });
+        void track.stretch.schedule({ active: true, output: when, input: loopStart - track.offset, ...this.stretchVoice() });
         track.stretchActive = true;
       }
     });

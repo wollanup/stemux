@@ -19,6 +19,12 @@ export const setTempoSource = (source: () => Tempo | null) => {
   tempoSource = source;
 };
 
+/** Pitch shift of the current piece (semitones), saved the same way */
+let pitchSource: () => number = () => 0;
+export const setPitchSource = (source: () => number) => {
+  pitchSource = source;
+};
+
 /**
  * Save track settings to piece settings in IndexedDB
  */
@@ -53,6 +59,7 @@ export const saveTrackSettingsToPiece = async (
     playbackRate,
     masterVolume,
     tempo: tempoSource(),
+    pitch: pitchSource(),
   };
   await savePieceSettings(pieceId, settings);
 };

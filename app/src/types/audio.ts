@@ -89,6 +89,7 @@ export interface PieceSettings {
   playbackRate: number;
   masterVolume: number;
   tempo?: Tempo | null; // Missing on pieces saved before tempo existed
+  pitch?: number; // Semitones; missing on pieces saved before pitch shift existed
 }
 
 export interface Piece {
@@ -168,6 +169,9 @@ export interface AudioStore {
   pause: () => void;
   seek: (time: number) => void;
   setPlaybackRate: (rate: number) => void;
+  /** Transpose the whole piece, tempo unchanged (semitones, fractional: see audio/pitch.ts) */
+  pitch: number;
+  setPitch: (semitones: number) => void;
   setMasterVolume: (volume: number) => void;
   
 

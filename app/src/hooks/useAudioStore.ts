@@ -35,7 +35,7 @@ import { createSettingsActions, loadLoopsPanelOpen } from './audioStore/settings
 import { createClipActions, loadEditMode, loadSnapEnabled } from './audioStore/clips';
 import { createHistoryActions } from './audioStore/history';
 import { createTempoActions, loadRulerMode } from './audioStore/tempo';
-import { setTempoSource } from './audioStore/storage';
+import { setPitchSource, setTempoSource } from './audioStore/storage';
 
 // Re-export for backwards compatibility with existing code
 export { loadTrackSettings } from './audioStore/shared';
@@ -54,6 +54,7 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
     ...loadLoopV2State(),
   },
   masterVolume: loadMasterVolume(),
+  pitch: 0,
   zoomLevel: 0,
   waveformStyle: loadWaveformStyle() as 'modern' | 'classic',
   waveformNormalize: loadWaveformNormalize(),
@@ -92,6 +93,7 @@ export const useAudioStore = create<AudioStore>((set, get) => ({
 
 // The tempo is saved with the other settings of the piece
 setTempoSource(() => useAudioStore.getState().tempo);
+setPitchSource(() => useAudioStore.getState().pitch);
 
 // Function to restore tracks from IndexedDB on app init
 export const restoreTracks = async () => {
@@ -204,10 +206,14 @@ useAudioStore.subscribe((state, prev) => {
   if (state.playbackState.playbackRate !== prev.playbackState.playbackRate) {
     void audioEngine.setPlaybackRate(state.playbackState.playbackRate);
   }
+  if (state.pitch !== prev.pitch) {
+    void audioEngine.setPitch(state.pitch);
+  }
 });
 syncEngineMix(useAudioStore.getState());
 syncEngineLoop(useAudioStore.getState());
 void audioEngine.setPlaybackRate(useAudioStore.getState().playbackState.playbackRate);
+void audioEngine.setPitch(useAudioStore.getState().pitch);
 
 audioEngine.on('timeupdate', () => {
   const time = audioEngine.getCurrentTime();

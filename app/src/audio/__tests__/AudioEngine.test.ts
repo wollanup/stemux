@@ -326,6 +326,95 @@ describe('AudioEngine playback rate', () => {
   });
 });
 
+describe('AudioEngine pitch shift', () => {
+  it('transposes through stretch voices without changing the speed', async () => {
+    engine.addTrack('a', fakeBuffer(10));
+    engine.addTrack('b', fakeBuffer(10));
+    const start = engine.play();
+    ctx.currentTime = start.ctxTime + 2;
+
+    await engine.setPitch(-1);
+
+    const [schedA, schedB] = stretchNodes.map((n) => n.schedules.at(-1)!);
+    expect(schedA).toEqual(schedB);
+    expect(schedA).toMatchObject({ active: true, rate: 1, semitones: -1 });
+    const when = schedA.output as number;
+    expect(schedA.input).toBeCloseTo(when - start.ctxTime, 9);
+    ctx.startedSources().forEach((s) => expect(s.stopTime).toBe(when));
+
+    // Still 1x
+    ctx.currentTime = when + 2;
+    expect(engine.getCurrentTime()).toBeCloseTo((schedA.input as number) + 2, 9);
+  });
+
+  it('retunes in place, continuing from the same position', async () => {
+    engine.addTrack('a', fakeBuffer(10));
+    await engine.setPitch(2);
+    const start = engine.play();
+    ctx.currentTime = start.ctxTime + 1;
+
+    await engine.setPitch(2.15);
+
+    expect(stretchNodes).toHaveLength(1);
+    const sched = stretchNodes[0].schedules.at(-1)!;
+    expect(sched).toMatchObject({ active: true, semitones: 2.15 });
+    expect(sched.input).toBeCloseTo((sched.output as number) - start.ctxTime, 9);
+  });
+
+  it('keeps the pitch when the speed changes, and the reverse', async () => {
+    engine.addTrack('a', fakeBuffer(10));
+    engine.play();
+    await engine.setPitch(3);
+    await engine.setPlaybackRate(0.5);
+    expect(stretchNodes[0].schedules.at(-1)).toMatchObject({ rate: 0.5, semitones: 3 });
+
+    // Back to 1x: still transposed, so still stretch voices
+    const sources = ctx.startedSources().length;
+    await engine.setPlaybackRate(1);
+    expect(stretchNodes[0].schedules.at(-1)).toMatchObject({ active: true, rate: 1, semitones: 3 });
+    expect(ctx.startedSources()).toHaveLength(sources);
+  });
+
+  it('carries the pitch across loop jumps', async () => {
+    engine.addTrack('a', fakeBuffer(10));
+    engine.setLoop({ start: 1, end: 2 });
+    await engine.setPitch(-0.5);
+    const start = engine.play();
+    advanceTo(start.ctxTime + 1.95);
+    const jump = stretchNodes[0].schedules.at(-1)!;
+    expect(jump).toMatchObject({ active: true, input: 1, semitones: -0.5 });
+  });
+
+  it('goes back to plain buffer playback without shift', async () => {
+    engine.addTrack('a', fakeBuffer(10));
+    await engine.setPitch(1);
+    const start = engine.play();
+    expect(ctx.startedSources()).toHaveLength(0);
+
+    ctx.currentTime = start.ctxTime + 1;
+    await engine.setPitch(0);
+
+    expect(engine.getPitch()).toBe(0);
+    expect(stretchNodes[0].schedules.at(-1)!.active).toBe(false);
+    expect(ctx.startedSources()[0].startArgs!.when).toBe(stretchNodes[0].schedules.at(-1)!.output);
+  });
+
+  it('applies only the latest of quick successive changes', async () => {
+    engine.addTrack('a', fakeBuffer(10));
+    const first = engine.setPitch(1);
+    const second = engine.setPlaybackRate(0.8);
+    await Promise.all([first, second]);
+    expect(engine.getPitch()).toBe(1);
+    expect(engine.getPlaybackRate()).toBe(0.8);
+  });
+
+  it('clamps the shift to an octave either way', async () => {
+    engine.addTrack('a', fakeBuffer(10));
+    await engine.setPitch(30);
+    expect(engine.getPitch()).toBe(12);
+  });
+});
+
 describe('AudioEngine level meters', () => {
   it('reads the peak of each channel of a track, after its gain', () => {
     engine.addTrack('stereo', fakeBuffer(10, 48000, 2));
