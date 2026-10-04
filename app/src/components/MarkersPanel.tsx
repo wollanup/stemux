@@ -228,69 +228,71 @@ const MarkersPanel = () => {
 
   return (
     <Stack data-loops-panel="open" gap="xs" className={classes.panel}>
-      {/* Markers Section */}
-      <Group gap="xs">
-        <Text size="sm" c="dimmed" mr="xs">
-          {t('markers.markers')}
-        </Text>
-        {loopState.markers.length === 0 && (
-          <Text size="sm" c="dimmed" fs="italic">
-            {t('markers.emptyHint')}
+      {/* Markers Section; the hide button stays top right whatever the number of chips */}
+      <Group gap="xs" wrap="nowrap" align="flex-start">
+        <Group gap="xs" flex={1} miw={0}>
+          <Text size="sm" c="dimmed" mr="xs">
+            {t('markers.markers')}
           </Text>
-        )}
-        {loopState.markers.map((marker, index) => {
-          const isInActiveLoop = loopState.loops.find(
-            l => l.enabled && (l.startMarkerId === marker.id || l.endMarkerId === marker.id)
-          );
+          {loopState.markers.length === 0 && (
+            <Text size="sm" c="dimmed" fs="italic">
+              {t('markers.emptyHint')}
+            </Text>
+          )}
+          {loopState.markers.map((marker, index) => {
+            const isInActiveLoop = loopState.loops.find(
+              l => l.enabled && (l.startMarkerId === marker.id || l.endMarkerId === marker.id)
+            );
 
-          const isLoopEndpoint = loopState.loops.some(
-            l => l.startMarkerId === marker.id || l.endMarkerId === marker.id
-          );
+            const isLoopEndpoint = loopState.loops.some(
+              l => l.startMarkerId === marker.id || l.endMarkerId === marker.id
+            );
 
-          const isLoopStartSelection = loopStartMarker === marker.id;
-          const color = markerColor(marker.id, loopState);
+            const isLoopStartSelection = loopStartMarker === marker.id;
+            const color = markerColor(marker.id, loopState);
 
-          // Loop ends take the color of their loop: filled while it plays
-          const variant: BadgeVariant = isInActiveLoop || isLoopStartSelection ? 'filled' : isLoopEndpoint ? 'outline' : 'light';
-          const chipColor = isLoopStartSelection ? 'orange' : isLoopEndpoint ? color : 'gray';
+            // Loop ends take the color of their loop: filled while it plays
+            const variant: BadgeVariant = isInActiveLoop || isLoopStartSelection ? 'filled' : isLoopEndpoint ? 'outline' : 'light';
+            const chipColor = isLoopStartSelection ? 'orange' : isLoopEndpoint ? color : 'gray';
 
-          return (
-            <Chip
-              key={marker.id}
-              data-marker-chip={marker.id}
-              icon={<IconPlayerPlayFilled size={14} />}
-              label={`${index + 1} - ${formatTime(marker.time)}`}
-              variant={variant}
-              color={chipColor}
-              onActivate={() => handleMarkerClick(marker.time)}
-              onDelete={() => handleDelete(marker.id)}
-              onPointerDown={(e) => handlePointerDown(e, marker.id)}
-              onPointerUp={handlePointerUp}
-              onPointerCancel={handlePointerUp}
-              actions={
-                <ChipActions
-                  menuLabel={t('markers.markerMenu')}
-                  deleteLabel={t('markers.deleteMarker')}
-                  onDelete={() => handleDelete(marker.id)}
-                  menu={
-                    <>
-                      <Menu.Item leftSection={<IconRepeat size={16} />} onClick={() => handleLoopEndpoint(marker.id)}>
-                        {loopStartMarker === marker.id ? t('markers.cancelLoopStart') :
-                         loopStartMarker ? t('markers.setLoopEnd') : t('markers.setLoopStart')}
-                      </Menu.Item>
-                      <Menu.Item leftSection={<IconTrash size={16} />} onClick={() => handleDelete(marker.id)}>
-                        {t('markers.deleteMarker')}
-                      </Menu.Item>
-                    </>
-                  }
-                />
-              }
-            />
-          );
-        })}
+            return (
+              <Chip
+                key={marker.id}
+                data-marker-chip={marker.id}
+                icon={<IconPlayerPlayFilled size={14} />}
+                label={`${index + 1} - ${formatTime(marker.time)}`}
+                variant={variant}
+                color={chipColor}
+                onActivate={() => handleMarkerClick(marker.time)}
+                onDelete={() => handleDelete(marker.id)}
+                onPointerDown={(e) => handlePointerDown(e, marker.id)}
+                onPointerUp={handlePointerUp}
+                onPointerCancel={handlePointerUp}
+                actions={
+                  <ChipActions
+                    menuLabel={t('markers.markerMenu')}
+                    deleteLabel={t('markers.deleteMarker')}
+                    onDelete={() => handleDelete(marker.id)}
+                    menu={
+                      <>
+                        <Menu.Item leftSection={<IconRepeat size={16} />} onClick={() => handleLoopEndpoint(marker.id)}>
+                          {loopStartMarker === marker.id ? t('markers.cancelLoopStart') :
+                           loopStartMarker ? t('markers.setLoopEnd') : t('markers.setLoopStart')}
+                        </Menu.Item>
+                        <Menu.Item leftSection={<IconTrash size={16} />} onClick={() => handleDelete(marker.id)}>
+                          {t('markers.deleteMarker')}
+                        </Menu.Item>
+                      </>
+                    }
+                  />
+                }
+              />
+            );
+          })}
+        </Group>
 
         {/* Hide the lists: the loop strip becomes thin and read-only */}
-        <ActionIcon variant="subtle" color="gray" onClick={() => setLoopsPanelOpen(false)} aria-label={t('markers.hidePanel')} aria-expanded ml="auto">
+        <ActionIcon variant="subtle" color="gray" onClick={() => setLoopsPanelOpen(false)} aria-label={t('markers.hidePanel')} aria-expanded>
           <IconChevronUp size={18} />
         </ActionIcon>
       </Group>

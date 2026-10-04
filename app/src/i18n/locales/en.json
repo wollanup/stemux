@@ -49,6 +49,7 @@
         "arrowRight": "→ - Forward 5 seconds (hold for continuous)",
         "ctrlLeft": "Ctrl + ← - Jump to beginning",
         "ctrlWheel": "Ctrl + Wheel - Zoom in/out around the mouse (pinch on mobile)",
+        "home": "Home - Back to the start",
         "more": "More shortcuts coming soon!",
         "redo": "Redo",
         "space": "SPACE - Play/Pause",

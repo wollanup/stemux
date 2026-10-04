@@ -138,6 +138,11 @@ const BottomControlBar = () => {
         if (document.activeElement instanceof HTMLElement) {
           document.activeElement.blur();
         }
+      } else if (e.code === 'Home') {
+        // Back to the start (on a focused slider, Home is its own: minimum)
+        if (target.getAttribute('role') === 'slider') return;
+        e.preventDefault();
+        seek(0);
       } else if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') {
         e.preventDefault();
         e.stopPropagation();

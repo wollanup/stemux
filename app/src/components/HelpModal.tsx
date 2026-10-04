@@ -184,6 +184,7 @@ const HelpModal = ({ open, onClose }: HelpModalProps) => {
           <Shortcut keys="SPACE">{t('help.sections.keyboard.space')}</Shortcut>
           <Shortcut keys="←">{t('help.sections.keyboard.arrowLeft')}</Shortcut>
           <Shortcut keys="→">{t('help.sections.keyboard.arrowRight')}</Shortcut>
+          <Shortcut keys="Home">{t('help.sections.keyboard.home')}</Shortcut>
           <Shortcut keys="Ctrl + ←">{t('help.sections.keyboard.ctrlLeft')}</Shortcut>
           <Shortcut keys="Ctrl + 🖱️">{t('help.sections.keyboard.ctrlWheel')}</Shortcut>
           <Shortcut keys="Shift + 🖱️">{t('help.sections.keyboard.altWheel')}</Shortcut>

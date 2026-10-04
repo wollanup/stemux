@@ -58,6 +58,8 @@ const PlaybackSpeedMenu = ({ currentRate, disabled, onRateChange }: PlaybackSpee
     <Popover opened={opened} onChange={setOpened} position="top-end" shadow="md" width={260}>
       <Popover.Target>
         <Button
+          // Controlled popover: the target does not toggle it by itself
+          onClick={() => setOpened((o) => !o)}
           leftSection={<IconGauge size={18} />}
           disabled={disabled}
           variant="outline"

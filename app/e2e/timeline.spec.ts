@@ -493,6 +493,19 @@ test.describe('touch screen', () => {
     await expect(page.locator('[data-marker]')).toHaveCount(1);
   });
 
+  test('the button hiding the markers stays on the first row, whatever the number of markers', async ({ page }) => {
+    await openWithTracks(page, stems);
+    const ruler = (await page.getByTestId('time-ruler').boundingBox())!;
+    for (const time of [5.5, 15.5, 25.5, 35.5]) {
+      await page.mouse.click(await rulerX(page, time), ruler.y + 12);
+    }
+    await expect(page.locator('[data-marker-chip]')).toHaveCount(4);
+    const chips = await page.locator('[data-marker-chip]').evaluateAll((els) => els.map((el) => el.getBoundingClientRect().top));
+    expect(Math.max(...chips)).toBeGreaterThan(Math.min(...chips)); // the chips wrap
+    const hide = (await page.getByRole('button', { name: 'Hide markers and loops' }).boundingBox())!;
+    expect(hide.y).toBeLessThan(Math.min(...chips) + 20);
+  });
+
   test('tempo and edit mode are in the menu, not in the bar; no bar.beat at the bottom', async ({ page }) => {
     await openWithTracks(page, stems);
     await expect(page.locator('[data-tempo-button]')).toHaveCount(0);
