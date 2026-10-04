@@ -6,7 +6,9 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { alpha, Box, Typography, useTheme } from '@mui/material';
+import { alpha, Box, Text } from '@mantine/core';
+import { useAppPalette } from '../theme/palette';
+import classes from './TrackLane.module.css';
 import { useTranslation } from 'react-i18next';
 import { useAudioStore } from '../hooks/useAudioStore';
 import { audioEngine } from '../audio/AudioEngine';
@@ -61,9 +63,9 @@ function useLiveTake(recording: boolean) {
  */
 function Clip({ geometry, pxPerSec, color, activeEdge }: { geometry: ClipGeometry; pxPerSec: number; color: string; activeEdge: ClipZone | null }) {
   const edge = (side: 'start' | 'end') => (
-    <Box
+    <div
       data-clip-edge={side}
-      sx={{ position: 'absolute', top: 0, bottom: 0, [side === 'start' ? 'left' : 'right']: -1, width: 3, bgcolor: color }}
+      style={{ position: 'absolute', top: 0, bottom: 0, [side === 'start' ? 'left' : 'right']: -1, width: 3, backgroundColor: color }}
     />
   );
   return (
@@ -72,13 +74,13 @@ function Clip({ geometry, pxPerSec, color, activeEdge }: { geometry: ClipGeometr
       data-clip-start={geometry.offset}
       data-clip-duration={geometry.duration}
       data-clip-trim={geometry.trimStart}
-      sx={{
+      style={{
         position: 'absolute',
         left: geometry.offset * pxPerSec,
         width: geometry.duration * pxPerSec,
         top: 0,
         bottom: 0,
-        bgcolor: alpha(color, 0.12),
+        backgroundColor: alpha(color, 0.12),
         border: '1px solid transparent',
         borderColor: activeEdge === 'body' ? alpha(color, 0.6) : 'transparent',
         '--clip-border': alpha(color, 0.6),
@@ -94,7 +96,7 @@ function Clip({ geometry, pxPerSec, color, activeEdge }: { geometry: ClipGeometr
 
 export default function TrackLane({ track, audio, width, height, pxPerSec, dimmed, headerOffset }: TrackLaneProps) {
   const { t } = useTranslation();
-  const theme = useTheme();
+  const palette = useAppPalette();
   const { seek, waveformStyle, waveformNormalize } = useAudioStore();
   const editMode = useAudioStore((s) => s.editMode);
   const isRecording = track.recordingState === 'recording';
@@ -139,13 +141,13 @@ export default function TrackLane({ track, audio, width, height, pxPerSec, dimme
     seek(Math.max(0, (e.clientX - rect.left) / pxPerSec));
   };
 
-  const waveColor = track.isMuted ? theme.palette.action.disabled : track.color;
+  const waveColor = track.isMuted ? palette.disabled : track.color;
   const recordStart = track.recordingStartOffset ?? 0;
   // Lane height minus its bottom separator; bars keep a margin of their own
   const drawHeight = height - 1;
 
   const renderWave = (source: PeakSource | null, sourceOffset: number, animate = false, bounds?: { start: number; end: number }) => (
-    <Box sx={{ position: 'absolute', left: 0, right: 0, top: 0, height: drawHeight, opacity: dimmed ? 0.35 : 1 }}>
+    <div style={{ position: 'absolute', left: 0, right: 0, top: 0, height: drawHeight, opacity: dimmed ? 0.35 : 1 }}>
       <WaveformCanvas
         source={source}
         offset={sourceOffset}
@@ -157,7 +159,7 @@ export default function TrackLane({ track, audio, width, height, pxPerSec, dimme
         normalize={waveformNormalize}
         animate={animate}
       />
-    </Box>
+    </div>
   );
 
   let hint: string | null = null;
@@ -166,7 +168,8 @@ export default function TrackLane({ track, audio, width, height, pxPerSec, dimme
   }
 
   return (
-    <Box
+    <div
+      className={track.isArmed ? `${classes.lane} ${classes.armed}` : classes.lane}
       onClick={handleClick}
       onPointerDown={(e) => {
         if (!clipDrag.handlers.onPointerDown(e)) pan.handlers.onPointerDown(e);
@@ -184,37 +187,23 @@ export default function TrackLane({ track, audio, width, height, pxPerSec, dimme
         pan.handlers.onPointerCancel(e);
       }}
       onPointerLeave={clipDrag.handlers.onPointerLeave}
-      sx={{
-        position: 'relative',
-        '@media (hover: hover)': {
-          '&:hover [data-clip]': { borderColor: 'var(--clip-border)' },
-        },
-        width,
-        height,
-        flexShrink: 0,
-        cursor: pan.panning ? 'grabbing' : (clipDrag.cursor ?? 'grab'),
-        userSelect: 'none',
-        bgcolor: track.isArmed ? alpha(theme.palette.error.main, 0.06) : 'transparent',
-        borderBottom: `1px solid ${theme.palette.divider}`,
-        outline: track.isArmed ? `1px dashed ${alpha(theme.palette.error.main, 0.6)}` : 'none',
-        outlineOffset: -1,
-      }}
+      style={{ width, height, cursor: pan.panning ? 'grabbing' : (clipDrag.cursor ?? 'grab') }}
     >
       {audio && shown && <Clip geometry={shown} pxPerSec={pxPerSec} color={track.color} activeEdge={clipDrag.zone} />}
       {audio && shown && renderWave(audio.pyramid, shown.offset - shown.trimStart, false, { start: shown.offset, end: shown.offset + shown.duration })}
 
       {isRecording && liveTake && (
         <>
-          <Box
+          <div
             ref={liveClipRef}
-            sx={{
+            style={{
               position: 'absolute',
               left: recordStart * pxPerSec,
               top: 0,
               bottom: 0,
               width: 2,
-              bgcolor: alpha(theme.palette.error.main, 0.14),
-              border: `1px solid ${alpha(theme.palette.error.main, 0.6)}`,
+              backgroundColor: 'color-mix(in srgb, var(--app-error) 14%, transparent)',
+              border: '1px solid color-mix(in srgb, var(--app-error) 60%, transparent)',
               pointerEvents: 'none',
             }}
           />
@@ -223,25 +212,26 @@ export default function TrackLane({ track, audio, width, height, pxPerSec, dimme
       )}
 
       {track.isLoading && !audio && (
-        <Box sx={{ position: 'absolute', inset: 6, bgcolor: 'action.hover', borderRadius: 1 }} />
+        <div style={{ position: 'absolute', inset: 6, backgroundColor: 'var(--app-hover)', borderRadius: 4 }} />
       )}
 
       {hint && (
-        <Typography
-          variant="caption"
-          sx={{
+        <Text
+          span
+          size="xs"
+          fw={track.isArmed ? 600 : 400}
+          style={{
             position: 'sticky',
             left: headerOffset + 12,
             display: 'inline-block',
-            mt: `${height / 2 - 10}px`,
-            color: track.isArmed ? 'error.main' : 'text.secondary',
-            fontWeight: track.isArmed ? 600 : 400,
+            marginTop: height / 2 - 10,
+            color: track.isArmed ? 'var(--app-error)' : 'var(--app-text-secondary)',
             pointerEvents: 'none',
           }}
         >
           {hint}
-        </Typography>
+        </Text>
       )}
-    </Box>
+    </div>
   );
 }

@@ -1,0 +1,11 @@
+.name {
+  cursor: pointer;
+}
+
+.name:hover {
+  color: var(--app-primary);
+}
+
+.piece {
+  padding: 8px 0;
+}

@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
-import { Box, Typography } from '@mui/material';
-import { CloudUpload } from '@mui/icons-material';
+import { Text, Title } from '@mantine/core';
+import { IconCloudUpload } from '@tabler/icons-react';
 import { useAudioStore } from '../hooks/useAudioStore';
 import { useTranslation } from 'react-i18next';
 
@@ -38,39 +38,38 @@ const FullScreenDropZone = ({ isDragging, onDragLeave }: FullScreenDropZoneProps
   }
 
   return (
-    <Box
+    <div
       onDrop={handleDrop}
       onDragOver={handleDragOver}
       onDragLeave={onDragLeave}
-      sx={{
+      style={{
         position: 'fixed',
         top: 0,
         left: 0,
         right: 0,
         bottom: 0,
         zIndex: 9999,
-        bgcolor: 'rgba(0, 0, 0, 0.7)',
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
         backdropFilter: 'blur(8px)',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
         pointerEvents: 'all',
-        border: '4px dashed',
-        borderColor: 'primary.main',
+        border: '4px dashed var(--app-primary)',
       }}
     >
-      <CloudUpload sx={{ fontSize: 120, color: 'primary.main', mb: 3 }} />
-      <Typography variant="h3" gutterBottom sx={{ color: 'white', fontWeight: 'bold' }}>
+      <IconCloudUpload size={120} color="var(--app-primary)" style={{ marginBottom: 24 }} />
+      <Title order={1} c="white" mb="xs">
         {t('upload.dropHere')}
-      </Typography>
-      <Typography variant="h6" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+      </Title>
+      <Text size="xl" c="rgba(255, 255, 255, 0.7)">
         {t('upload.description')}
-      </Typography>
-      <Typography variant="body1" sx={{ color: 'rgba(255, 255, 255, 0.5)', mt: 3 }}>
+      </Text>
+      <Text c="rgba(255, 255, 255, 0.5)" mt="lg">
         {t('track.count', { current: tracks.length, max: 8 })}
-      </Typography>
-    </Box>
+      </Text>
+    </div>
   );
 };
 

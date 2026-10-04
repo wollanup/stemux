@@ -1,0 +1,31 @@
+.header {
+  border-bottom: 1px solid var(--app-divider);
+}
+
+.body {
+  padding: 8px 0;
+}
+
+.item {
+  padding: 16px 24px;
+}
+
+.item:hover {
+  background-color: var(--app-hover);
+}
+
+.line {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.icon {
+  display: flex;
+  color: var(--app-text-secondary);
+}
+
+.text {
+  flex: 1;
+  min-width: 0;
+}

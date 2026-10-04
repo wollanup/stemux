@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
-import { Box, Button, Typography, Stack } from '@mui/material';
-import { Add, Mic } from '@mui/icons-material';
+import { Button, Flex, Text } from '@mantine/core';
+import { IconMicrophone, IconPlus } from '@tabler/icons-react';
 import { useAudioStore } from '../hooks/useAudioStore';
 import { useTranslation } from 'react-i18next';
 
@@ -25,28 +25,19 @@ const TrackAdder = () => {
   }
 
   return (
-    <Box sx={{ pb: 4 }}>
+    <div style={{ paddingBottom: 'var(--mantine-spacing-xl)' }}>
       {/* Track counter - always visible */}
-      <Typography 
-        variant="body2" 
-        color="text.secondary" 
-        sx={{ mb: 2, textAlign: 'center' }}
-      >
+      <Text size="sm" c="dimmed" ta="center" mb="md">
         {t('track.count', { current: tracks.length, max: 8 })}
-      </Typography>
+      </Text>
 
       {/* Buttons */}
-      <Stack 
-        direction={{ xs: 'column', sm: 'row' }} 
-        spacing={2} 
-        sx={{ justifyContent: 'center' }}
-      >
+      <Flex direction={{ base: 'column', xs: 'row' }} gap="md" justify="center" px="md">
         {/* Import audio file button */}
         <Button
-          variant="outlined"
-          startIcon={<Add />}
+          variant="outline"
+          leftSection={<IconPlus size={18} />}
           onClick={() => document.getElementById('file-input')?.click()}
-          component="label"
         >
           {t('track.importAudioTrack')}
         </Button>
@@ -54,14 +45,14 @@ const TrackAdder = () => {
         {/* Add recordable track button */}
         {isRecordingSupported && (
           <Button
-            variant="outlined"
-            startIcon={<Mic />}
+            variant="outline"
+            leftSection={<IconMicrophone size={18} />}
             onClick={addRecordableTrack}
           >
             {t('track.addRecordableTrack')}
           </Button>
         )}
-      </Stack>
+      </Flex>
 
       {/* Hidden file input */}
       <input
@@ -72,7 +63,7 @@ const TrackAdder = () => {
         style={{ display: 'none' }}
         onChange={handleFileInput}
       />
-    </Box>
+    </div>
   );
 };
 

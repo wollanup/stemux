@@ -6,7 +6,8 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { alpha, Box, useTheme } from '@mui/material';
+import { alpha, useMantineTheme } from '@mantine/core';
+import { contrastText, useAppPalette } from '../theme/palette';
 import { useAudioStore } from '../hooks/useAudioStore';
 import type { LoopState } from '../types/audio';
 import { LOOP_COLORS, loopColor, markerColor, nextColor } from '../utils/colors';
@@ -42,7 +43,8 @@ const DOUBLE_TAP_MS = 350;
 
 /** Graduation, drawn for the visible part only: seconds, or bars when the ruler counts bars */
 function Graduation({ top }: { top: number }) {
-  const theme = useTheme();
+  const theme = useMantineTheme();
+  const palette = useAppPalette();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const height = GRADUATION_HEIGHT;
   const tempo = useAudioStore((s) => s.tempo);
@@ -62,7 +64,7 @@ function Graduation({ top }: { top: number }) {
     if (!g) return;
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     g.clearRect(0, 0, width, height);
-    g.font = `11px ${theme.typography.fontFamily}`;
+    g.font = `11px ${theme.fontFamily}`;
     g.textBaseline = 'top';
     const from = scrollLeft / pxPerSec;
     const to = (scrollLeft + width) / pxPerSec;
@@ -72,10 +74,10 @@ function Graduation({ top }: { top: number }) {
       for (const tick of gridTicks(from, to, pxPerSec, tempo)) {
         const x = Math.round(tick.time * pxPerSec - scrollLeft) + 0.5;
         const isBar = tick.bar !== undefined;
-        g.fillStyle = isBar && tick.label ? theme.palette.text.secondary : theme.palette.divider;
+        g.fillStyle = isBar && tick.label ? palette.textSecondary : palette.divider;
         g.fillRect(x, isBar ? (tick.label ? 0 : height / 2) : height - 6, 1, isBar ? height : 6);
         if (tick.label) {
-          g.fillStyle = theme.palette.text.secondary;
+          g.fillStyle = palette.textSecondary;
           g.fillText(String(tick.bar), x + 4, 4);
         }
       }
@@ -85,14 +87,14 @@ function Graduation({ top }: { top: number }) {
     const { major } = tickSpacing(pxPerSec);
     for (const tick of ticks(from, to, pxPerSec)) {
       const x = Math.round(tick.time * pxPerSec - scrollLeft) + 0.5;
-      g.fillStyle = tick.major ? theme.palette.text.secondary : theme.palette.divider;
+      g.fillStyle = tick.major ? palette.textSecondary : palette.divider;
       g.fillRect(x, tick.major ? 0 : height - 6, 1, tick.major ? height : 6);
       if (tick.major) {
-        g.fillStyle = theme.palette.text.secondary;
+        g.fillStyle = palette.textSecondary;
         g.fillText(formatTimeLabel(tick.time, major), x + 4, 4);
       }
     }
-  }, [theme, height, bars, tempo]);
+  }, [theme, palette, height, bars, tempo]);
 
   useEffect(() => {
     draw();
@@ -120,7 +122,7 @@ const dragPreview = (drag: Drag, loopState: LoopState, pxPerSec: number, duratio
 };
 
 export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: TimeRulerProps) {
-  const theme = useTheme();
+  const palette = useAppPalette();
   const loopState = useAudioStore((s) => s.loopState);
   const armedLoopId = useAudioStore((s) => s.armedLoopId);
   const preview = useMarkerPreview();
@@ -234,7 +236,7 @@ export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: Ti
   const cursor = drag ? cursorFor(drag.hit, true) : hoverCursor;
 
   return (
-    <Box
+    <div
       data-testid="time-ruler"
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
@@ -243,7 +245,7 @@ export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: Ti
         setDrag(null);
         setMarkerPreview(null);
       }}
-      sx={{
+      style={{
         position: 'relative',
         width,
         height: layout.height,
@@ -251,12 +253,12 @@ export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: Ti
         cursor,
         touchAction: 'none',
         userSelect: 'none',
-        bgcolor: 'background.paper',
-        borderBottom: `1px solid ${theme.palette.divider}`,
+        backgroundColor: 'var(--app-paper)',
+        borderBottom: '1px solid var(--app-divider)',
       }}
     >
       {/* Loop strip */}
-      <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, height: strip, bgcolor: alpha(theme.palette.text.primary, layout.editable ? 0.07 : 0.04) }} data-loop-strip={layout.editable ? 'edit' : 'read-only'} />
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: strip, backgroundColor: alpha(palette.text, layout.editable ? 0.07 : 0.04) }} data-loop-strip={layout.editable ? 'edit' : 'read-only'} />
 
       {loopState.loops.map((loop) => {
         const a = markerTime(loop.startMarkerId);
@@ -266,20 +268,20 @@ export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: Ti
         const armed = loop.id === armedLoopId;
         const color = loopColor(loop, loopState.loops);
         return (
-          <Box
+          <div
             key={loop.id}
             data-loop={loop.id}
             data-armed={armed || undefined}
-            sx={{
+            style={{
               position: 'absolute',
               top: 2,
               height: strip - 4,
               left: Math.min(a, b) * pxPerSec,
               width: Math.abs(b - a) * pxPerSec,
-              bgcolor: alpha(color, active ? 0.6 : 0.25),
+              backgroundColor: alpha(color, active ? 0.6 : 0.25),
               // Armed: dashed, it will loop once the playhead gets in
               border: `1px ${armed ? 'dashed' : 'solid'} ${alpha(color, active || armed ? 1 : 0.6)}`,
-              borderRadius: 0.5,
+              borderRadius: 2,
               pointerEvents: 'none',
             }}
           />
@@ -287,16 +289,16 @@ export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: Ti
       })}
 
       {newLoop && (
-        <Box
-          sx={{
+        <div
+          style={{
             position: 'absolute',
             top: 2,
             height: strip - 4,
             left: newLoop.left,
             width: newLoop.width,
-            bgcolor: alpha(newLoopColor, 0.35),
+            backgroundColor: alpha(newLoopColor, 0.35),
             border: `1px dashed ${newLoopColor}`,
-            borderRadius: 0.5,
+            borderRadius: 2,
             pointerEvents: 'none',
           }}
         />
@@ -310,15 +312,15 @@ export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: Ti
         const opensLoop = loopStartIds.has(marker.id);
         const color = markerColor(marker.id, loopState);
         return (
-          <Box
+          <div
             key={marker.id}
             data-marker={marker.id}
             data-time={marker.time}
-            sx={{ position: 'absolute', top: 0, bottom: 0, left: marker.time * pxPerSec - 1, width: 2, bgcolor: color, pointerEvents: 'none' }}
+            style={{ position: 'absolute', top: 0, bottom: 0, left: marker.time * pxPerSec - 1, width: 2, backgroundColor: color, pointerEvents: 'none' }}
           >
             {/* Handle: fills the loop strip (not the graduation), easy to grab */}
-            <Box
-              sx={{
+            <div
+              style={{
                 position: 'absolute',
                 top: 2,
                 height: strip - 4,
@@ -329,25 +331,25 @@ export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: Ti
                 fontSize: strip >= 40 ? 14 : 11,
                 lineHeight: `${strip - 4}px`,
                 fontWeight: 700,
-                color: theme.palette.getContrastText(color),
-                bgcolor: color,
+                color: contrastText(color),
+                backgroundColor: color,
                 borderRadius: opensLoop ? '4px 0 0 4px' : '0 4px 4px 0',
               }}
             >
               {index + 1}
-            </Box>
-          </Box>
+            </div>
+          </div>
         );
       })}
 
       {/* Playhead (moved by the timeline animation loop) */}
-      <Box
+      <div
         ref={playheadRef}
-        sx={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: 0, pointerEvents: 'none', willChange: 'transform' }}
+        style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: 0, pointerEvents: 'none', willChange: 'transform' }}
       >
-        <Box sx={{ position: 'absolute', top: strip, bottom: 0, left: -1, width: 2, bgcolor: 'primary.light' }} />
-        <Box
-          sx={{
+        <div style={{ position: 'absolute', top: strip, bottom: 0, left: -1, width: 2, backgroundColor: 'var(--app-primary-light)' }} />
+        <div
+          style={{
             position: 'absolute',
             bottom: 0,
             left: -6,
@@ -355,11 +357,11 @@ export default function TimeRuler({ width, pxPerSec, duration, playheadRef }: Ti
             height: 0,
             borderLeft: '6px solid transparent',
             borderRight: '6px solid transparent',
-            borderTop: `8px solid ${theme.palette.primary.light}`,
+            borderTop: '8px solid var(--app-primary-light)',
             transform: 'translateY(-16px)',
           }}
         />
-      </Box>
-    </Box>
+      </div>
+    </div>
   );
 }

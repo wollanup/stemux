@@ -1,14 +1,5 @@
 import { useState } from 'react';
-import {
-  Drawer,
-  Box,
-  Grid,
-  Typography,
-  Slider,
-  IconButton,
-  Button,
-} from '@mui/material';
-import { Close } from '@mui/icons-material';
+import { Box, Button, Drawer, SimpleGrid, Slider, Stack, Text } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
 
 interface PlaybackSpeedDrawerProps {
@@ -39,40 +30,43 @@ const PlaybackSpeedDrawer = ({ open, currentRate, onClose, onRateChange }: Playb
     onClose(); // Close drawer after preset selection
   };
 
-  const handleSliderChange = (_: Event, value: number | number[]) => {
-    const rate = (value as number) / 100;
-    setCustomRate(rate);
-  };
-
-  const handleSliderCommitted = (_: Event | React.SyntheticEvent, value: number | number[]) => {
-    const rate = (value as number) / 100;
-    onRateChange(rate);
-  };
+  const column = (label: string, speeds: number[]) => (
+    <Stack align="center" gap={4}>
+      <Text size="xs" c="dimmed" mb={4}>
+        {label}
+      </Text>
+      {speeds.map((speed) => {
+        const selected = Math.abs(currentRate - speed) < 0.01;
+        return (
+          <Button
+            key={speed}
+            variant={selected ? 'filled' : 'subtle'}
+            color={selected ? undefined : 'gray'}
+            onClick={() => handlePresetClick(speed)}
+            size="xs"
+            fullWidth
+            maw={100}
+            miw={80}
+          >
+            {speed}x
+          </Button>
+        );
+      })}
+    </Stack>
+  );
 
   return (
     <Drawer
-      anchor="bottom"
-      open={open}
+      position="bottom"
+      opened={open}
       onClose={onClose}
-      onKeyDown={(e) => {
-        if (e.key === ' ') {
-          e.preventDefault();
-          e.stopPropagation();
-        } else if (e.key === 'Escape') {
-          onClose();
-        }
-      }}
-      sx={{
-        '& .MuiDrawer-paper': {
-          borderTopLeftRadius: 16,
-          borderTopRightRadius: 16,
-          maxHeight: '70vh',
-        },
-      }}
+      size="auto"
+      title={t('speed.title')}
+      radius="lg"
+      styles={{ content: { maxHeight: '70vh' } }}
     >
-      <Box 
-        sx={{ width: '100%', p: 3 }} 
-        role="presentation"
+      <Box
+        // Space would toggle playback (global shortcut)
         onKeyDown={(e) => {
           if (e.key === ' ') {
             e.preventDefault();
@@ -80,117 +74,32 @@ const PlaybackSpeedDrawer = ({ open, currentRate, onClose, onRateChange }: Playb
           }
         }}
       >
-        {/* Header */}
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
-          <Typography variant="h6">{t('speed.title')}</Typography>
-          <IconButton size="small" onClick={onClose}>
-            <Close />
-          </IconButton>
-        </Box>
-
         {/* Slider */}
-        <Box sx={{ mb: 3, px: 1 }}>
-          <Typography variant="subtitle2" gutterBottom>
+        <Box mb="xl" px="xs">
+          <Text size="sm" fw={600} mb="xs">
             {t('speed.custom')}: {customRate.toFixed(2)}x
-          </Typography>
+          </Text>
           <Slider
             value={customRate * 100}
-            onChange={handleSliderChange}
-            onChangeCommitted={handleSliderCommitted}
+            onChange={(value) => setCustomRate(value / 100)}
+            onChangeEnd={(value) => onRateChange(value / 100)}
             min={50}
             max={200}
             step={5}
-            marks={[
-              { value: 100, label: '1x' },
-            ]}
-            valueLabelDisplay="auto"
-            valueLabelFormat={(value) => `${(value / 100).toFixed(2)}x`}
+            marks={[{ value: 100, label: '1x' }]}
+            label={(value) => `${(value / 100).toFixed(2)}x`}
           />
         </Box>
 
         {/* Preset speeds in three columns */}
-        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+        <Text size="sm" fw={600} c="dimmed" mb="xs">
           {t('speed.presets')}
-        </Typography>
-        <Grid container spacing={2}>
-          {/* Slow speeds - Left column */}
-          <Grid size={{ xs: 4 }}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
-              <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5 }}>
-                {t('speed.slower')}
-              </Typography>
-              {SLOW_SPEEDS.map((speed) => (
-                <Button
-                  key={speed}
-                  variant={Math.abs(currentRate - speed) < 0.01 ? 'contained' : 'text'}
-                  onClick={() => handlePresetClick(speed)}
-                  size="small"
-                  sx={{ 
-                    minWidth: 80, 
-                    width: '100%', 
-                    maxWidth: 100,
-                    textTransform: 'none',
-                    color: Math.abs(currentRate - speed) < 0.01 ? undefined : 'text.primary',
-                  }}
-                >
-                  {speed}x
-                </Button>
-              ))}
-            </Box>
-          </Grid>
-
-          {/* Normal speed - Center column */}
-          <Grid size={{ xs: 4 }}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
-              <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5 }}>
-                {t('speed.normal')}
-              </Typography>
-              {NORMAL_SPEED.map((speed) => (
-                <Button
-                  key={speed}
-                  variant={Math.abs(currentRate - speed) < 0.01 ? 'contained' : 'text'}
-                  onClick={() => handlePresetClick(speed)}
-                  size="small"
-                  sx={{ 
-                    minWidth: 80, 
-                    width: '100%', 
-                    maxWidth: 100,
-                    textTransform: 'none',
-                    color: Math.abs(currentRate - speed) < 0.01 ? undefined : 'text.primary',
-                  }}
-                >
-                  {speed}x
-                </Button>
-              ))}
-            </Box>
-          </Grid>
-
-          {/* Fast speeds - Right column */}
-          <Grid size={{ xs: 4 }}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
-              <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5 }}>
-                {t('speed.faster')}
-              </Typography>
-              {FAST_SPEEDS.map((speed) => (
-                <Button
-                  key={speed}
-                  variant={Math.abs(currentRate - speed) < 0.01 ? 'contained' : 'text'}
-                  onClick={() => handlePresetClick(speed)}
-                  size="small"
-                  sx={{ 
-                    minWidth: 80, 
-                    width: '100%', 
-                    maxWidth: 100,
-                    textTransform: 'none',
-                    color: Math.abs(currentRate - speed) < 0.01 ? undefined : 'text.primary',
-                  }}
-                >
-                  {speed}x
-                </Button>
-              ))}
-            </Box>
-          </Grid>
-        </Grid>
+        </Text>
+        <SimpleGrid cols={3} spacing="md">
+          {column(t('speed.slower'), SLOW_SPEEDS)}
+          {column(t('speed.normal'), NORMAL_SPEED)}
+          {column(t('speed.faster'), FAST_SPEEDS)}
+        </SimpleGrid>
       </Box>
     </Drawer>
   );

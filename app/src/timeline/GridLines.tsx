@@ -4,13 +4,14 @@
  */
 
 import { useCallback, useEffect, useRef } from 'react';
-import { alpha, useTheme } from '@mui/material';
+import { alpha } from '@mantine/core';
+import { useAppPalette } from '../theme/palette';
 import { useAudioStore } from '../hooks/useAudioStore';
 import { gridTicks } from '../tempo/tempo';
 import { getView, subscribeView } from './viewStore';
 
 export default function GridLines() {
-  const theme = useTheme();
+  const palette = useAppPalette();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const tempo = useAudioStore((s) => (s.rulerMode === 'bars' ? s.tempo : null));
 
@@ -31,13 +32,13 @@ export default function GridLines() {
     if (!g) return;
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     g.clearRect(0, 0, width, height);
-    const barColor = alpha(theme.palette.text.primary, 0.14);
-    const beatColor = alpha(theme.palette.text.primary, 0.05);
+    const barColor = alpha(palette.text, 0.14);
+    const beatColor = alpha(palette.text, 0.05);
     for (const tick of gridTicks(scrollLeft / pxPerSec, (scrollLeft + width) / pxPerSec, pxPerSec, tempo)) {
       g.fillStyle = tick.bar !== undefined ? barColor : beatColor;
       g.fillRect(Math.round(tick.time * pxPerSec - scrollLeft), 0, 1, height);
     }
-  }, [theme, tempo]);
+  }, [palette, tempo]);
 
   useEffect(() => {
     const parent = canvasRef.current?.parentElement;

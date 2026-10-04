@@ -144,8 +144,8 @@ test.describe('timeline', () => {
 
   test('the mouse wheel over a volume slider changes the volume', async ({ page }) => {
     await openWithTracks(page, stems);
-    const slider = page.locator('[data-track-row="bass.wav"] .MuiSlider-root');
-    const volume = () => slider.locator('input').inputValue().then(Number);
+    const slider = page.locator('[data-track-row="bass.wav"] .mantine-Slider-root');
+    const volume = () => slider.getByRole('slider').getAttribute('aria-valuenow').then(Number);
     const before = await volume();
     const box = (await slider.boundingBox())!;
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);

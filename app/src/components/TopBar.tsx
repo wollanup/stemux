@@ -1,48 +1,32 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
+import { ActionIcon, Button, Menu, Progress, Slider, Text, Tooltip } from '@mantine/core';
 import {
-  AppBar,
-  Box,
-  Button,
-  IconButton,
-  LinearProgress,
-  ListItemIcon,
-  ListItemText,
-  Divider,
-  Menu,
-  MenuItem,
-  Slider,
-  Stack,
-  Toolbar,
-  Typography,
-  Tooltip,
-} from '@mui/material';
-import {
-  Album,
-  DarkMode,
-  DeleteSweep,
-  WrongLocation,
-  GraphicEq,
-  HelpOutline,
-  LightMode,
-  MoreVert,
-  Refresh,
-  Settings,
-  ZoomIn,
-  ZoomOut,
-  KeyboardArrowDown,
-  Check,
-  MusicNote,
-  OpenWith,
-  PanTool,
-} from '@mui/icons-material';
+  IconArrowsMove,
+  IconChevronDown,
+  IconDisc,
+  IconDotsVertical,
+  IconHandStop,
+  IconHelpCircle,
+  IconMagnet,
+  IconMapPinOff,
+  IconMoon,
+  IconMusic,
+  IconRefresh,
+  IconSettings,
+  IconSun,
+  IconTrashX,
+  IconWaveSine,
+  IconZoomIn,
+  IconZoomOut,
+} from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { StemuxIcon } from './StemuxIcon';
-import MagnetIcon from './MagnetIcon';
 import TempoPanel from './TempoPanel';
 import DeleteAllMarkersDialog from './DeleteAllMarkersDialog';
 import { usePlaybackTime } from '../hooks/usePlaybackTime';
 import { useAudioStore } from '../hooks/useAudioStore';
 import type { PieceWithStats } from '../types/audio';
+import classes from './Bars.module.css';
 
 interface TopBarProps {
   hasLoadedTracks: boolean;
@@ -86,15 +70,12 @@ const TopBar = ({
   onOpenPiecesManager,
 }: TopBarProps) => {
   const { t } = useTranslation();
-  const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
-  const [piecesMenuAnchorEl, setPiecesMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [recentPieces, setRecentPieces] = useState<PieceWithStats[]>([]);
   const [deleteMarkersOpen, setDeleteMarkersOpen] = useState(false);
-  const [tempoAnchor, setTempoAnchor] = useState<HTMLElement | null>(null);
-  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const [tempoOpen, setTempoOpen] = useState(false);
   const tempo = useAudioStore((s) => s.tempo);
   const markerCount = useAudioStore((s) => s.loopState.markers.length);
-  
+
   const { getRecentPieces, getCurrentPiece, loadPiece, currentPieceName, snapEnabled, setSnapEnabled, editMode, setEditMode } = useAudioStore();
 
   // Use live playback time hook (updates every 100ms)
@@ -102,9 +83,7 @@ const TopBar = ({
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   // Load pieces menu data when opening
-  const handleOpenPiecesMenu = async (event: React.MouseEvent<HTMLElement>) => {
-    setPiecesMenuAnchorEl(event.currentTarget);
-    
+  const handleOpenPiecesMenu = async () => {
     try {
       const [recent, current] = await Promise.all([
         getRecentPieces(10),
@@ -117,7 +96,6 @@ const TopBar = ({
   };
 
   const handleLoadPiece = async (id: string) => {
-    setPiecesMenuAnchorEl(null);
     try {
       await loadPiece(id);
     } catch (error) {
@@ -125,323 +103,196 @@ const TopBar = ({
     }
   };
 
-  return (
-    <AppBar position="fixed" elevation={2} color="default" sx={{ bgcolor: 'background.paper' }}>
-      <Toolbar>
-        <Box sx={{ mr: 2, display: 'flex', alignItems: 'center' }}>
-          <StemuxIcon size={28} />
-        </Box>
-        
-        {/* Mobile: no title, pieces are managed from the menu */}
-        {!isMobile && (
-          <Typography variant="body1" component="div">
-            Stemux
-          </Typography>
-        )}
-
-        {/* Desktop: Piece name with menu */}
-        {!isMobile && currentPieceName && (
+  const mainMenu = (
+    <Menu position="bottom-end" shadow="md" width={260}>
+      <Menu.Target>
+        <ActionIcon variant="subtle" color="gray" size="lg" aria-label={t('menu.title')}>
+          <IconDotsVertical size={22} />
+        </ActionIcon>
+      </Menu.Target>
+      <Menu.Dropdown>
+        {isMobile && (
           <>
-            <Button
-              color="inherit"
-              onClick={handleOpenPiecesMenu}
-              endIcon={<KeyboardArrowDown />}
-              sx={{ ml: 2, textTransform: 'none' }}
+            <Menu.Item
+              disabled={!hasLoadedTracks}
+              leftSection={<IconMusic size={16} />}
+              onClick={() => setTempoOpen(true)}
             >
-              {currentPieceName}
-            </Button>
-            <Menu
-              anchorEl={piecesMenuAnchorEl}
-              open={Boolean(piecesMenuAnchorEl)}
-              onClose={() => setPiecesMenuAnchorEl(null)}
-              anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-              transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+              {tempo ? `${t('tempo.title')} · ${Math.round(tempo.bpm * 10) / 10} BPM` : t('tempo.title')}
+            </Menu.Item>
+            <Menu.CheckboxItem
+              checked={editMode}
+              onChange={setEditMode}
+              closeMenuOnClick
+              disabled={!hasLoadedTracks}
+              rightSection={editMode ? <IconArrowsMove size={16} /> : <IconHandStop size={16} />}
             >
-              <MenuItem
-                onClick={() => {
-                  setPiecesMenuAnchorEl(null);
-                  onOpenPiecesManager();
-                }}
-              >
-                <ListItemIcon>
-                  <Settings fontSize="small" />
-                </ListItemIcon>
-                <ListItemText>{t('menu.pieces')}</ListItemText>
-              </MenuItem>
-              
-              {recentPieces.length > 0 && <MenuItem disabled sx={{ opacity: 0.6 }}>
-                <ListItemText
-                  primary={t('pieces.recentPieces')}
-                  slotProps={{ primary: { variant: 'caption', color: 'text.secondary' } }}
-                />
-              </MenuItem>}
-              
-              {recentPieces.map((piece) => (
-                <MenuItem key={piece.id} onClick={() => handleLoadPiece(piece.id)}>
-                  <ListItemText primary={piece.name} />
-                </MenuItem>
-              ))}
-            </Menu>
+              {t('timeline.editMode')}
+            </Menu.CheckboxItem>
+            <Menu.Divider />
           </>
         )}
 
-        <Box sx={{ flexGrow: 1 }} />
+        <Menu.Item leftSection={<IconDisc size={16} />} onClick={onOpenPiecesManager}>
+          {t('menu.pieces')}
+        </Menu.Item>
+        <Menu.Item leftSection={<IconHelpCircle size={16} />} onClick={onOpenHelp}>
+          {t('help.title')}
+        </Menu.Item>
+        <Menu.Item leftSection={prefersDarkMode ? <IconMoon size={16} /> : <IconSun size={16} />} onClick={onOpenThemeDialog}>
+          {t('menu.theme')}
+        </Menu.Item>
+        <Menu.Item leftSection={<IconWaveSine size={16} />} onClick={onOpenSettings}>
+          {t('menu.interface')}
+        </Menu.Item>
+        <Menu.Item leftSection={<IconMapPinOff size={16} />} onClick={() => setDeleteMarkersOpen(true)} disabled={markerCount === 0}>
+          {t('markers.deleteAll')}
+        </Menu.Item>
+        <Menu.Item leftSection={<IconTrashX size={16} />} onClick={onOpenDeleteAllDialog} disabled={tracksCount === 0}>
+          {t('menu.deleteAllTracks')}
+        </Menu.Item>
+        <Menu.Item
+          leftSection={<IconRefresh size={16} />}
+          onClick={async () => {
+            // Unregister all service workers and hard reload
+            if ('serviceWorker' in navigator) {
+              const registrations = await navigator.serviceWorker.getRegistrations();
+              await Promise.all(registrations.map((reg) => reg.unregister()));
+            }
+            // Hard reload bypassing all caches
+            window.location.reload();
+          }}
+        >
+          {t('menu.refresh')}
+        </Menu.Item>
+
+        <Menu.Label>{`${__APP_VERSION__} • ${new Date(__BUILD_DATE__).toLocaleString()}`}</Menu.Label>
+      </Menu.Dropdown>
+    </Menu>
+  );
+
+  return (
+    <header className={`${classes.bar} ${classes.top}`}>
+      <div className={classes.toolbar}>
+        <span style={{ marginRight: 16, display: 'flex', alignItems: 'center' }}>
+          <StemuxIcon size={28} />
+        </span>
+
+        {/* Mobile: no title, pieces are managed from the menu */}
+        {!isMobile && <Text>Stemux</Text>}
+
+        {/* Desktop: Piece name with menu */}
+        {!isMobile && currentPieceName && (
+          <Menu position="bottom-start" shadow="md" onOpen={handleOpenPiecesMenu}>
+            <Menu.Target>
+              <Button variant="subtle" color="gray" c="var(--mantine-color-text)" ml="md" rightSection={<IconChevronDown size={18} />}>
+                {currentPieceName}
+              </Button>
+            </Menu.Target>
+            <Menu.Dropdown>
+              <Menu.Item leftSection={<IconSettings size={16} />} onClick={onOpenPiecesManager}>
+                {t('menu.pieces')}
+              </Menu.Item>
+              {recentPieces.length > 0 && <Menu.Label>{t('pieces.recentPieces')}</Menu.Label>}
+              {recentPieces.map((piece) => (
+                <Menu.Item key={piece.id} onClick={() => handleLoadPiece(piece.id)}>
+                  {piece.name}
+                </Menu.Item>
+              ))}
+            </Menu.Dropdown>
+          </Menu>
+        )}
+
+        <div style={{ flexGrow: 1 }} />
 
         {/* Mobile: tempo and edit mode are in the menu, to keep the bar light */}
-        <TempoPanel
-          disabled={!hasLoadedTracks}
-          compact={isMobile}
-          {...(isMobile ? { anchorEl: tempoAnchor, onClose: () => setTempoAnchor(null) } : {})}
-        />
+        {!isMobile && <TempoPanel disabled={!hasLoadedTracks} compact={false} />}
 
         {/* Drag on the lanes: scroll (hand, default) or edit clips (move arrows) */}
         {!isMobile && (
-          <Tooltip title={editMode ? t('timeline.editModeOn') : t('timeline.editModeOff')}>
-            <span>
-              <IconButton
-                color={editMode ? 'primary' : 'inherit'}
+          <Tooltip label={editMode ? t('timeline.editModeOn') : t('timeline.editModeOff')}>
+            <span className={classes.tooltipAnchor} style={{ marginRight: 4 }}>
+              <ActionIcon
+                variant="subtle"
+                color={editMode ? undefined : 'gray'}
+                size="lg"
                 onClick={() => setEditMode(!editMode)}
                 disabled={!hasLoadedTracks}
                 aria-label={t('timeline.editMode')}
                 aria-pressed={editMode}
-                sx={{ mr: 0.5 }}
               >
-                {editMode ? <OpenWith fontSize="small" /> : <PanTool fontSize="small" />}
-              </IconButton>
+                {editMode ? <IconArrowsMove size={20} /> : <IconHandStop size={20} />}
+              </ActionIcon>
             </span>
           </Tooltip>
         )}
 
         {/* Magnetism for clip editing (Alt disables it during a drag) */}
-        <Tooltip title={snapEnabled ? t('timeline.snapOn') : t('timeline.snapOff')}>
-          <span>
-            <IconButton
-              color={snapEnabled ? 'primary' : 'inherit'}
+        <Tooltip label={snapEnabled ? t('timeline.snapOn') : t('timeline.snapOff')}>
+          <span className={classes.tooltipAnchor} style={{ marginRight: 8 }}>
+            <ActionIcon
+              variant="subtle"
+              color={snapEnabled ? undefined : 'gray'}
+              size="lg"
               onClick={() => setSnapEnabled(!snapEnabled)}
               disabled={!hasLoadedTracks}
               aria-label={t('timeline.snap')}
               aria-pressed={snapEnabled}
-              sx={{ mr: 1, opacity: snapEnabled ? 1 : 0.6 }}
+              style={{ opacity: snapEnabled ? 1 : 0.6 }}
             >
-              <MagnetIcon fontSize="small" />
-            </IconButton>
+              <IconMagnet size={20} />
+            </ActionIcon>
           </span>
         </Tooltip>
 
         {/* Zoom controls */}
-        <IconButton
-          color="inherit"
-          onClick={onZoomOut}
-          disabled={!hasLoadedTracks || zoomLevel <= 0}
-          aria-label="Zoom out"
-        >
-          <ZoomOut />
-        </IconButton>
+        <ActionIcon variant="subtle" color="gray" size="lg" onClick={onZoomOut} disabled={!hasLoadedTracks || zoomLevel <= 0} aria-label="Zoom out">
+          <IconZoomOut size={22} />
+        </ActionIcon>
 
         <Slider
           value={sliderValue}
-          onChange={(_, value) => {
-            const newValue = value as number;
-            onSliderDragStart(newValue);
-            onZoomChange(newValue);
+          onChange={(value) => {
+            onSliderDragStart(value);
+            onZoomChange(value);
           }}
-          onChangeCommitted={onSliderDragEnd}
+          onChangeEnd={onSliderDragEnd}
           min={0}
           max={100}
           disabled={!hasLoadedTracks}
-          size="small"
-          color="secondary"
-          sx={{ width: 120, mx: 1 }}
-          aria-label="Zoom"
+          size="sm"
+          color="grape"
+          label={null}
+          w={120}
+          mx="xs"
+          thumbProps={{ 'aria-label': 'Zoom' }}
         />
 
-        <IconButton
-          color="inherit"
-          onClick={onZoomIn}
-          disabled={!hasLoadedTracks || zoomLevel >= 500}
-          aria-label="Zoom in"
-          sx={{ mr: 1 }}
-        >
-          <ZoomIn />
-        </IconButton>
+        <ActionIcon variant="subtle" color="gray" size="lg" onClick={onZoomIn} disabled={!hasLoadedTracks || zoomLevel >= 500} aria-label="Zoom in" mr="xs">
+          <IconZoomIn size={22} />
+        </ActionIcon>
 
-        <Stack gap={2} direction="row" alignItems="center">
-          {/* Menu button */}
-          <IconButton
-            ref={menuButtonRef}
-            color="inherit"
-            onClick={(e) => setMenuAnchorEl(e.currentTarget)}
-            aria-label={t('menu.title')}
-          >
-            <MoreVert />
-          </IconButton>
-        </Stack>
-
-        {/* Menu */}
-        <Menu
-          anchorEl={menuAnchorEl}
-          open={Boolean(menuAnchorEl)}
-          onClose={() => setMenuAnchorEl(null)}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-          transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-        >
-          {isMobile && [
-            <MenuItem
-              key="tempo"
-              disabled={!hasLoadedTracks}
-              onClick={() => {
-                setMenuAnchorEl(null);
-                setTempoAnchor(menuButtonRef.current);
-              }}
-            >
-              <ListItemIcon>
-                <MusicNote fontSize="small" />
-              </ListItemIcon>
-              <ListItemText>{tempo ? `${t('tempo.title')} · ${Math.round(tempo.bpm * 10) / 10} BPM` : t('tempo.title')}</ListItemText>
-            </MenuItem>,
-            <MenuItem
-              key="edit-mode"
-              role="menuitemcheckbox"
-              aria-checked={editMode}
-              disabled={!hasLoadedTracks}
-              onClick={() => {
-                setMenuAnchorEl(null);
-                setEditMode(!editMode);
-              }}
-            >
-              <ListItemIcon>{editMode ? <OpenWith fontSize="small" /> : <PanTool fontSize="small" />}</ListItemIcon>
-              <ListItemText>{t('timeline.editMode')}</ListItemText>
-              {editMode && <Check fontSize="small" sx={{ ml: 2 }} />}
-            </MenuItem>,
-            <Divider key="divider" />,
-          ]}
-
-          <MenuItem
-            onClick={() => {
-              setMenuAnchorEl(null);
-              onOpenPiecesManager();
-            }}
-          >
-            <ListItemIcon>
-              <Album fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>{t('menu.pieces')}</ListItemText>
-          </MenuItem>
-
-          <MenuItem
-            onClick={() => {
-              setMenuAnchorEl(null);
-              onOpenHelp();
-            }}
-          >
-            <ListItemIcon>
-              <HelpOutline fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>{t('help.title')}</ListItemText>
-          </MenuItem>
-
-          <MenuItem
-            onClick={() => {
-              setMenuAnchorEl(null);
-              onOpenThemeDialog();
-            }}
-          >
-            <ListItemIcon>
-              {prefersDarkMode ? <DarkMode fontSize="small" /> : <LightMode fontSize="small" />}
-            </ListItemIcon>
-            <ListItemText>{t('menu.theme')}</ListItemText>
-          </MenuItem>
-
-          <MenuItem
-            onClick={(e) => {
-              setMenuAnchorEl(null);
-              // Blur the button to avoid aria-hidden focus conflict
-              if (e.currentTarget) {
-                (e.currentTarget as HTMLElement).blur();
-              }
-              setTimeout(() => onOpenSettings(), 50);
-            }}
-          >
-            <ListItemIcon>
-              <GraphicEq fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>{t('menu.interface')}</ListItemText>
-          </MenuItem>
-
-          <MenuItem
-            onClick={() => {
-              setMenuAnchorEl(null);
-              setDeleteMarkersOpen(true);
-            }}
-            disabled={markerCount === 0}
-          >
-            <ListItemIcon>
-              <WrongLocation fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>{t('markers.deleteAll')}</ListItemText>
-          </MenuItem>
-
-          <MenuItem
-            onClick={() => {
-              setMenuAnchorEl(null);
-              onOpenDeleteAllDialog();
-            }}
-            disabled={tracksCount === 0}
-          >
-            <ListItemIcon>
-              <DeleteSweep fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>{t('menu.deleteAllTracks')}</ListItemText>
-          </MenuItem>
-
-          <MenuItem
-            onClick={async () => {
-              setMenuAnchorEl(null);
-              // Unregister all service workers and hard reload
-              if ('serviceWorker' in navigator) {
-                const registrations = await navigator.serviceWorker.getRegistrations();
-                await Promise.all(registrations.map((reg) => reg.unregister()));
-              }
-              // Hard reload bypassing all caches
-              window.location.reload();
-            }}
-          >
-            <ListItemIcon>
-              <Refresh fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>{t('menu.refresh')}</ListItemText>
-          </MenuItem>
-
-          <MenuItem disabled sx={{ opacity: '0.6 !important' }}>
-            <ListItemText
-              primary={`${__APP_VERSION__} • ${new Date(__BUILD_DATE__).toLocaleString()}`}
-              slotProps={{
-                primary: {
-                  variant: 'caption',
-                  color: 'text.secondary',
-                },
-              }}
-            />
-          </MenuItem>
-        </Menu>
-      </Toolbar>
+        {isMobile ? (
+          <TempoPanel disabled={!hasLoadedTracks} compact opened={tempoOpen} onClose={() => setTempoOpen(false)}>
+            {mainMenu}
+          </TempoPanel>
+        ) : (
+          mainMenu
+        )}
+      </div>
 
       <DeleteAllMarkersDialog open={deleteMarkersOpen} onClose={() => setDeleteMarkersOpen(false)} />
 
       {/* Progress bar */}
-      <LinearProgress
-        variant="determinate"
+      <Progress
         value={progressPercent}
-        sx={{
-          height: 3,
-          backgroundColor: 'transparent',
-          '& .MuiLinearProgress-bar': {
-            backgroundColor: isPlaying ? 'primary.light' : 'action.disabled',
-            transition: 'none', // Remove animation for instant updates
-          },
-        }}
+        size={3}
+        radius={0}
+        transitionDuration={0}
+        color={isPlaying ? 'var(--app-primary-light)' : 'var(--app-disabled)'}
+        styles={{ root: { backgroundColor: 'transparent' } }}
       />
-    </AppBar>
+    </header>
   );
 };
 

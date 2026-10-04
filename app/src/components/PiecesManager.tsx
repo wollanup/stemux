@@ -1,28 +1,25 @@
 import { useState, useEffect } from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  TextField,
-  List,
-  ListItem,
-  ListItemText,
-  IconButton,
-  Typography,
+  ActionIcon,
   Box,
+  Button,
   Divider,
-  Stack,
+  Group,
+  Loader,
+  Modal,
   Paper,
-  useMediaQuery,
-  useTheme,
-  CircularProgress,
-} from '@mui/material';
-import { Delete, FolderOpen } from '@mui/icons-material';
+  Stack,
+  Text,
+  TextInput,
+} from '@mantine/core';
+import { IconFolderOpen, IconTrash } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { useAudioStore } from '../hooks/useAudioStore';
 import type { PieceWithStats } from '../types/audio';
+import { useMedia } from '../theme/palette';
+import { MOBILE_QUERY } from '../theme/theme';
+import ConfirmDialog from './ConfirmDialog';
+import classes from './PiecesManager.module.css';
 
 interface PiecesManagerProps {
   open: boolean;
@@ -44,8 +41,7 @@ const formatBytes = (bytes: number, t: (key: string) => string): string => {
 
 const PiecesManager = ({ open, onClose }: PiecesManagerProps) => {
   const { t } = useTranslation();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMobile = useMedia(MOBILE_QUERY);
   
   const {
     currentPieceId,
@@ -200,217 +196,171 @@ const PiecesManager = ({ open, onClose }: PiecesManagerProps) => {
 
   return (
     <>
-      <Dialog
-        open={open}
+      <Modal
+        opened={open}
         onClose={onClose}
         fullScreen={isMobile}
-        maxWidth="sm"
-        fullWidth
-        aria-labelledby="pieces-manager-title"
+        size={600}
+        title={t('pieces.title')}
       >
-        <DialogTitle id="pieces-manager-title">{t('pieces.title')}</DialogTitle>
-        <DialogContent>
-          {loading ? (
-            <Box display="flex" justifyContent="center" p={4}>
-              <CircularProgress />
-            </Box>
-          ) : (
-            <Stack spacing={3}>
-              {/* Current piece section */}
-              {currentPiece && (
-                <Paper variant="outlined" sx={{ p: 2 }}>
-                  <Stack direction="row" alignItems="center" justifyContent="space-between" mb={1}>
-                    <Typography variant="overline" color="text.secondary">
-                      {t('pieces.currentPiece')}
-                    </Typography>
-                    <IconButton
-                      size="small"
-                      color="error"
-                      onClick={() => setDeleteConfirm(currentPiece.id)}
-                      aria-label={t('pieces.delete')}
-                    >
-                      <Delete fontSize="small" />
-                    </IconButton>
-                  </Stack>
-                  
-                  {isEditingName ? (
-                    <TextField
-                      value={editedName}
-                      onChange={(e) => setEditedName(e.target.value)}
-                      onBlur={handleRename}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          handleRename();
-                        } else if (e.key === 'Escape') {
-                          handleCancelEdit();
-                        }
-                      }}
-                      autoFocus
-                      size="small"
-                      variant="standard"
-                      fullWidth
-                      sx={{ mb: 1 }}
-                    />
-                  ) : (
-                    <Typography
-                      variant="h6"
-                      gutterBottom
-                      onClick={handleStartEditName}
-                      sx={{
-                        cursor: 'pointer',
-                        '&:hover': {
-                          color: 'primary.main',
-                        },
-                      }}
-                    >
-                      {currentPiece.name}
-                    </Typography>
-                  )}
-                  
-                  <Typography variant="body2" color="text.secondary">
-                    {t('pieces.tracks', { count: currentPiece.trackCount })} • {formatBytes(currentPiece.size, t)}
-                  </Typography>
-                </Paper>
-              )}
+        {loading ? (
+          <Group justify="center" p="xl">
+            <Loader />
+          </Group>
+        ) : (
+          <Stack gap="lg">
+            {/* Current piece section */}
+            {currentPiece && (
+              <Paper withBorder p="md">
+                <Group justify="space-between" mb="xs">
+                  <Text size="xs" c="dimmed" tt="uppercase" fw={500} lts={1}>
+                    {t('pieces.currentPiece')}
+                  </Text>
+                  <ActionIcon
+                    variant="subtle"
+                    color="red"
+                    onClick={() => setDeleteConfirm(currentPiece.id)}
+                    aria-label={t('pieces.delete')}
+                  >
+                    <IconTrash size={18} />
+                  </ActionIcon>
+                </Group>
 
-              {/* New piece button */}
-              <Box>
-                <Button
-                  variant="contained"
-                  fullWidth
-                  onClick={handleCreatePiece}
-                  color="primary"
-                >
-                  {t('pieces.newPiece')}
-                </Button>
-              </Box>
-
-              <Divider />
-
-              {/* Other pieces list */}
-              <Box>
-                {pieces.length === 0 ? (
-                  <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
-                    {t('pieces.noPieces')}
-                  </Typography>
+                {isEditingName ? (
+                  <TextInput
+                    value={editedName}
+                    onChange={(e) => setEditedName(e.currentTarget.value)}
+                    onBlur={handleRename}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleRename();
+                      } else if (e.key === 'Escape') {
+                        e.stopPropagation();
+                        handleCancelEdit();
+                      }
+                    }}
+                    autoFocus
+                    variant="unstyled"
+                    size="lg"
+                    mb="xs"
+                  />
                 ) : (
-                  <>
-                    <Typography variant="subtitle2" gutterBottom>
-                      {t('pieces.title')}
-                    </Typography>
-                    <List disablePadding>
-                      {pieces.map((piece) => (
-                        <ListItem
-                          key={piece.id}
-                          data-piece={piece.name}
-                          secondaryAction={
-                            <Stack direction="row" gap={0.5} alignItems="center">
-                              {/* Opening a piece is explicit: a tap on the row does nothing */}
-                              <Button
-                                size="small"
-                                variant="outlined"
-                                startIcon={<FolderOpen />}
-                                onClick={() => handleLoadPiece(piece.id)}
-                              >
-                                {t('pieces.open')}
-                              </Button>
-                              <IconButton
-                                edge="end"
-                                aria-label={t('pieces.delete')}
-                                onClick={() => setDeleteConfirm(piece.id)}
-                              >
-                                <Delete />
-                              </IconButton>
-                            </Stack>
-                          }
-                          sx={{ pr: 18 }}
-                        >
-                          <ListItemText
-                            primary={piece.name}
-                            secondary={
-                              `${t('pieces.tracks', { count: piece.trackCount })} • ${formatBytes(piece.size, t)}`
-                            }
-                            slotProps={{ primary: { noWrap: true } }}
-                          />
-                        </ListItem>
-                      ))}
-                    </List>
-                  </>
+                  <Text size="lg" fw={500} mb="xs" onClick={handleStartEditName} className={classes.name}>
+                    {currentPiece.name}
+                  </Text>
                 )}
-              </Box>
 
-              <Divider />
+                <Text size="sm" c="dimmed">
+                  {t('pieces.tracks', { count: currentPiece.trackCount })} • {formatBytes(currentPiece.size, t)}
+                </Text>
+              </Paper>
+            )}
 
-              {/* Global stats */}
-              <Box>
-                <Typography variant="subtitle2" gutterBottom>
-                  {t('pieces.globalStats')}
-                </Typography>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  {t('pieces.totalSize')}: {formatBytes(totalSize, t)}
-                </Typography>
-                <Button
-                  variant="outlined"
-                  color="error"
-                  onClick={() => setDeleteAllConfirm(true)}
-                  disabled={totalSize === 0}
-                  fullWidth
-                >
-                  {t('pieces.deleteAll')}
-                </Button>
-              </Box>
-            </Stack>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={onClose}>{t('pieces.closeButton')}</Button>
-        </DialogActions>
-      </Dialog>
+            {/* New piece button */}
+            <Button fullWidth onClick={handleCreatePiece}>
+              {t('pieces.newPiece')}
+            </Button>
+
+            <Divider />
+
+            {/* Other pieces list */}
+            <Box>
+              {pieces.length === 0 ? (
+                <Text size="sm" c="dimmed" py="md" ta="center">
+                  {t('pieces.noPieces')}
+                </Text>
+              ) : (
+                <>
+                  <Text size="sm" fw={600} mb="xs">
+                    {t('pieces.title')}
+                  </Text>
+                  <Stack gap={0}>
+                    {pieces.map((piece) => (
+                      <Group key={piece.id} data-piece={piece.name} className={classes.piece} wrap="nowrap" gap="xs">
+                        <Box flex={1} miw={0}>
+                          <Text truncate>{piece.name}</Text>
+                          <Text size="sm" c="dimmed">
+                            {`${t('pieces.tracks', { count: piece.trackCount })} • ${formatBytes(piece.size, t)}`}
+                          </Text>
+                        </Box>
+                        {/* Opening a piece is explicit: a tap on the row does nothing */}
+                        <Button
+                          size="xs"
+                          variant="outline"
+                          leftSection={<IconFolderOpen size={16} />}
+                          onClick={() => handleLoadPiece(piece.id)}
+                        >
+                          {t('pieces.open')}
+                        </Button>
+                        <ActionIcon
+                          variant="subtle"
+                          color="gray"
+                          size="lg"
+                          aria-label={t('pieces.delete')}
+                          onClick={() => setDeleteConfirm(piece.id)}
+                        >
+                          <IconTrash size={20} />
+                        </ActionIcon>
+                      </Group>
+                    ))}
+                  </Stack>
+                </>
+              )}
+            </Box>
+
+            <Divider />
+
+            {/* Global stats */}
+            <Box>
+              <Text size="sm" fw={600} mb="xs">
+                {t('pieces.globalStats')}
+              </Text>
+              <Text size="sm" c="dimmed" mb="xs">
+                {t('pieces.totalSize')}: {formatBytes(totalSize, t)}
+              </Text>
+              <Button
+                variant="outline"
+                color="red"
+                onClick={() => setDeleteAllConfirm(true)}
+                disabled={totalSize === 0}
+                fullWidth
+              >
+                {t('pieces.deleteAll')}
+              </Button>
+            </Box>
+          </Stack>
+        )}
+        <Group justify="flex-end" mt="lg">
+          <Button variant="subtle" onClick={onClose}>
+            {t('pieces.closeButton')}
+          </Button>
+        </Group>
+      </Modal>
 
       {/* Delete confirmation dialog */}
-      <Dialog
-        open={deleteConfirm !== null}
+      <ConfirmDialog
+        opened={deleteConfirm !== null}
         onClose={() => setDeleteConfirm(null)}
-        aria-labelledby="delete-piece-title"
-      >
-        <DialogTitle id="delete-piece-title">{t('pieces.deleteConfirmTitle')}</DialogTitle>
-        <DialogContent>
-          <Typography>
-            {t('pieces.deleteConfirmMessage', {
-              name: pieceToDelete?.name || '',
-              count: pieceToDelete?.trackCount || 0,
-            })}
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteConfirm(null)}>{t('pieces.cancelButton')}</Button>
-          <Button
-            onClick={() => deleteConfirm && handleDeletePiece(deleteConfirm)}
-            color="error"
-            variant="contained"
-          >
-            {t('pieces.deleteConfirmButton')}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        onConfirm={() => deleteConfirm && handleDeletePiece(deleteConfirm)}
+        title={t('pieces.deleteConfirmTitle')}
+        message={t('pieces.deleteConfirmMessage', {
+          name: pieceToDelete?.name || '',
+          count: pieceToDelete?.trackCount || 0,
+        })}
+        cancelLabel={t('pieces.cancelButton')}
+        confirmLabel={t('pieces.deleteConfirmButton')}
+      />
 
       {/* Delete all confirmation dialog */}
-      <Dialog
-        open={deleteAllConfirm}
+      <ConfirmDialog
+        opened={deleteAllConfirm}
         onClose={() => setDeleteAllConfirm(false)}
-        aria-labelledby="delete-all-pieces-title"
-      >
-        <DialogTitle id="delete-all-pieces-title">{t('pieces.deleteAllConfirmTitle')}</DialogTitle>
-        <DialogContent>
-          <Typography>{t('pieces.deleteAllConfirmMessage')}</Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteAllConfirm(false)}>{t('pieces.cancelButton')}</Button>
-          <Button onClick={handleDeleteAll} color="error" variant="contained">
-            {t('pieces.deleteAllConfirmButton')}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        onConfirm={handleDeleteAll}
+        title={t('pieces.deleteAllConfirmTitle')}
+        message={t('pieces.deleteAllConfirmMessage')}
+        cancelLabel={t('pieces.cancelButton')}
+        confirmLabel={t('pieces.deleteAllConfirmButton')}
+      />
     </>
   );
 };

@@ -1,31 +1,42 @@
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  IconButton,
-  List,
-  ListItem,
-  ListItemText,
-  Switch,
-  Typography,
-  useMediaQuery,
-  useTheme,
-} from '@mui/material';
-import { Close, GraphicEq, Equalizer } from '@mui/icons-material';
+import { Modal, Switch, Text } from '@mantine/core';
+import { IconChartBar, IconWaveSine } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { useAudioStore } from '../hooks/useAudioStore';
+import { useMedia } from '../theme/palette';
+import { MOBILE_QUERY } from '../theme/theme';
 import RecordingLatencySetting from './RecordingLatencySetting';
+import classes from './Settings.module.css';
 
 interface SettingsUIProps {
   open: boolean;
   onClose: () => void;
 }
 
+/** One setting: icon, title and description, a control on the right */
+export function SettingRow({ icon, title, description, control }: {
+  icon: React.ReactNode;
+  title: React.ReactNode;
+  description: React.ReactNode;
+  control: React.ReactNode;
+}) {
+  return (
+    <div className={classes.line}>
+      <span className={classes.icon}>{icon}</span>
+      <div className={classes.text}>
+        <Text fw={500}>{title}</Text>
+        <Text size="sm" c="dimmed" mt={4}>
+          {description}
+        </Text>
+      </div>
+      {control}
+    </div>
+  );
+}
+
 export default function SettingsUI({ open, onClose }: SettingsUIProps) {
   const { t } = useTranslation();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  
+  const isMobile = useMedia(MOBILE_QUERY);
+
   const waveformStyle = useAudioStore(state => state.waveformStyle);
   const setWaveformStyle = useAudioStore(state => state.setWaveformStyle);
   const waveformNormalize = useAudioStore(state => state.waveformNormalize);
@@ -33,92 +44,49 @@ export default function SettingsUI({ open, onClose }: SettingsUIProps) {
   const isRecordingSupported = useAudioStore(state => state.isRecordingSupported);
 
   return (
-    <Dialog
-      open={open}
+    <Modal
+      opened={open}
       onClose={onClose}
       fullScreen={isMobile}
-      maxWidth="sm"
-      fullWidth
-      disableRestoreFocus
+      size={600}
+      returnFocus={false}
+      title={t('settings.title')}
+      classNames={{ header: classes.header, body: classes.body }}
     >
-      <DialogTitle sx={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        borderBottom: `1px solid ${theme.palette.divider}`
-      }}>
-        {t('settings.title')}
-        <IconButton onClick={onClose} size="small">
-          <Close />
-        </IconButton>
-      </DialogTitle>
-      
-      <DialogContent sx={{ p: 0 }}>
-        <List sx={{ width: '100%' }}>
-          {/* Waveform Style */}
-          <ListItem
-            sx={{
-              py: 2,
-              px: 3,
-              '&:hover': {
-                bgcolor: 'action.hover'
-              }
-            }}
-          >
-            <GraphicEq sx={{ mr: 2, color: 'text.secondary' }} />
-            <ListItemText
-              primary={
-                <Typography variant="body1" fontWeight={500}>
-                  {t('settings.waveformStyle.title')}
-                </Typography>
-              }
-              secondary={
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                  {t('settings.waveformStyle.description')}
-                </Typography>
-              }
-            />
+      {/* Waveform Style */}
+      <div className={classes.item}>
+        <SettingRow
+          icon={<IconWaveSine size={22} />}
+          title={t('settings.waveformStyle.title')}
+          description={t('settings.waveformStyle.description')}
+          control={
             <Switch
-              edge="end"
               checked={waveformStyle === 'modern'}
-              onChange={(e) => setWaveformStyle(e.target.checked ? 'modern' : 'classic')}
+              onChange={(e) => setWaveformStyle(e.currentTarget.checked ? 'modern' : 'classic')}
+              aria-label={t('settings.waveformStyle.title')}
             />
-          </ListItem>
+          }
+        />
+      </div>
 
-          {/* Normalize */}
-          <ListItem
-            sx={{
-              py: 2,
-              px: 3,
-              '&:hover': {
-                bgcolor: 'action.hover'
-              }
-            }}
-          >
-            <Equalizer sx={{ mr: 2, color: 'text.secondary' }} />
-            <ListItemText
-              primary={
-                <Typography variant="body1" fontWeight={500}>
-                  {t('settings.normalize.title')}
-                </Typography>
-              }
-              secondary={
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                  {t('settings.normalize.description')}
-                </Typography>
-              }
-            />
+      {/* Normalize */}
+      <div className={classes.item}>
+        <SettingRow
+          icon={<IconChartBar size={22} />}
+          title={t('settings.normalize.title')}
+          description={t('settings.normalize.description')}
+          control={
             <Switch
-              edge="end"
               checked={waveformNormalize}
-              onChange={(e) => setWaveformNormalize(e.target.checked)}
+              onChange={(e) => setWaveformNormalize(e.currentTarget.checked)}
+              aria-label={t('settings.normalize.title')}
             />
-          </ListItem>
+          }
+        />
+      </div>
 
-          {/* Recording latency compensation */}
-          {isRecordingSupported && <RecordingLatencySetting />}
-        </List>
-      </DialogContent>
-    </Dialog>
+      {/* Recording latency compensation */}
+      {isRecordingSupported && <RecordingLatencySetting />}
+    </Modal>
   );
 }

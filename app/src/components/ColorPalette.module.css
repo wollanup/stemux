@@ -1,0 +1,37 @@
+.anchor {
+  display: inline-flex;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 32px);
+  gap: 8px;
+}
+
+.swatch {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  outline-offset: 2px;
+  transition: transform 0.1s;
+}
+
+.swatch[data-selected] {
+  outline: 2px solid var(--mantine-color-text);
+}
+
+.swatch:hover,
+.swatch:focus-visible {
+  transform: scale(1.12);
+}
+
+.dot {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid var(--app-divider);
+}

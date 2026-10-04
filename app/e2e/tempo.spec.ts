@@ -33,7 +33,7 @@ test.describe('tempo', () => {
     await page.reload();
     await expect(page.locator('[data-tempo-button]')).toHaveText('90 BPM');
     await page.locator('[data-tempo-button]').click();
-    await expect(page.getByRole('combobox', { name: 'Beats per bar' })).toHaveText('3');
+    await expect(page.getByRole('combobox', { name: 'Beats per bar' })).toHaveValue('3');
     await page.getByRole('button', { name: 'Time', exact: true }).click();
     await expect(page.locator('canvas[data-graduation]')).toHaveAttribute('data-graduation', 'time');
   });

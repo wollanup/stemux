@@ -214,7 +214,7 @@ Perfect for practicing difficult sections:
 
 - **[React 19](https://react.dev/)** - UI framework
 - **[TypeScript](https://www.typescriptlang.org/)** - Type safety
-- **[Material-UI v7](https://mui.com/)** - Component library
+- **[Mantine 9](https://mantine.dev/)** - Component library, with [Tabler Icons](https://tabler.io/icons)
 - **[Web Audio API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API)** - Audio processing
 - **[Signalsmith Stretch](https://signalsmith-audio.co.uk/code/stretch/)** - Pitch-preserving speed change
 - **[Zustand](https://zustand-demo.pmnd.rs/)** - State management
@@ -268,7 +268,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🙏 Acknowledgments
 
 - **WaveSurfer.js** - Powered the waveforms of the first versions
-- **Material-UI** - For the beautiful component library
+- **Material-UI** - Component library of the first versions
+- **Mantine** - For the component library
 - **Web Audio API** - For making this possible in the browser
 
 ---

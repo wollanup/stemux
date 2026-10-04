@@ -1,0 +1,28 @@
+.handle {
+  position: absolute;
+  z-index: 7;
+  touch-action: none;
+  transition: background-color 0.15s;
+}
+
+/* Inside the resized area: never over the clip edges next to it */
+.x {
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 6px;
+  cursor: col-resize;
+}
+
+.y {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 6px;
+  cursor: row-resize;
+}
+
+.handle:hover,
+.handle:active {
+  background-color: alpha(var(--mantine-primary-color-filled), 0.35);
+}

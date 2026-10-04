@@ -7,7 +7,10 @@
  */
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { alpha, Box, useMediaQuery, useTheme } from '@mui/material';
+import { alpha } from '@mantine/core';
+import { useAppPalette, useMedia } from '../theme/palette';
+import { WIDE_QUERY } from '../theme/theme';
+import classes from './Timeline.module.css';
 import { closestCenter, DndContext, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useAudioStore } from '../hooks/useAudioStore';
@@ -34,9 +37,9 @@ import { loopColor, markerColor } from '../utils/colors';
 const MANUAL_SCROLL_GRACE_MS = 3000;
 
 export default function Timeline() {
-  const theme = useTheme();
+  const palette = useAppPalette();
   const { t } = useTranslation();
-  const wide = useMediaQuery(theme.breakpoints.up('md'));
+  const wide = useMedia(WIDE_QUERY);
 
   // Header column width: resizable, remembered in this browser
   const [savedHeaderWidth, setSavedHeaderWidth] = useState(loadHeaderWidth);
@@ -245,7 +248,7 @@ export default function Timeline() {
   };
 
   const hasSolo = tracks.some((t) => t.isSolo);
-  const scrollbar = scrollbarColors(theme);
+  const scrollbar = scrollbarColors(palette);
 
   // Active loop and markers, drawn across all lanes (following a drag in the ruler)
   const markers = applyMarkerPreview(loopState.markers, markerPreview);
@@ -255,91 +258,72 @@ export default function Timeline() {
   const loopEnd = activeLoop && markers.find((m) => m.id === activeLoop.endMarkerId)?.time;
 
   return (
-    <Box
+    <div
       ref={scrollRef}
       onScroll={onScroll}
       id="timeline-scroll"
       data-timeline-scroll
       data-px-per-sec={pps}
-      sx={{
-        flex: 1,
-        minHeight: 0,
-        overflow: 'auto',
-        position: 'relative',
-        touchAction: 'pan-x pan-y',
-        overscrollBehavior: 'contain',
-        bgcolor: alpha(theme.palette.text.primary, theme.palette.mode === 'dark' ? 0.02 : 0.03),
-        // Native horizontal scrollbar replaced by TimelineScrollbar; vertical one styled alike
-        '&::-webkit-scrollbar': { width: 10, height: 0 },
-        '&::-webkit-scrollbar-track': { bgcolor: scrollbar.track },
-        '&::-webkit-scrollbar-thumb': {
-          bgcolor: scrollbar.thumb,
-          borderRadius: 5,
-          border: '2px solid transparent',
-          backgroundClip: 'padding-box',
-          '&:hover': { bgcolor: scrollbar.thumbHover },
-        },
-        // No per-axis styling (Firefox): hide both, the wheel still scrolls vertically
-        '@supports not selector(::-webkit-scrollbar)': { scrollbarWidth: 'none' },
-      }}
+      className={classes.scroll}
+      style={{ '--sb-track': scrollbar.track, '--sb-thumb': scrollbar.thumb, '--sb-thumb-hover': scrollbar.thumbHover } as React.CSSProperties}
     >
-      <Box sx={{ position: 'relative', width: headerWidth + width, minWidth: '100%' }}>
+      <div style={{ position: 'relative', width: headerWidth + width, minWidth: '100%' }}>
         {/* Ruler row */}
-        <Box sx={{ position: 'sticky', top: 0, zIndex: 5, display: 'flex', height: rulerHeight }}>
+        <div style={{ position: 'sticky', top: 0, zIndex: 5, display: 'flex', height: rulerHeight }}>
           {wide && (
-            <Box
-              sx={{
+            <div
+              style={{
                 position: 'sticky',
                 left: 0,
                 zIndex: 6,
                 width: headerWidth,
                 flexShrink: 0,
-                bgcolor: 'background.paper',
-                borderRight: `1px solid ${theme.palette.divider}`,
-                borderBottom: `1px solid ${theme.palette.divider}`,
+                backgroundColor: 'var(--app-paper)',
+                borderRight: '1px solid var(--app-divider)',
+                borderBottom: '1px solid var(--app-divider)',
               }}
             >
               <ResizeHandle axis="x" label={t('track.resizeHeaders')} {...headerResize} />
-            </Box>
+            </div>
           )}
           <TimeRuler width={width} pxPerSec={pps} duration={duration} playheadRef={rulerPlayheadRef} />
-        </Box>
+        </div>
 
         {/* Lanes */}
-        <Box sx={{ position: 'relative' }}>
+        <div style={{ position: 'relative' }}>
           {/* Overlay across all lanes: played area, active loop, markers, playhead */}
-          <Box sx={{ position: 'absolute', top: 0, bottom: 0, left: headerWidth, width, zIndex: 2, pointerEvents: 'none', overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', top: 0, bottom: 0, left: headerWidth, width, zIndex: 2, pointerEvents: 'none', overflow: 'hidden' }}>
             <GridLines />
-            <Box ref={playedRef} sx={{ position: 'absolute', top: 0, bottom: 0, left: 0, bgcolor: alpha(theme.palette.background.default, 0.35) }} />
+            <div ref={playedRef} className={classes.fill} style={{ left: 0, backgroundColor: alpha(palette.background, 0.35) }} />
             {activeLoopColor && loopStart !== undefined && loopEnd !== undefined && (
-              <Box
-                sx={{
-                  position: 'absolute',
-                  top: 0,
-                  bottom: 0,
+              <div
+                className={classes.fill}
+                style={{
                   left: Math.min(loopStart, loopEnd) * pps,
                   width: Math.abs(loopEnd - loopStart) * pps,
-                  bgcolor: alpha(activeLoopColor, 0.08),
+                  backgroundColor: alpha(activeLoopColor, 0.08),
                   borderLeft: `1px solid ${alpha(activeLoopColor, 0.6)}`,
                   borderRight: `1px solid ${alpha(activeLoopColor, 0.6)}`,
                 }}
               />
             )}
             {markers.map((m) => (
-              <Box
+              <div
                 key={m.id}
                 data-marker-line={m.id}
-                sx={{ position: 'absolute', top: 0, bottom: 0, left: m.time * pps, width: '1px', bgcolor: alpha(markerColor(m.id, loopState), 0.35) }}
+                className={classes.fill}
+                style={{ left: m.time * pps, width: 1, backgroundColor: alpha(markerColor(m.id, loopState), 0.35) }}
               />
             ))}
-            <Box ref={lanePlayheadRef} sx={{ position: 'absolute', top: 0, bottom: 0, left: -1, width: 2, bgcolor: 'primary.light', willChange: 'transform' }} />
+            <div ref={lanePlayheadRef} className={classes.fill} style={{ left: -1, width: 2, backgroundColor: 'var(--app-primary-light)', willChange: 'transform' }} />
             {snapGuide !== null && (
-              <Box
+              <div
                 data-snap-guide={snapGuide}
-                sx={{ position: 'absolute', top: 0, bottom: 0, left: snapGuide * pps - 1, width: 2, bgcolor: 'warning.light', boxShadow: `0 0 6px ${theme.palette.warning.light}` }}
+                className={classes.fill}
+                style={{ left: snapGuide * pps - 1, width: 2, backgroundColor: 'var(--app-warning-light)', boxShadow: '0 0 6px var(--app-warning-light)' }}
               />
             )}
-          </Box>
+          </div>
 
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={tracks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
@@ -358,15 +342,15 @@ export default function Timeline() {
               ))}
             </SortableContext>
           </DndContext>
-        </Box>
+        </div>
 
         <TimelineScrollbar scrollRef={scrollRef} headerWidth={headerWidth} containerWidth={containerWidth} contentWidth={width} />
 
         {/* Add tracks, always visible whatever the horizontal scroll */}
-        <Box sx={{ position: 'sticky', left: 0, width: containerWidth || '100%', py: 3 }}>
+        <div style={{ position: 'sticky', left: 0, width: containerWidth || '100%', paddingBlock: 'var(--mantine-spacing-lg)' }}>
           <TrackAdder />
-        </Box>
-      </Box>
-    </Box>
+        </div>
+      </div>
+    </div>
   );
 }

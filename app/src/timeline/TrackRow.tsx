@@ -1,6 +1,5 @@
 import { memo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Box } from '@mui/material';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { AudioTrack } from '../types/audio';
@@ -49,22 +48,23 @@ function TrackRow({ track, wide, headerWidth, headerResize, contentWidth, viewpo
   );
 
   return (
-    <Box
+    <div
       ref={setNodeRef}
       data-track-row={track.name}
       data-track-height={laneHeight}
-      style={{ transform: CSS.Translate.toString(transform), transition }}
-      sx={{
+      style={{
+        transform: CSS.Translate.toString(transform),
+        transition,
         display: 'flex',
         flexDirection: wide ? 'row' : 'column',
         position: 'relative',
         zIndex: isDragging ? 10 : 'auto',
-        boxShadow: isDragging ? 8 : 'none',
+        boxShadow: isDragging ? 'var(--mantine-shadow-xl)' : 'none',
       }}
     >
       {/* Header stays visible while scrolling horizontally */}
-      <Box
-        sx={{
+      <div
+        style={{
           position: 'sticky',
           left: 0,
           zIndex: 3,
@@ -74,7 +74,7 @@ function TrackRow({ track, wide, headerWidth, headerResize, contentWidth, viewpo
       >
         {header}
         {wide && <ResizeHandle axis="x" label={t('track.resizeHeaders')} {...headerResize} />}
-      </Box>
+      </div>
       <TrackLane
         track={track}
         audio={audio}
@@ -96,7 +96,7 @@ function TrackRow({ track, wide, headerWidth, headerResize, contentWidth, viewpo
           onReset={() => updateTrack(track.id, { height: undefined })}
         />
       )}
-    </Box>
+    </div>
   );
 }
 

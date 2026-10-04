@@ -1,0 +1,5 @@
+/* Room taken by the fixed top and bottom bars */
+.toolbarSpacer {
+  flex-shrink: 0;
+  min-height: var(--app-toolbar-height);
+}

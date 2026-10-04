@@ -184,7 +184,7 @@ export default defineConfig({
         codeSplitting: {
           groups: [
             { name: 'react-vendor', test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/ },
-            { name: 'mui-vendor', test: /node_modules[\\/](@mui|@emotion)[\\/]/ },
+            { name: 'ui-vendor', test: /node_modules[\\/](@mantine|@tabler|@floating-ui)[\\/]/ },
             { name: 'i18n-vendor', test: /node_modules[\\/](i18next|react-i18next)[\\/]/ },
           ],
         },

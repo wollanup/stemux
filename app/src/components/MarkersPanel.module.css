@@ -1,0 +1,194 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: var(--app-paper);
+  border-bottom: 1px solid var(--app-divider);
+}
+
+.section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.collapsed {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: var(--app-paper);
+  border-bottom: 1px solid var(--app-divider);
+}
+
+.collapsedChevron {
+  display: block;
+  margin-left: auto;
+  color: var(--app-text-secondary);
+}
+
+.count {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  box-sizing: border-box;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--app-selected);
+  color: var(--app-text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Chip colors come from variables set per chip */
+.chip {
+  --chip-bg: var(--app-selected);
+  --chip-fg: var(--mantine-color-text);
+  --chip-border: transparent;
+  --chip-icon: inherit;
+  --chip-hover: var(--app-hover);
+
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 4px 0 6px;
+  border-radius: 12px;
+  border: 1px solid var(--chip-border);
+  background-color: var(--chip-bg);
+  color: var(--chip-fg);
+  font-size: 13px;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.15s;
+}
+
+.chip[data-dashed] {
+  border-style: dashed;
+}
+
+.chip:hover {
+  background-color: var(--chip-hover);
+}
+
+.chip:focus-visible {
+  outline: 2px solid var(--mantine-primary-color-filled);
+  outline-offset: 1px;
+}
+
+.icon {
+  display: flex;
+  align-items: center;
+  margin-right: 4px;
+  color: var(--chip-icon);
+}
+
+.label {
+  display: flex;
+  align-items: center;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  margin-left: 4px;
+}
+
+.action {
+  display: flex;
+  padding: 2px;
+  border-radius: 50%;
+  color: inherit;
+  opacity: 0.7;
+}
+
+.action:hover {
+  opacity: 1;
+}
+
+.deleteAction:hover {
+  color: var(--app-error);
+}
+
+.playingIcon {
+  display: inline-flex;
+}
+
+.loopPlaying {
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.loopPlaying span {
+  width: 3px;
+  height: 12px;
+  border-radius: 1.5px;
+  background-color: currentColor;
+  transform-origin: bottom;
+  animation: loop-eq 1s ease-in-out infinite;
+}
+
+.loopPlaying span:nth-of-type(1) {
+  animation-delay: -0.2s;
+}
+
+.loopPlaying span:nth-of-type(2) {
+  animation-delay: -0.6s;
+  animation-duration: 0.9s;
+}
+
+.loopPlaying span:nth-of-type(3) {
+  animation-delay: -0.4s;
+  animation-duration: 1.1s;
+}
+
+@keyframes loop-eq {
+  0%,
+  100% {
+    transform: scaleY(0.3);
+  }
+
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loopPlaying span {
+    animation: none;
+  }
+
+  .loopPlaying span:nth-of-type(1) {
+    transform: scaleY(0.6);
+  }
+
+  .loopPlaying span:nth-of-type(3) {
+    transform: scaleY(0.4);
+  }
+}
+
+.loopPause {
+  display: none;
+}
+
+@media (hover: hover) {
+  .chip:hover .loopPlaying {
+    display: none;
+  }
+
+  .chip:hover .loopPause {
+    display: inline-block;
+  }
+}

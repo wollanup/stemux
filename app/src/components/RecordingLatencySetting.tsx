@@ -1,16 +1,6 @@
 import { useState } from 'react';
-import {
-  Alert,
-  Box,
-  Button,
-  CircularProgress,
-  ListItem,
-  ListItemText,
-  Slider,
-  Switch,
-  Typography,
-} from '@mui/material';
-import { Timer } from '@mui/icons-material';
+import { Alert, Box, Button, Group, Loader, Slider, Switch, Text } from '@mantine/core';
+import { IconStopwatch } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import {
   calibrateRoundTripLatency,
@@ -18,6 +8,8 @@ import {
   loadLatencyOverrideMs,
   saveLatencyOverrideMs,
 } from '../audio/latency';
+import { SettingRow } from './SettingsUI';
+import classes from './Settings.module.css';
 
 const MAX_LATENCY_MS = 500;
 
@@ -51,66 +43,57 @@ export default function RecordingLatencySetting() {
   };
 
   return (
-    <ListItem sx={{ py: 2, px: 3, flexDirection: 'column', alignItems: 'stretch' }}>
-      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-        <Timer sx={{ mr: 2, color: 'text.secondary' }} />
-        <ListItemText
-          primary={
-            <Typography variant="body1" fontWeight={500}>
-              {t('settings.latency.title')}
-            </Typography>
-          }
-          secondary={
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-              {isAuto
-                ? t('settings.latency.autoDescription', { ms: estimateMs })
-                : t('settings.latency.manualDescription')}
-            </Typography>
-          }
-        />
-        <Typography variant="body2" sx={{ mr: 1 }}>{t('settings.latency.auto')}</Typography>
-        <Switch
-          edge="end"
-          checked={isAuto}
-          onChange={(e) => update(e.target.checked ? null : estimateMs)}
-        />
-      </Box>
+    <div className={classes.item}>
+      <SettingRow
+        icon={<IconStopwatch size={22} />}
+        title={t('settings.latency.title')}
+        description={isAuto ? t('settings.latency.autoDescription', { ms: estimateMs }) : t('settings.latency.manualDescription')}
+        control={
+          <Switch
+            label={t('settings.latency.auto')}
+            labelPosition="left"
+            checked={isAuto}
+            onChange={(e) => update(e.currentTarget.checked ? null : estimateMs)}
+          />
+        }
+      />
 
       {!isAuto && (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, pl: 5, pr: 1, mt: 1 }}>
+        <Group gap="md" pl={38} pr={8} mt="xs" wrap="nowrap">
           <Slider
             value={override}
             min={0}
             max={MAX_LATENCY_MS}
             step={1}
-            onChange={(_, value) => update(value as number)}
+            onChange={update}
             aria-label={t('settings.latency.title')}
+            style={{ flex: 1 }}
           />
-          <Typography variant="body2" sx={{ minWidth: 64, textAlign: 'right' }}>
+          <Text size="sm" miw={64} ta="right">
             {override} ms
-          </Typography>
-        </Box>
+          </Text>
+        </Group>
       )}
 
-      <Box sx={{ pl: 5, mt: 1 }}>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+      <Box pl={38} mt="xs">
+        <Text size="sm" c="dimmed" mb="xs">
           {t('settings.latency.calibrationHelp')}
-        </Typography>
+        </Text>
         <Button
-          variant="outlined"
-          size="small"
+          variant="outline"
+          size="xs"
           onClick={calibrate}
           disabled={calibrating}
-          startIcon={calibrating ? <CircularProgress size={16} /> : undefined}
+          leftSection={calibrating ? <Loader size={14} /> : undefined}
         >
           {calibrating ? t('settings.latency.calibrating') : t('settings.latency.calibrate')}
         </Button>
         {message && (
-          <Alert severity={message.severity} sx={{ mt: 1 }}>
+          <Alert color={message.severity === 'success' ? 'green' : 'red'} mt="xs">
             {message.text}
           </Alert>
         )}
       </Box>
-    </ListItem>
+    </div>
   );
 }
