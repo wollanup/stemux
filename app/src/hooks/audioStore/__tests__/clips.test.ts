@@ -78,4 +78,15 @@ describe('recorded clips', () => {
     expect(store.getState().tracks[0].clipOffset).toBeUndefined();
     expect((db.settings.get('p') as PieceSettings).trackSettings[0].clipOffset).toBeUndefined();
   });
+
+  it('remembers the pitch a take was recorded at, and forgets it when cleared', async () => {
+    const { store } = makeStore();
+    await store.getState().saveRecording('rec', new Blob(['wav']), 0, 2.15);
+    expect(store.getState().tracks[0].recordedPitch).toBe(2.15);
+    expect((db.settings.get('p') as PieceSettings).trackSettings[0].recordedPitch).toBe(2.15);
+
+    await store.getState().clearRecording('rec');
+    expect(store.getState().tracks[0].recordedPitch).toBeUndefined();
+    expect((db.settings.get('p') as PieceSettings).trackSettings[0].recordedPitch).toBeUndefined();
+  });
 });

@@ -464,3 +464,62 @@ describe('AudioEngine level meters', () => {
     expect(engine.getTrackPeaks('missing')).toBeNull();
   });
 });
+
+describe('AudioEngine takes recorded on a transposed piece', () => {
+  /** Lets the engine prepare its stretch nodes and switch voices */
+  const settle = async () => {
+    for (let i = 0; i < 10; i++) await Promise.resolve();
+  };
+
+  it('plays a take as recorded when the pitch has not changed since', async () => {
+    engine.setTrackPitchOffset('take', 2);
+    engine.addTrack('song', fakeBuffer(10));
+    engine.addTrack('take', fakeBuffer(10));
+    await engine.setPitch(2);
+    engine.play();
+    const [song, take] = stretchNodes.map((n) => n.schedules.at(-1)!);
+    expect(song).toMatchObject({ active: true, semitones: 2 });
+    expect(take).toMatchObject({ active: true, semitones: 0 });
+  });
+
+  it('shifts the take by the difference when the piece goes back to its original pitch', async () => {
+    engine.setTrackPitchOffset('take', 2);
+    engine.addTrack('song', fakeBuffer(10));
+    engine.addTrack('take', fakeBuffer(10));
+    // Pitch 0, but the take needs -2: stretch voices for every track, still in sync
+    await settle();
+    expect(stretchNodes).toHaveLength(2);
+    const start = engine.play();
+    expect(ctx.startedSources()).toHaveLength(0);
+    const [song, take] = stretchNodes.map((n) => n.schedules.at(-1)!);
+    expect(song).toMatchObject({ active: true, semitones: 0, output: start.ctxTime });
+    expect(take).toMatchObject({ active: true, semitones: -2, output: start.ctxTime });
+  });
+
+  it('goes back to plain playback once no track is shifted', async () => {
+    engine.setTrackPitchOffset('take', 2);
+    engine.addTrack('take', fakeBuffer(10));
+    await settle();
+    engine.setTrackPitchOffset('take', 0);
+    await settle();
+    engine.play();
+    expect(ctx.startedSources()).toHaveLength(1);
+    expect(stretchNodes[0].schedules).toHaveLength(0);
+  });
+
+  it('retunes only the take when its own pitch changes while playing', async () => {
+    engine.addTrack('song', fakeBuffer(10));
+    engine.addTrack('take', fakeBuffer(10));
+    await engine.setPitch(3);
+    const start = engine.play();
+    ctx.currentTime = start.ctxTime + 1;
+    const songSchedules = stretchNodes[0].schedules.length;
+
+    engine.setTrackPitchOffset('take', 3);
+
+    expect(stretchNodes[0].schedules).toHaveLength(songSchedules);
+    const take = stretchNodes[1].schedules.at(-1)!;
+    expect(take).toMatchObject({ active: true, semitones: 0 });
+    expect(take.input).toBeCloseTo((take.output as number) - start.ctxTime, 9);
+  });
+});
