@@ -171,6 +171,19 @@
     "tracks_one": "{{count}} track",
     "tracks_other": "{{count}} tracks"
   },
+  "pitch": {
+    "cents": "cents",
+    "centsDown": "{{step}} cents lower",
+    "centsInput": "Fine tuning in cents",
+    "centsUp": "{{step}} cents higher",
+    "hint": "Fine tuning from −50 to +50 cents (100 cents = 1 semitone). The tempo does not change.",
+    "reset": "Original pitch",
+    "semitoneDown": "One semitone lower",
+    "semitones": "semitones",
+    "semitonesInput": "Transposition in semitones",
+    "semitoneUp": "One semitone higher",
+    "title": "Pitch"
+  },
   "pwa": {
     "reload": "Reload",
     "updateAvailable": "New version available! Click reload to update."

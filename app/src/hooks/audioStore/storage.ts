@@ -4,6 +4,7 @@
  */
 
 import type { AudioTrack, PieceSettings, Tempo } from '../../types/audio';
+import { NO_PITCH_SHIFT, type PitchShift } from '../../audio/pitch';
 import {
   savePieceSettings,
   getAllAudioFiles,
@@ -17,6 +18,12 @@ import { logger } from '../../utils/logger';
 let tempoSource: () => Tempo | null = () => null;
 export const setTempoSource = (source: () => Tempo | null) => {
   tempoSource = source;
+};
+
+/** Pitch shift of the current piece, saved the same way */
+let pitchSource: () => PitchShift = () => NO_PITCH_SHIFT;
+export const setPitchSource = (source: () => PitchShift) => {
+  pitchSource = source;
 };
 
 /**
@@ -53,6 +60,7 @@ export const saveTrackSettingsToPiece = async (
     playbackRate,
     masterVolume,
     tempo: tempoSource(),
+    pitch: pitchSource(),
   };
   await savePieceSettings(pieceId, settings);
 };

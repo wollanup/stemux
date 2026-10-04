@@ -62,7 +62,7 @@ const PlaybackSpeedMenu = ({ currentRate, disabled, onRateChange }: PlaybackSpee
           disabled={disabled}
           variant="outline"
           size="xs"
-          miw={100}
+          miw={{ base: undefined, xs: 100 }}
         >
           {currentRate.toFixed(2)}x
         </Button>

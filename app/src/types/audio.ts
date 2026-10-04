@@ -1,5 +1,6 @@
 import type { ClipGeometry } from '../timeline/clipEdit';
 import type { HistoryEntry } from '../hooks/audioStore/history';
+import type { PitchShift } from '../audio/pitch';
 
 export interface AudioTrack {
   id: string;
@@ -89,6 +90,7 @@ export interface PieceSettings {
   playbackRate: number;
   masterVolume: number;
   tempo?: Tempo | null; // Missing on pieces saved before tempo existed
+  pitch?: PitchShift; // Missing on pieces saved before pitch shift existed
 }
 
 export interface Piece {
@@ -168,6 +170,9 @@ export interface AudioStore {
   pause: () => void;
   seek: (time: number) => void;
   setPlaybackRate: (rate: number) => void;
+  /** Transpose the whole piece, tempo unchanged (see audio/pitch.ts) */
+  pitch: PitchShift;
+  setPitch: (pitch: PitchShift) => void;
   setMasterVolume: (volume: number) => void;
   
 
