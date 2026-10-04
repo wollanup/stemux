@@ -233,9 +233,7 @@
     "custom": "Custom",
     "faster": "Faster",
     "normal": "Normal",
-    "presets": "Quick Presets",
-    "slower": "Slower",
-    "title": "Playback Speed"
+    "slower": "Slower"
   },
   "tempo": {
     "barOne": "Bar 1 starts at",
@@ -299,7 +297,6 @@
   },
   "upload": {
     "description": "Drop audio files here or click to select",
-    "dropHere": "Drop your files here",
-    "title": "Add Audio Tracks"
+    "dropHere": "Drop your files here"
   }
 }
